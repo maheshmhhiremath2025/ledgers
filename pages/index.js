@@ -59,6 +59,20 @@ export default function Home() {
   const [orgConfig, setOrgConfig] = useState(null)
   const userMenuRef = useRef()
 
+  // Refetch org config whenever user leaves config page (logo may have changed)
+  useEffect(() => {
+    if (!user) return
+    const token = localStorage.getItem('sb_token')
+    const h = {
+      'x-org-id': user.orgId,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }
+    fetch('/api/config', { headers: h, credentials: 'include' })
+      .then(r => r.json())
+      .then(cfg => { if (!cfg.error) setOrgConfig(cfg) })
+      .catch(() => {})
+  }, [page, user?.orgId])
+
   // Load saved theme
   useEffect(() => {
     const saved = localStorage.getItem('sb_theme') || 'dark'

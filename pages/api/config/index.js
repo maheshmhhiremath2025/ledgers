@@ -33,9 +33,13 @@ export default async function handler(req, res) {
 
       let data = { ...req.body, orgId }
 
-      // Strip logo if not allowed
+      // Only strip NEW logo uploads if plan doesn't allow — never wipe existing logo
       const logoCheck = checkLimit(user || { plan: 'starter' }, 'logo_upload')
-      if (!logoCheck.allowed) delete data.logoUrl
+      if (!logoCheck.allowed) {
+        const existing = await OrgConfig.findOne({ orgId })
+        if (existing?.logoUrl) data.logoUrl = existing.logoUrl
+        else delete data.logoUrl
+      }
 
       const config = await OrgConfig.findOneAndUpdate({ orgId }, data, { new: true, upsert: true, runValidators: true })
       return res.status(200).json(config)
