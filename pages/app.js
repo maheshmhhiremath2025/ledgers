@@ -17,7 +17,7 @@ import TeamPage from '../components/TeamPage'
 import CustomerPage from '../components/CustomerPage'
 import VendorPage from '../components/VendorPage'
 import ExpensePage from '../components/ExpensePage'
-import OrgSwitcher from '../components/Orgswitcher'
+import OrgSwitcher from '../components/OrgSwitcher'
 
 const NAV = [
   { id:'dashboard',       label:'Dashboard',       path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
