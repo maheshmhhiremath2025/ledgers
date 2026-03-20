@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Badge, Btn, SearchBar, Card, EmptyState, fmt, fmtDate } from './ui'
+import RecordPaymentModal from './RecordPaymentModal'
 
 // ── PDF dropdown portal ──
 function PDFDropdown({ invoiceId, invoiceNumber, orgId, anchorEl, onClose, onOpen }) {
@@ -181,6 +182,7 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
   const [total, setTotal]           = useState(0)
   const [pdfMenu, setPdfMenu]       = useState(null)
   const [emailModal, setEmailModal] = useState(null)
+  const [paymentModal, setPaymentModal] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -262,6 +264,14 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
           onOpen={(msg, type) => toast(msg, type)}
         />
       )}
+      {paymentModal && (
+        <RecordPaymentModal
+          invoice={paymentModal}
+          headers={headers}
+          toast={toast}
+          onClose={(refresh) => { setPaymentModal(null); if (refresh) load() }}
+        />
+      )}
       {emailModal && (
         <SendEmailModal
           invoice={emailModal}
@@ -272,6 +282,14 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
       )}
 
       {/* Send Email Modal */}
+      {paymentModal && (
+        <RecordPaymentModal
+          invoice={paymentModal}
+          headers={headers}
+          toast={toast}
+          onClose={(refresh) => { setPaymentModal(null); if (refresh) load() }}
+        />
+      )}
       {emailModal && (
         <SendEmailModal
           invoice={emailModal}
@@ -361,20 +379,20 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
                           {(inv.status==='Draft'||inv.status==='Due') && (
                             <>
                               <Btn size="sm" onClick={e => { e.stopPropagation(); setEmailModal(inv) }}>✉ Send</Btn>
-                              <Btn size="sm" variant="primary" onClick={e => markStatus(e,inv,'Paid')}>Mark Paid</Btn>
+                              <Btn size="sm" variant="primary" onClick={e => { e.stopPropagation(); setPaymentModal(inv) }}>💳 Pay</Btn>
                             </>
                           )}
                           {inv.status==='Sent' && (
                             <>
                               <Btn size="sm" onClick={e => { e.stopPropagation(); setEmailModal(inv) }}>✉ Resend</Btn>
-                              <Btn size="sm" variant="primary" onClick={e => markStatus(e,inv,'Paid')}>Mark Paid</Btn>
+                              <Btn size="sm" variant="primary" onClick={e => { e.stopPropagation(); setPaymentModal(inv) }}>💳 Pay</Btn>
                             </>
                           )}
                           {inv.status==='Overdue' && (
                             <>
                               <Btn size="sm" onClick={e => sendReminder(e, inv)} title="Send overdue reminder email">⚠ Remind</Btn>
                               <Btn size="sm" onClick={e => { e.stopPropagation(); setEmailModal(inv) }}>✉ Email</Btn>
-                              <Btn size="sm" variant="primary" onClick={e => markStatus(e,inv,'Paid')}>Mark Paid</Btn>
+                              <Btn size="sm" variant="primary" onClick={e => { e.stopPropagation(); setPaymentModal(inv) }}>💳 Pay</Btn>
                             </>
                           )}
                           <Btn size="sm"
