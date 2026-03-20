@@ -245,3 +245,5 @@ select option { background: var(--surface); color: var(--text); }
   z-index: 199;
   backdrop-filter: blur(2px);
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }

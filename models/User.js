@@ -4,7 +4,7 @@ import crypto from 'crypto'
 const UserSchema = new mongoose.Schema({
   orgId:        { type: String, required: true, index: true },
   name:         { type: String, required: true },
-  email:        { type: String, required: true, unique: true, lowercase: true, trim: true },
+  email:        { type: String, required: true, lowercase: true, trim: true },
   passwordHash: { type: String, required: true },
   role:         { type: String, enum: ['admin', 'accountant', 'viewer'], default: 'accountant' },
   active:       { type: Boolean, default: true },
@@ -46,5 +46,10 @@ UserSchema.methods.isActive = function() {
   if (this.planExpiry && new Date() < this.planExpiry) return true
   return false
 }
+
+// Each email can only have ONE record per org, but can have multiple orgs
+UserSchema.index({ email: 1, orgId: 1 }, { unique: true })
+UserSchema.index({ email: 1 })
+UserSchema.index({ orgId: 1 })
 
 export default mongoose.models.User || mongoose.model('User', UserSchema)

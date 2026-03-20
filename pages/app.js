@@ -17,6 +17,7 @@ import TeamPage from '../components/TeamPage'
 import CustomerPage from '../components/CustomerPage'
 import VendorPage from '../components/VendorPage'
 import ExpensePage from '../components/ExpensePage'
+import OrgSwitcher from '../components/Orgswitcher'
 
 const NAV = [
   { id:'dashboard',       label:'Dashboard',       path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
@@ -122,6 +123,14 @@ export default function Home() {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500)
   }, [])
 
+  const handleOrgSwitch = (newUser) => {
+    if (newUser.token) localStorage.setItem('sb_token', newUser.token)
+    setUser(newUser)
+    setOrgConfig(null)
+    setPage('dashboard')
+    setView('list')
+  }
+
   const logout = async () => {
     await fetch('/api/auth/me', { method: 'POST', credentials: 'include' })
     localStorage.removeItem('sb_token')
@@ -224,6 +233,9 @@ export default function Home() {
               )
             })}
           </nav>
+
+          {/* Org Switcher */}
+          <OrgSwitcher user={user} headers={headers} collapsed={collapsed} onSwitch={handleOrgSwitch} toast={toast} />
 
           {/* User */}
           <div style={{ padding: '10px 6px', borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative', background: 'var(--sidebar-bg)' }} ref={userMenuRef}>

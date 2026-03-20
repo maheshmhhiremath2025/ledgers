@@ -10,13 +10,14 @@ export default async function handler(req, res) {
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' })
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' })
 
-  const existing = await User.findOne({ email })
-  if (existing) return res.status(400).json({ error: 'Email already registered' })
+  const cleanOrgId = orgId || email.split('@')[1].replace(/\./g, '-')
+  const existing = await User.findOne({ email, orgId: cleanOrgId })
+  if (existing) return res.status(400).json({ error: 'Email already registered for this organisation' })
 
   const user = new User({
     name,
     email,
-    orgId: orgId || email.split('@')[1].replace(/\./g, '-'),
+    orgId: cleanOrgId,
     role: 'admin',
     plan: 'starter',
   })

@@ -9,10 +9,13 @@ export default async function handler(req, res) {
   const { email, password } = req.body
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
 
-  const user = await User.findOne({ email: email.toLowerCase() })
-  if (!user || !user.verifyPassword(password)) {
-    return res.status(401).json({ error: 'Invalid email or password' })
-  }
+  // Find the primary org record (admin role, earliest created) for this email
+  const allUsers = await User.find({ email: email.toLowerCase() }).sort({ createdAt: 1 })
+  if (!allUsers.length) return res.status(401).json({ error: 'Invalid email or password' })
+
+  // Try to verify password against any of the user's org records
+  const user = allUsers.find(u => u.verifyPassword(password)) || null
+  if (!user) return res.status(401).json({ error: 'Invalid email or password' })
   if (!user.active) return res.status(403).json({ error: 'Account disabled' })
 
   const payload = {
