@@ -1,7 +1,7 @@
-import { connectDB } from '../../../lib/mongodb'
-import Invoice from '../../../models/Invoice'
-import Payment from '../../../models/Payment'
-import { postInvoiceRaised, postPaymentReceived } from '../../../lib/journal'
+import { connectDB } from '../../../../lib/mongodb'
+import Invoice from '../../../../models/Invoice'
+import Payment from '../../../../models/Payment'
+import { postInvoiceRaised, postPaymentReceived } from '../../../../lib/journal'
 
 async function autoCreateReceipt(orgId, invoice) {
   try {

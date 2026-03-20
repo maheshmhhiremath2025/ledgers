@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 const AccountSchema = new mongoose.Schema({
-  orgId: { type: String, required: true, index: true },
+  orgId: { type: String, required: true },
   code: { type: String, required: true },
   name: { type: String, required: true },
   type: { type: String, enum: ['Asset', 'Liability', 'Equity', 'Income', 'Expense'], required: true },

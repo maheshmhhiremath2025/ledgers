@@ -282,6 +282,15 @@ export default function ExpensePage({ org, headers, toast, readOnly=false }) {
       )}
 
       {/* Table */}
+
+      {/* How it works */}
+      <div style={{ padding:'12px 16px', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r-md)', marginBottom:18, fontSize:12, color:'var(--text-2)', lineHeight:1.7 }}>
+        <b style={{ color:'var(--amber-text)', fontSize:13 }}>💸 How expense tracking works</b><br/>
+        Record every business expense with a category, amount and payment mode.
+        Each expense automatically posts a journal entry to keep your books balanced.
+        View monthly breakdowns by category on the Dashboard and include expenses in your Profit & Loss report.
+      </div>
+
       <Card>
         <div style={{padding:'12px 16px',borderBottom:'1px solid var(--border)',display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
           <SearchBar value={search} onChange={setSearch} placeholder="Search vendor, description…"/>

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 const ExpenseSchema = new mongoose.Schema({
-  orgId:       { type: String, required: true, index: true },
+  orgId:       { type: String, required: true },
   expenseNumber: { type: String, required: true },
   date:        { type: Date, required: true },
   category:    { type: String, required: true }, // Rent, Salaries, Travel, etc.

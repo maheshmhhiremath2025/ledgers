@@ -148,6 +148,8 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
   const [notes,       setNotes]       = useState('')
   const [terms,       setTerms]       = useState('')
   const [lineItems,   setLineItems]   = useState([newLine()])
+  const [products,    setProducts]    = useState([])
+  const [productDropdown, setProductDropdown] = useState(null) // index of open dropdown
   const [template,    setTemplate]    = useState('classic')
   const [saving,      setSaving]      = useState(false)
   const [configLoaded,setConfigLoaded]= useState(false)
@@ -191,6 +193,12 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
   const setLine = (i, k, v) => {
     setLineItems(prev => { const ls = [...prev]; ls[i] = { ...ls[i], [k]: v }; ls[i].amount = (parseFloat(ls[i].qty)||0)*(parseFloat(ls[i].rate)||0); return ls })
   }
+
+  useEffect(() => {
+    fetch('/api/products', { headers })
+      .then(r=>r.json()).then(d=>setProducts(Array.isArray(d)?d:[]))
+      .catch(()=>{})
+  }, [])
 
   const subtotal = lineItems.reduce((s,l) => s+(parseFloat(l.qty)||0)*(parseFloat(l.rate)||0), 0)
   const taxTotal  = lineItems.reduce((s,l) => s+(parseFloat(l.qty)||0)*(parseFloat(l.rate)||0)*(parseFloat(l.tax)||0)/100, 0)
@@ -290,8 +298,34 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
           </div>
           {lineItems.map((line, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 70px 110px 28px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-              <input value={line.description} onChange={e => setLine(i,'description',e.target.value)} placeholder="Item description"
-                style={inputCls} onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border-2)'} />
+              <div style={{ position:'relative' }}>
+                <input value={line.description} onChange={e => { setLine(i,'description',e.target.value); setProductDropdown(i) }}
+                  onFocus={e=>{e.target.style.borderColor='var(--accent)';setProductDropdown(i)}}
+                  onBlur={()=>setTimeout(()=>setProductDropdown(null),200)}
+                  placeholder="Item or type to search catalogue…"
+                  style={inputCls} />
+                {productDropdown===i && products.filter(p=>!line.description||p.name.toLowerCase().includes(line.description.toLowerCase())).length>0 && (
+                  <div style={{ position:'absolute', top:'calc(100% + 3px)', left:0, right:0, background:'var(--surface)', border:'1px solid var(--border-2)', borderRadius:'var(--r-md)', zIndex:999, boxShadow:'var(--shadow-lg)', maxHeight:200, overflowY:'auto' }}>
+                    {products.filter(p=>!line.description||p.name.toLowerCase().includes(line.description.toLowerCase())).slice(0,8).map(p=>(
+                      <button key={p._id} onMouseDown={()=>{
+                        setLineItems(prev=>prev.map((l,idx)=>idx===i?{...l,description:p.name,rate:p.price,tax:p.taxRate||18,hsnCode:p.hsnCode||'',unit:p.unit||'pcs'}:l))
+                        setProductDropdown(null)
+                      }} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%', padding:'8px 12px', background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font)', textAlign:'left', borderBottom:'1px solid var(--border)', transition:'background 0.1s' }}
+                        onMouseEnter={e=>e.currentTarget.style.background='var(--surface-2)'}
+                        onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>{p.name}</div>
+                          {p.hsnCode && <div style={{ fontSize:10, color:'var(--text-3)', fontFamily:'var(--mono)' }}>HSN: {p.hsnCode}</div>}
+                        </div>
+                        <div style={{ textAlign:'right', flexShrink:0, marginLeft:8 }}>
+                          <div style={{ fontSize:12, fontFamily:'var(--mono)', fontWeight:600, color:'var(--accent-2)' }}>₹{p.price}</div>
+                          <div style={{ fontSize:10, color:'var(--text-3)' }}>{p.tax||18}% GST</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <input type="number" value={line.qty} onChange={e=>setLine(i,'qty',e.target.value)} min="0"
                 style={inputCls} onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border-2)'} />
               <input type="number" value={line.rate} onChange={e=>setLine(i,'rate',e.target.value)} min="0"

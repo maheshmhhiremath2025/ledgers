@@ -260,6 +260,14 @@ export default function VendorPage({ org, headers, toast, readOnly=false }) {
         </div>
       </div>
 
+
+      {/* How it works */}
+      <div style={{ padding:'12px 16px', background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)', borderRadius:'var(--r-md)', marginBottom:18, fontSize:12, color:'var(--text-2)', lineHeight:1.7 }}>
+        <b style={{ color:'var(--red-text)', fontSize:13 }}>🏭 How vendor management works</b><br/>
+        Save your vendors here and they auto-fill when creating Purchase Orders — no retyping names and addresses.
+        Each vendor shows total spend, number of POs raised and outstanding payables.
+        Click any vendor to see their full purchase order history and contact details.
+      </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
         {[
           { label:'Total Vendors',  value:vendors.length,                                  color:'var(--accent-2)' },

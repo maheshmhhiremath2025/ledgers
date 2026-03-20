@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 const VendorSchema = new mongoose.Schema({
-  orgId:   { type: String, required: true, index: true },
+  orgId:   { type: String, required: true },
   name:    { type: String, required: true },
   email:   { type: String, default: '' },
   address: { type: String, default: '' },
