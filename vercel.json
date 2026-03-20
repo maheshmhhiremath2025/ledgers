@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "functions": {
+    "pages/api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/recurring/run?secret=REPLACE_WITH_YOUR_CRON_SECRET",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
