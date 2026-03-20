@@ -1,352 +1,259 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Head from 'next/head'
-import AuthPage from '../components/AuthPage'
-import InvoiceList from '../components/InvoiceList'
-import InvoiceForm from '../components/InvoiceForm'
-import POList from '../components/POList'
-import POForm from '../components/POForm'
-import PaymentList from '../components/PaymentList'
-import PaymentForm from '../components/PaymentForm'
-import AccountsList from '../components/AccountsList'
-import Dashboard from '../components/Dashboard'
-import ConfigPage from '../components/ConfigPage'
-import BillingPage from '../components/BillingPage'
-import RecurringList from '../components/RecurringList'
-import ReportsPage from '../components/ReportsPage'
-import TeamPage from '../components/TeamPage'
-import CustomerPage from '../components/CustomerPage'
-import ExpensePage from '../components/ExpensePage'
+import { useEffect, useState } from 'react'
 
-const NAV = [
-  { id:'dashboard',       label:'Dashboard',       path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
-  { id:'invoices',        label:'Invoices',         path:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 18H8M16 14H8M10 10H8' },
-  { id:'customers',       label:'Customers',        path:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
-  { id:'purchase-orders', label:'Purchase Orders',  path:'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3.8 6h16.4M16 10a4 4 0 01-8 0' },
-  { id:'payments',        label:'Payments',         path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-  { id:'expenses',        label:'Expenses',         path:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id:'recurring',       label:'Recurring',         path:'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
-  { id:'ledgers',         label:'Ledgers',          path:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-  { id:'reports',         label:'Reports',          path:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { id:'config',          label:'Configuration',    path:'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
-  { id:'team',            label:'Team',             path:'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' },
-  { id:'billing',         label:'Billing',          path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+const FEATURES = [
+  { icon: '📄', title: 'GST Invoicing', desc: 'Create professional GST-compliant invoices in seconds. 5 PDF templates, auto-numbering, send by email.' },
+  { icon: '📊', title: 'Financial Reports', desc: 'P&L, Balance Sheet, Trial Balance and GSTR-1/3B — all auto-generated from your transactions.' },
+  { icon: '🔁', title: 'Recurring Invoices', desc: 'Set weekly, monthly or quarterly schedules. Invoices create and send themselves automatically.' },
+  { icon: '💳', title: 'Online Payments', desc: 'Customers pay via UPI, cards or net banking through a branded portal — powered by Razorpay.' },
+  { icon: '📒', title: 'Double-Entry Ledger', desc: 'Every transaction posts journal entries automatically. Real-time chart of accounts, always balanced.' },
+  { icon: '👥', title: 'Team Access', desc: 'Invite accountants and viewers with role-based access — Admin, Accountant, Viewer.' },
+  { icon: '💸', title: 'Expense Tracking', desc: 'Record business expenses by category. Auto-posts to expense ledger. Monthly summaries on dashboard.' },
+  { icon: '🌙', title: 'Dark & Light Mode', desc: 'Beautiful dark interface by default with a clean professional light mode.' },
 ]
 
-// Helper: always send token in header + cookie credentials
-function authFetch(url, options = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('sb_token') : null
-  return fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  })
-}
+const PLANS = [
+  {
+    name: 'Starter', price: '₹0', period: 'free forever', highlight: false,
+    features: ['5 invoices / month', '3 purchase orders / month', 'Classic PDF template', 'Chart of accounts', '1 organisation'],
+  },
+  {
+    name: 'Professional', price: '₹999', period: '/month', highlight: true,
+    features: ['Unlimited invoices & POs', 'All 5 PDF templates', 'Logo on invoices', 'GST & bank config', 'Saved customers', 'Email delivery', 'Customer payment portal'],
+  },
+  {
+    name: 'Business', price: '₹2,499', period: '/month', highlight: false,
+    features: ['Everything in Professional', '5 team members', 'Role-based access', 'CSV / Excel export', 'Recurring invoices', 'Overdue reminders', 'Priority support'],
+  },
+]
 
-export default function Home() {
-  const [user, setUser]         = useState(null)
-  const [authLoading, setAL]    = useState(true)
-  const [page, setPage]         = useState('dashboard')
-  const [view, setView]         = useState('list')
-  const [editItem, setEditItem] = useState(null)
-  const [toasts, setToasts]     = useState([])
-  const [collapsed, setCollapsed] = useState(false)
-  const [userMenuOpen, setUMO]  = useState(false)
-  const [theme, setTheme]       = useState('dark')
-  const [orgConfig, setOrgConfig] = useState(null)
-  const userMenuRef = useRef()
+const TESTIMONIALS = [
+  { name: 'Priya S.', role: 'Freelance Designer', text: 'Finally an invoicing tool that understands Indian GST. The recurring billing alone saves me 2 hours every month.' },
+  { name: 'Rahul M.', role: 'Software Consultant', text: 'The customer portal is a game changer. Clients pay the same day instead of following up for weeks.' },
+  { name: 'Anita K.', role: 'CA & Accountant', text: 'The GSTR-1 export is accurate and the trial balance is always in sync. Highly recommend to my clients.' },
+]
 
-  // Refetch org config whenever user leaves config page (logo may have changed)
-  useEffect(() => {
-    if (!user) return
-    const token = localStorage.getItem('sb_token')
-    const h = {
-      'x-org-id': user.orgId,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    }
-    fetch('/api/config', { headers: h, credentials: 'include' })
-      .then(r => r.json())
-      .then(cfg => { if (!cfg.error) setOrgConfig(cfg) })
-      .catch(() => {})
-  }, [page, user?.orgId])
+export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false)
+  const [isDark, setIsDark] = useState(true)
 
-  // Load saved theme
   useEffect(() => {
     const saved = localStorage.getItem('sb_theme') || 'dark'
-    setTheme(saved)
-    document.documentElement.setAttribute('data-theme', saved)
+    setIsDark(saved === 'dark')
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
+    const next = isDark ? 'light' : 'dark'
+    setIsDark(!isDark)
     localStorage.setItem('sb_theme', next)
     document.documentElement.setAttribute('data-theme', next)
   }
 
-  useEffect(() => {
-    const token = localStorage.getItem('sb_token')
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-    fetch('/api/auth/me', { credentials: 'include', headers })
-      .then(r => r.json())
-      .then(d => {
-        if (d.user) {
-          setUser(d.user)
-          // Fetch org config for logo
-          const h = { 'x-org-id': d.user.orgId, ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-          fetch('/api/config', { headers: h })
-            .then(r => r.json())
-            .then(cfg => setOrgConfig(cfg))
-            .catch(() => {})
-        }
-        setAL(false)
-      })
-      .catch(() => setAL(false))
-  }, [])
-
-  useEffect(() => {
-    const h = e => { if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUMO(false) }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [])
-
-  const toast = useCallback((msg, type = 'success') => {
-    const id = Date.now()
-    setToasts(t => [...t, { id, msg, type }])
-    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500)
-  }, [])
-
-  const logout = async () => {
-    await fetch('/api/auth/me', { method: 'POST', credentials: 'include' })
-    localStorage.removeItem('sb_token')
-    setUser(null)
+  const C = {
+    bg:      isDark ? '#0D0F1A' : '#F0F2F8',
+    surface: isDark ? '#1E2140' : '#FFFFFF',
+    border:  isDark ? 'rgba(255,255,255,0.08)' : 'rgba(99,102,241,0.12)',
+    text:    isDark ? '#ECEEF8' : '#0F1729',
+    text2:   isDark ? '#9EA3BF' : '#374151',
+    text3:   isDark ? '#636880' : '#6B7280',
+    accent:  '#6366F1',
+    dim:     isDark ? 'rgba(99,102,241,0.14)' : 'rgba(99,102,241,0.08)',
+    navBg:   scrolled ? (isDark ? 'rgba(13,15,26,0.92)' : 'rgba(255,255,255,0.92)') : 'transparent',
   }
-
-  const navigate = p => { setPage(p); setView('list'); setEditItem(null) }
-  const openForm = (item = null) => {
-    if (user?.role === 'viewer') { return } // viewers cannot edit
-    setEditItem(item); setView('form')
-  }
-  const closeForm = () => { setView('list'); setEditItem(null) }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'x-org-id': user?.orgId || 'default',
-    ...(typeof window !== 'undefined' && localStorage.getItem('sb_token')
-      ? { 'Authorization': `Bearer ${localStorage.getItem('sb_token')}` }
-      : {}),
-  }
-
-  const orgProp = { id: user?.orgId || 'default', name: user?.orgId || 'default' }
-  const curNav  = NAV.find(n => n.id === page)
-
-  if (authLoading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--accent)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 0 32px rgba(99,102,241,0.4)' }}>
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11h14M11 4v14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Loading Synergific Books…</div>
-      </div>
-    </div>
-  )
-
-  if (!user) return <AuthPage onAuth={(u, token) => { if (token) localStorage.setItem('sb_token', token); setUser(u) }} />
+  const F = "'DM Sans', system-ui, sans-serif"
+  const M = "'DM Mono', monospace"
 
   return (
     <>
-      <Head><title>Synergific Books</title></Head>
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
+      <Head>
+        <title>Synergific Books — GST Invoicing & Accounting for India</title>
+        <meta name="description" content="Professional GST invoicing, double-entry accounting, financial reports and online payments for Indian businesses." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+      </Head>
+      <div style={{ background: C.bg, color: C.text, fontFamily: F, minHeight: '100vh' }}>
 
-        {/* Sidebar */}
-        <aside style={{ width: collapsed ? 56 : 220, flexShrink: 0, background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-2)', display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease', overflow: 'hidden' }}>
-
-          {/* Brand */}
-          <div style={{ height: 56, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
-            {orgConfig?.logoUrl ? (
-              <img
-                src={orgConfig.logoUrl}
-                alt={orgConfig.businessName || 'Logo'}
-                style={{ height: 32, maxWidth: collapsed ? 28 : 140, objectFit: 'contain', borderRadius: 4 }}
-              />
-            ) : (
-              <>
-                <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 14px rgba(99,102,241,0.35)' }}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-                </div>
-                {!collapsed && (
-                  <span style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.3px' }}>
-                    {orgConfig?.businessName || 'Synergific Books'}
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Nav */}
-          <nav style={{ flex: 1, padding: '10px 6px', overflowY: 'auto', background: 'var(--sidebar-bg)' }}>
-            {!collapsed && <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 10px 8px' }}>Navigation</div>}
-            {NAV.map(n => {
-              const active = page === n.id
-              return (
-                <React.Fragment key={n.id}>
-                  {n.id === 'config' && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '6px 4px 8px' }} />}
-                  <button onClick={() => navigate(n.id)} title={collapsed ? n.label : ''} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                    padding: collapsed ? '10px' : '9px 10px',
-                    justifyContent: collapsed ? 'center' : 'flex-start',
-                    background: active ? 'var(--accent-dim)' : 'transparent',
-                    color: active ? 'var(--accent-2)' : 'var(--text-3)',
-                    border: 'none', borderRadius: 'var(--r)',
-                    fontWeight: active ? 600 : 400, fontSize: 13, cursor: 'pointer',
-                    transition: 'all 0.12s', marginBottom: 2,
-                    outline: active ? '1px solid rgba(99,102,241,0.2)' : 'none',
-                  }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.color = 'var(--text-2)' } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-3)' } }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <path d={n.path} />
-                    </svg>
-                    {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{n.label}</span>}
-                  </button>
-                </React.Fragment>
-              )
-            })}
-          </nav>
-
-          {/* User */}
-          <div style={{ padding: '10px 6px', borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative', background: 'var(--sidebar-bg)' }} ref={userMenuRef}>
-            <button onClick={() => setUMO(o => !o)} style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-              padding: collapsed ? '8px' : '8px 10px', justifyContent: collapsed ? 'center' : 'flex-start',
-              background: 'transparent', border: 'none', borderRadius: 'var(--r)', cursor: 'pointer',
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), var(--teal))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                {(user.name || user.email).charAt(0).toUpperCase()}
+        {/* Navbar */}
+        <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: C.navBg, backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: `1px solid ${scrolled ? C.border : 'transparent'}`, transition: 'all 0.2s' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(99,102,241,0.4)' }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
               </div>
-              {!collapsed && (
-                <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.orgId}</div>
-                </div>
-              )}
-            </button>
-
-            {userMenuOpen && (
-              <div className="fade-up" style={{ position: 'absolute', bottom: 'calc(100% + 6px)', left: 6, right: 6, background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', zIndex: 100 }}>
-                <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{user.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>{user.email}</div>
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11, color: 'var(--accent-3)', padding: '2px 6px', background: 'var(--accent-dim)', borderRadius: 4 }}>
-                      Org: {user.orgId}
-                    </span>
-                    <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, background: user.plan === 'business' ? 'rgba(99,102,241,0.15)' : user.plan === 'professional' ? 'rgba(59,130,246,0.15)' : 'rgba(136,135,128,0.15)', color: user.plan === 'business' ? '#A5B4FC' : user.plan === 'professional' ? '#93C5FD' : '#9EA3BF' }}>
-                      {user.plan === 'business' ? 'Business' : user.plan === 'professional' ? 'Pro' : 'Free'}
-                    </span>
-                  </div>
-                </div>
-                <button onClick={logout} style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--red-text)', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Main */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, background: 'var(--bg)' }}>
-
-          {/* Topbar */}
-          <header style={{ height: 56, borderBottom: '1px solid var(--border-2)', background: 'var(--topbar-bg)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 14, flexShrink: 0 }}>
-            <button onClick={() => setCollapsed(c => !c)} style={{ width: 30, height: 30, border: 'none', background: 'var(--surface)', borderRadius: 'var(--r)', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.color = 'var(--text)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.color = 'var(--text-3)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </button>
-
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{curNav?.label}</span>
-              {view === 'form' && <>
-                <span style={{ color: 'var(--text-4)', fontSize: 13 }}>/</span>
-                <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>{editItem ? 'Edit' : 'New'}</span>
-              </>}
+              <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px', color: C.text }}>Synergific Books</span>
             </div>
-
-            {/* Role badge — shown for all roles */}
-            {user?.role && (() => {
-              const roles = {
-                admin:      { label: 'Admin',      color: '#6366F1', bg: 'rgba(99,102,241,0.12)',  border: 'rgba(99,102,241,0.25)', icon: '🛡' },
-                accountant: { label: 'Accountant', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.25)', icon: '📊' },
-                viewer:     { label: 'View only',  color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', icon: '👁' },
-              }
-              const r = roles[user.role] || roles.viewer
-              return (
-                <div style={{ fontSize: 11, fontWeight: 600, color: r.color, background: r.bg, border: `1px solid ${r.border}`, borderRadius: 'var(--r)', padding: '4px 10px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span>{r.icon}</span>{r.label}
-                </div>
-              )
-            })()}
-
-            {/* Theme toggle */}
-            <button onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              style={{ width: 32, height: 32, borderRadius: 'var(--r)', background: 'var(--surface)', border: '1px solid var(--border-2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0, transition: 'all 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-3)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-2)'}>
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
-
-            {/* FY badge */}
-            <div style={{ fontSize: 11, color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '4px 10px', letterSpacing: '0.02em', flexShrink: 0 }}>
-              {(() => { const now = new Date(); const y = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1; return `FY ${y}–${String(y + 1).slice(2)}` })()}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+              {['features','pricing'].map(id => (
+                <a key={id} href={`#${id}`} style={{ fontSize: 14, color: C.text2, fontWeight: 500, textDecoration: 'none', textTransform: 'capitalize' }}
+                  onMouseEnter={e => e.target.style.color = C.accent} onMouseLeave={e => e.target.style.color = C.text2}>{id}</a>
+              ))}
             </div>
-
-            {view === 'list' && page !== 'dashboard' && page !== 'ledgers' && page !== 'config' && page !== 'billing' && page !== 'recurring' && page !== 'reports' && page !== 'team' && page !== 'customers' && page !== 'expenses' && user?.role !== 'viewer' && (
-              <button onClick={() => openForm()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r)', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 12px rgba(99,102,241,0.35)', transition: 'all 0.15s', flexShrink: 0, fontFamily: 'var(--font)' }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.5)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 12px rgba(99,102,241,0.35)'}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                New {curNav?.label.replace(/s$/, '')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={toggleTheme} style={{ width: 34, height: 34, borderRadius: 8, background: C.surface, border: `1px solid ${C.border}`, cursor: 'pointer', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isDark ? '☀️' : '🌙'}
               </button>
-            )}
-          </header>
-
-          {/* Content */}
-          <main style={{ flex: 1, overflow: 'auto', padding: '24px', background: 'var(--bg)' }}>
-            <div key={page + view} className="fade-up">
-              {page === 'dashboard'       &&                    <Dashboard    org={orgProp} headers={headers} toast={toast} onNavigate={navigate} />}
-              {page === 'invoices'        && view === 'list' && <InvoiceList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
-              {page === 'invoices'        && view === 'form' && <InvoiceForm  org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
-              {page === 'customers'       &&                    <CustomerPage org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
-              {page === 'purchase-orders' && view === 'list' && <POList       org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
-              {page === 'purchase-orders' && view === 'form' && <POForm       org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
-              {page === 'payments'        && view === 'list' && <PaymentList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
-              {page === 'payments'        && view === 'form' && <PaymentForm  org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
-              {page === 'expenses'        &&                    <ExpensePage  org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
-              {page === 'recurring'       &&                   <RecurringList org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
-              {page === 'ledgers'         &&                    <AccountsList org={orgProp} headers={headers} toast={toast} />}
-              {page === 'reports'         &&                    <ReportsPage  org={orgProp} headers={headers} toast={toast} />}
-              {page === 'config'          &&                    <ConfigPage   org={orgProp} headers={headers} toast={toast} readOnly={user?.role !== 'admin'} onSave={cfg => setOrgConfig(cfg)} />}
-              {page === 'billing'         &&                    <BillingPage  headers={headers} toast={toast} user={user} />}
-              {page === 'team'            &&                    <TeamPage     org={orgProp} headers={headers} toast={toast} user={user} onNavigate={navigate} />}
+              <a href="/app" style={{ padding: '8px 14px', fontSize: 13, fontWeight: 600, color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, textDecoration: 'none', background: C.surface }}>Log in</a>
+              <a href="/app" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#fff', background: C.accent, borderRadius: 8, textDecoration: 'none', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}>Get started free</a>
             </div>
-          </main>
-        </div>
-      </div>
-
-      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 99999, display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'none' }}>
-        {toasts.map(t => (
-          <div key={t.id} className={`toast ${t.type}`} style={{ pointerEvents: 'auto' }}>
-            <span style={{ fontSize: 15, flexShrink: 0 }}>{t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}</span>
-            {t.msg}
           </div>
-        ))}
+        </nav>
+
+        {/* Hero */}
+        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '96px 24px 80px', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: C.dim, border: '1px solid rgba(99,102,241,0.25)', borderRadius: 99, fontSize: 12, fontWeight: 600, color: '#818CF8', marginBottom: 28 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6EE7B7', display: 'inline-block' }} />
+            GST-compliant · Made for India · Starts free
+          </div>
+          <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 800, letterSpacing: '-2px', lineHeight: 1.1, marginBottom: 24, color: C.text }}>
+            Invoicing & accounting<br />
+            <span style={{ color: C.accent }}>built for Indian businesses</span>
+          </h1>
+          <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: C.text2, lineHeight: 1.6, maxWidth: 540, margin: '0 auto 40px' }}>
+            Create GST invoices, track expenses, generate GSTR reports and accept online payments — all in one beautiful app.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="/app" style={{ padding: '14px 28px', fontSize: 15, fontWeight: 700, color: '#fff', background: C.accent, borderRadius: 10, textDecoration: 'none', boxShadow: '0 6px 24px rgba(99,102,241,0.45)' }}>Start for free — no credit card</a>
+            <a href="#features" style={{ padding: '14px 28px', fontSize: 15, fontWeight: 600, color: C.text2, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, textDecoration: 'none' }}>See features ↓</a>
+          </div>
+          <div style={{ marginTop: 56, display: 'flex', justifyContent: 'center', gap: 48, flexWrap: 'wrap' }}>
+            {[['5 mins','to first invoice'],['₹0','to get started'],['GSTR-1','export ready'],['5 templates','PDF designs']].map(([v,l]) => (
+              <div key={l} style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: M, fontSize: 22, fontWeight: 700, color: C.accent }}>{v}</div>
+                <div style={{ fontSize: 12, color: C.text3, marginTop: 3 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Mock dashboard */}
+        <section style={{ maxWidth: 960, margin: '0 auto 96px', padding: '0 24px' }}>
+          <div style={{ borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}`, boxShadow: isDark ? '0 32px 96px rgba(0,0,0,0.6)' : '0 32px 96px rgba(99,102,241,0.12)' }}>
+            <div style={{ background: isDark ? '#13152B' : '#E8EBF4', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${C.border}` }}>
+              {['#EF4444','#F59E0B','#10B981'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />)}
+              <div style={{ flex: 1, height: 22, background: isDark ? '#1E2140' : '#fff', borderRadius: 6, marginLeft: 8, display: 'flex', alignItems: 'center', paddingLeft: 10 }}>
+                <span style={{ fontSize: 11, color: C.text3, fontFamily: M }}>synergific-books.vercel.app/app</span>
+              </div>
+            </div>
+            <div style={{ background: C.bg, padding: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 14 }}>
+                {[['FY Revenue','₹8,42,500','#818CF8'],['Outstanding','₹1,24,000','#FCD34D'],['Cash Balance','₹3,56,200','#6EE7B7'],['Net Profit','₹4,18,300','#6EE7B7']].map(([l,v,c]) => (
+                  <div key={l} style={{ background: C.surface, borderRadius: 10, padding: '12px 14px', border: `1px solid ${C.border}` }}>
+                    <div style={{ fontSize: 9, color: C.text3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{l}</div>
+                    <div style={{ fontFamily: M, fontSize: 16, fontWeight: 700, color: c }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: C.surface, borderRadius: 10, border: `1px solid ${C.border}`, height: 100, display: 'flex', alignItems: 'flex-end', gap: 4, padding: '14px 16px' }}>
+                {[30,45,25,60,80,55,90,70,85,100,65,95].map((h,i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+                    <div style={{ width: '45%', height: `${h*0.55}px`, background: '#6366F1', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
+                    <div style={{ width: '45%', height: `${h*0.12}px`, background: '#EF4444', borderRadius: '2px 2px 0 0', opacity: 0.7 }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" style={{ maxWidth: 1100, margin: '0 auto 96px', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <h2 style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 12, color: C.text }}>Everything your business needs</h2>
+            <p style={{ fontSize: 16, color: C.text2, maxWidth: 440, margin: '0 auto' }}>From your first invoice to your CA's annual filing — we handle the full cycle.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '22px 20px', transition: 'border-color 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(99,102,241,0.1)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = 'none' }}>
+                <div style={{ fontSize: 26, marginBottom: 10 }}>{f.icon}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6, color: C.text }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.6 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section id="pricing" style={{ maxWidth: 1100, margin: '0 auto 96px', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <h2 style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 12, color: C.text }}>Simple, transparent pricing</h2>
+            <p style={{ fontSize: 16, color: C.text2 }}>Start free. Upgrade when you grow.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, alignItems: 'stretch' }}>
+            {PLANS.map(p => (
+              <div key={p.name} style={{ background: p.highlight ? C.accent : C.surface, border: `1px solid ${p.highlight ? 'transparent' : C.border}`, borderRadius: 16, padding: '32px 26px', position: 'relative', transform: p.highlight ? 'scale(1.03)' : 'none', boxShadow: p.highlight ? '0 16px 48px rgba(99,102,241,0.4)' : 'none', display: 'flex', flexDirection: 'column' }}>
+                {p.highlight && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#10B981', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 14px', borderRadius: 99, whiteSpace: 'nowrap' }}>Most popular</div>}
+                <div style={{ fontSize: 12, fontWeight: 700, color: p.highlight ? 'rgba(255,255,255,0.7)' : C.text3, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.name}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontFamily: M, fontSize: 34, fontWeight: 800, color: p.highlight ? '#fff' : C.text }}>{p.price}</span>
+                  <span style={{ fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.6)' : C.text3 }}>{p.period}</span>
+                </div>
+                <div style={{ borderTop: `1px solid ${p.highlight ? 'rgba(255,255,255,0.2)' : C.border}`, paddingTop: 18, marginTop: 14, marginBottom: 22, flex: 1 }}>
+                  {p.features.map(f => (
+                    <div key={f} style={{ display: 'flex', gap: 9, marginBottom: 9, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.9)' : C.text2 }}>
+                      <span style={{ color: p.highlight ? '#6EE7B7' : '#10B981', fontWeight: 700, flexShrink: 0 }}>✓</span>{f}
+                    </div>
+                  ))}
+                </div>
+                <a href="/app" style={{ display: 'block', textAlign: 'center', padding: '11px', background: p.highlight ? '#fff' : C.dim, color: C.accent, borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: 'none', border: p.highlight ? 'none' : `1px solid rgba(99,102,241,0.25)` }}>
+                  {p.price === '₹0' ? 'Start free' : 'Get started'} →
+                </a>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section style={{ maxWidth: 1100, margin: '0 auto 96px', padding: '0 24px' }}>
+          <h2 style={{ textAlign: 'center', fontSize: 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 44, color: C.text }}>Loved by Indian businesses</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 20px' }}>
+                <div style={{ fontSize: 18, marginBottom: 12, color: '#FCD34D' }}>★★★★★</div>
+                <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.7, marginBottom: 16 }}>"{t.text}"</p>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{t.name}</div>
+                <div style={{ fontSize: 12, color: C.text3 }}>{t.role}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section style={{ maxWidth: 1100, margin: '0 auto 96px', padding: '0 24px' }}>
+          <div style={{ background: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 20, padding: 'clamp(40px,6vw,72px)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 14, color: C.text }}>Ready to simplify your finances?</h2>
+            <p style={{ fontSize: 16, color: C.text2, maxWidth: 440, margin: '0 auto 32px', lineHeight: 1.6 }}>Join Indian freelancers and businesses using Synergific Books. Free to start, no credit card required.</p>
+            <a href="/app" style={{ display: 'inline-block', padding: '15px 36px', fontSize: 16, fontWeight: 700, color: '#fff', background: C.accent, borderRadius: 12, textDecoration: 'none', boxShadow: '0 8px 32px rgba(99,102,241,0.45)' }}>
+              Create your free account →
+            </a>
+            <div style={{ marginTop: 16, fontSize: 13, color: C.text3 }}>Free forever plan · No credit card · Setup in 5 minutes</div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer style={{ borderTop: `1px solid ${C.border}`, padding: '28px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 24, height: 24, borderRadius: 6, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>Synergific Books</span>
+            </div>
+            <div style={{ display: 'flex', gap: 20 }}>
+              {[['Features','#features'],['Pricing','#pricing'],['Log in','/app'],['Sign up','/app']].map(([l,h]) => (
+                <a key={l} href={h} style={{ fontSize: 13, color: C.text3, textDecoration: 'none' }}
+                  onMouseEnter={e => e.target.style.color = C.accent} onMouseLeave={e => e.target.style.color = C.text3}>{l}</a>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: C.text3 }}>© {new Date().getFullYear()} Synergific Software</div>
+          </div>
+        </footer>
+
       </div>
     </>
   )
