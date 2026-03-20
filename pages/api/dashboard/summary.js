@@ -3,6 +3,7 @@ import Invoice from '../../../models/Invoice'
 import PurchaseOrder from '../../../models/PurchaseOrder'
 import Payment from '../../../models/Payment'
 import Account from '../../../models/Account'
+import Expense from '../../../models/Expense'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
@@ -18,6 +19,7 @@ export default async function handler(req, res) {
     const [
       invoiceStats, poStats, recentInvoices, recentPayments,
       monthlyRevenue, monthlyPayments, topCustomers, accounts,
+      upcomingInvoices, expenseByCategory, monthlyExpenses,
     ] = await Promise.all([
       // Invoice status totals
       Invoice.aggregate([
@@ -61,6 +63,25 @@ export default async function handler(req, res) {
       ]),
       // Account balances for cash position
       Account.find({ orgId, type: { $in: ['Asset','Income','Expense'] } }).select('code name type balance'),
+      // Upcoming invoices due in next 14 days (not yet paid)
+      Invoice.find({ orgId, status: { $in: ['Sent','Overdue'] }, dueDate: { $lte: new Date(Date.now() + 14*24*60*60*1000) } })
+        .sort({ dueDate: 1 }).limit(5),
+      // Expenses by category (this FY)
+      Expense.aggregate([
+        { $match: { orgId, date: { $gte: fyStart } } },
+        { $group: { _id: '$category', total: { $sum: '$total' }, count: { $sum: 1 } } },
+        { $sort: { total: -1 } },
+        { $limit: 6 }
+      ]),
+      // Monthly expenses (last 6 months)
+      Expense.aggregate([
+        { $match: { orgId, date: { $gte: last6Start } } },
+        { $group: {
+          _id: { year: { $year: '$date' }, month: { $month: '$date' } },
+          expenses: { $sum: '$total' },
+        }},
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+      ]),
     ])
 
     // Build 6-month chart series
@@ -72,13 +93,16 @@ export default async function handler(req, res) {
 
     const revenueMap   = {}
     const collectedMap = {}
+    const expenseMap   = {}
     monthlyRevenue.forEach(x   => { revenueMap[`${x._id.year}-${x._id.month}`]   = x.revenue })
     monthlyPayments.forEach(x  => { collectedMap[`${x._id.year}-${x._id.month}`] = x.collected })
+    monthlyExpenses.forEach(x  => { expenseMap[`${x._id.year}-${x._id.month}`]   = x.expenses })
 
     const chartData = months.map(m => ({
       label:     m.label,
       revenue:   revenueMap[`${m.year}-${m.month}`]   || 0,
       collected: collectedMap[`${m.year}-${m.month}`] || 0,
+      expenses:  expenseMap[`${m.year}-${m.month}`]   || 0,
     }))
 
     // FY totals
@@ -117,6 +141,8 @@ export default async function handler(req, res) {
       topCustomers,
       recentInvoices,
       recentPayments,
+      upcomingInvoices,
+      expenseByCategory,
     }
 
     return res.status(200).json(summary)
