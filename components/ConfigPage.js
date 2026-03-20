@@ -39,7 +39,6 @@ function Field({ label, value, onChange, type = 'text', placeholder, hint, mono 
       />
       {hint && <div style={hintStyle}>{hint}</div>}
     </div>
-    </ROCtx.Provider>
   )
 }
 
