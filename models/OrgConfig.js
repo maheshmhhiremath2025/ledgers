@@ -24,9 +24,9 @@ const OrgConfigSchema = new mongoose.Schema({
   defaultTax:      { type: Number, default: 18 },
   defaultTerms:    { type: String, default: 'Payment due within 30 days.' },
   defaultNotes:    { type: String, default: 'Thank you for your business!' },
-  paymentInstructions: { type: String, default: '' },
   signatureName:   { type: String, default: '' },
   signatureTitle:  { type: String, default: '' },
+  signatureImage:  { type: String, default: '' },
   footerText:      { type: String, default: 'This is a computer-generated invoice.' },
   // Email / SMTP config
   smtpHost:        { type: String, default: '' },

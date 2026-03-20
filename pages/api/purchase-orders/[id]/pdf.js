@@ -18,6 +18,7 @@ function buildPOHTML(po, cfg) {
   const pan        = cfg?.pan             || ''
   const sigName    = cfg?.signatureName   || ''
   const sigTitle   = cfg?.signatureTitle  || ''
+  const sigImage   = cfg?.signatureImage   || ''
   const footerText = cfg?.footerText      || 'This is a computer-generated purchase order.'
 
   const rows = (po.lineItems || []).map((item, i) => {
@@ -164,16 +165,18 @@ function buildPOHTML(po, cfg) {
     ${po.terms ? `<div class="note-box terms"><div class="note-lbl">Terms &amp; Conditions</div><div class="note-txt">${po.terms}</div></div>` : ''}
   </div>` : ''}
 
-  ${sigName ? `
-  <div class="sig-wrap">
-    <div class="sig-box">
-      <div style="font-size:10px;color:#999">For ${bizName}</div>
-      <div class="sig-line"></div>
-      <div style="font-size:12px;font-weight:700;color:#222">${sigName}</div>
-      ${sigTitle ? `<div style="font-size:11px;color:#666">${sigTitle}</div>` : ''}
-      <div style="font-size:10px;color:#999;margin-top:2px">Authorized Signatory</div>
-    </div>
-  </div>` : ''}
+  ${(sigName || sigImage) ? (
+    '<div class="sig-wrap"><div class="sig-box">' +
+    '<div style="font-size:10px;color:#999;margin-bottom:6px">For ' + bizName + '</div>' +
+    (sigImage
+      ? '<img src="' + sigImage + '" alt="Signature" style="height:52px;max-width:200px;object-fit:contain;display:block;margin:0 auto 4px"/>'
+      : '<div class="sig-line"></div>'
+    ) +
+    (sigName ? '<div style="font-size:12px;font-weight:700;color:#222">' + sigName + '</div>' : '') +
+    (sigTitle ? '<div style="font-size:11px;color:#666">' + sigTitle + '</div>' : '') +
+    '<div style="font-size:10px;color:#999;margin-top:2px">Authorized Signatory</div>' +
+    '</div></div>'
+  ) : ''}
 
   <div class="footer">
     <span>${footerText}</span>
@@ -196,7 +199,8 @@ export default async function handler(req, res) {
     ])
     if (!po) return res.status(404).json({ error: 'Not found' })
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    return res.send(buildPOHTML(po, config))
+    const cfgObj = config ? (config.toObject ? config.toObject() : config) : {}
+    return res.send(buildPOHTML(po, cfgObj))
   } catch (e) {
     return res.status(500).json({ error: e.message })
   }

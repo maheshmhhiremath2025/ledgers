@@ -242,16 +242,18 @@ function buildHTML(inv, cfg, t) {
     ${inv.terms ? `<div class="note-box" style="background:${t.termsBg};border-left:3px solid ${t.termsBorder}"><div class="note-lbl">Terms &amp; Conditions</div><div class="note-txt">${inv.terms}</div></div>` : ''}
   </div>` : ''}
 
-  ${cfg?.signatureName ? `
-  <div class="sig-wrap">
-    <div class="sig-box">
-      <div style="font-size:10px;color:${faintColor}">For ${biz}</div>
-      <div class="sig-line"></div>
-      <div style="font-size:12px;font-weight:700;color:${bodyColor}">${cfg.signatureName}</div>
-      ${cfg?.signatureTitle ? `<div style="font-size:11px;color:${mutedColor}">${cfg.signatureTitle}</div>` : ''}
-      <div style="font-size:10px;color:${faintColor};margin-top:2px">Authorized Signatory</div>
-    </div>
-  </div>` : ''}
+  ${(cfg?.signatureName || cfg?.signatureImage) ? (
+    '<div class="sig-wrap"><div class="sig-box">' +
+    '<div style="font-size:10px;color:' + faintColor + ';margin-bottom:6px">For ' + biz + '</div>' +
+    (cfg.signatureImage
+      ? '<img src="' + cfg.signatureImage + '" alt="Signature" style="height:52px;max-width:200px;object-fit:contain;display:block;margin:0 auto 4px"/>'
+      : '<div class="sig-line"></div>'
+    ) +
+    (cfg.signatureName ? '<div style="font-size:12px;font-weight:700;color:' + bodyColor + '">' + cfg.signatureName + '</div>' : '') +
+    (cfg.signatureTitle ? '<div style="font-size:11px;color:' + mutedColor + '">' + cfg.signatureTitle + '</div>' : '') +
+    '<div style="font-size:10px;color:' + faintColor + ';margin-top:2px">Authorized Signatory</div>' +
+    '</div></div>'
+  ) : ''}
 
   <div class="footer">
     <span>${cfg?.footerText||'This is a computer-generated invoice.'}</span>
@@ -274,8 +276,11 @@ export default async function handler(req, res) {
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
     const templateKey = invoice.template || 'classic'
     const t = TEMPLATES[templateKey] || TEMPLATES.classic
+    // Convert to plain objects so all fields including signatureImage are accessible
+    const cfgObj = config ? (config.toObject ? config.toObject() : config) : {}
+    console.log('[pdf] orgId:', orgId, 'signatureName:', cfgObj.signatureName, 'signatureImage len:', cfgObj.signatureImage?.length || 0)
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    return res.send(buildHTML(invoice, config, t))
+    return res.send(buildHTML(invoice, cfgObj, t))
   } catch (e) {
     return res.status(500).json({ error: e.message })
   }

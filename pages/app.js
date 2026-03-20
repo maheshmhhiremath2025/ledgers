@@ -549,12 +549,15 @@ export default function Home() {
             <div key={page + view} className="fade-up">
               {page === 'dashboard'       &&                    <Dashboard    org={orgProp} headers={headers} toast={toast} onNavigate={navigate} />}
               {page === 'invoices'        && view === 'list' && <InvoiceList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
+              {page === 'invoices'        && view === 'form' && <InvoiceForm  org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'customers'       &&                    <CustomerPage org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'vendors'         &&                    <VendorPage      org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'products'        &&                    <ProductCatalogue org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'credit-notes'    &&                    <CreditNotes     org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'list' && <POList       org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
+              {page === 'purchase-orders' && view === 'form' && <POForm       org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'payments'        && view === 'list' && <PaymentList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
+              {page === 'payments'        && view === 'form' && <PaymentForm  org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'expenses'        &&                    <ExpensePage      org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'recurring'       &&                   <RecurringList org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'ledgers'         &&                    <AccountsList org={orgProp} headers={headers} toast={toast} />}

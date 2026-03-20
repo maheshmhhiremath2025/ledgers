@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
 const ROCtx = createContext(false)
 import { Btn, Card, SectionTitle } from './ui'
+import SignaturePad from './SignaturePad'
 
 const TABS = [
   { id: 'business', label: 'Business',   icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
@@ -106,6 +107,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
   const [logoUrl,         setLogoUrl]         = useState('')
   const [signatureName,   setSignatureName]   = useState('')
   const [signatureTitle,  setSignatureTitle]  = useState('')
+  const [signatureImage,  setSignatureImage]  = useState('')
 
   const [gstin,   setGstin]   = useState('')
   const [pan,     setPan]     = useState('')
@@ -152,6 +154,10 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
         setLogoUrl(d.logoUrl || '')
         setSignatureName(d.signatureName || '')
         setSignatureTitle(d.signatureTitle || '')
+        // Load from DB first, fallback to sessionStorage if DB has empty
+        const dbSig = d.signatureImage || ''
+        const cachedSig = sessionStorage.getItem(`sig_${d.orgId || 'default'}`) || ''
+        setSignatureImage(dbSig || cachedSig)
         setGstin(d.gstin || '')
         setPan(d.pan || '')
         setSacCode(d.sacCode || '')
@@ -186,7 +192,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
 
   const buildPayload = () => ({
     businessName, businessEmail, businessPhone, businessAddress,
-    businessWebsite, logoUrl, signatureName, signatureTitle,
+    businessWebsite, logoUrl, signatureName, signatureTitle, signatureImage,
     gstin, pan, sacCode,
     bankName, bankBranch, accountName, accountNumber, ifscCode, upiId, paymentInstructions,
     invoicePrefix, poPrefix, defaultCurrency, defaultTax: parseFloat(defaultTax) || 0,
@@ -368,6 +374,33 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <Field label="Name" value={signatureName} onChange={markDirty(setSignatureName)} placeholder="Mahesh Kumar" />
                 <Field label="Designation" value={signatureTitle} onChange={markDirty(setSignatureTitle)} placeholder="Director / CEO" />
+              </div>
+              <div style={{ marginTop:14 }}>
+                <div style={{ fontSize:12, color:'var(--text-3)', fontWeight:500, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em' }}>Signature Image</div>
+                <div style={{ fontSize:11, color:'var(--text-4)', marginBottom:8 }}>Draw, type or upload your signature — appears on all invoice PDFs</div>
+                <SignaturePad
+                  value={signatureImage}
+                  onChange={async v => {
+                    setSignatureImage(v)
+                    setDirty(true)
+                    // Direct MongoDB update via API — only send signatureImage
+                    try {
+                      const res = await fetch('/api/config', {
+                        method: 'POST',
+                        headers: { ...headers, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ signatureImage: v }),
+                      })
+                      const d = await res.json()
+                      console.log('[sig save] status:', res.status, 'success:', d.success, 'len:', d.signatureImage?.length || 0)
+                      if (res.ok) sessionStorage.setItem('sig_' + (headers['x-org-id']||'default'), v)
+                    } catch(e) { console.error('sig save error', e) }
+                  }}
+                  signerName={signatureName}
+                  signerTitle={signatureTitle}
+                />
+                {signatureImage && (
+                  <div style={{ fontSize:11, color:'var(--green-text)', marginTop:6 }}>✓ Signature saved — appears on all invoice PDFs</div>
+                )}
               </div>
               <SaveBar />
             </Card>

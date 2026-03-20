@@ -101,39 +101,88 @@ function CustomerSelect({ value, onChange, headers }) {
   )
 }
 
-// Template picker
+// Template definitions
 const TEMPLATES = [
-  { id: 'classic',    name: 'Classic',     desc: 'Clean blue header', color: '#185FA5' },
-  { id: 'minimal',    name: 'Minimal',     desc: 'Black & white',      color: '#1a1a1a' },
-  { id: 'modern',     name: 'Modern',      desc: 'Teal accent',        color: '#0F6E56' },
-  { id: 'bold',       name: 'Bold',        desc: 'Dark header',        color: '#1E2140' },
-  { id: 'professional', name: 'Pro',       desc: 'Purple accent',      color: '#6366F1' },
+  { id: 'classic',      name: 'Classic',      desc: 'Clean blue header, professional layout', color: '#185FA5' },
+  { id: 'minimal',      name: 'Minimal',      desc: 'Black & white, ultra clean',             color: '#1a1a1a' },
+  { id: 'modern',       name: 'Modern',       desc: 'Teal accent, contemporary feel',         color: '#0F6E56' },
+  { id: 'bold',         name: 'Bold',         desc: 'Dark header, high contrast',             color: '#1E2140' },
+  { id: 'professional', name: 'Professional', desc: 'Purple accent, premium look',            color: '#6366F1' },
 ]
 
-function TemplatePicker({ value, onChange }) {
+function MiniInvoice({ color }) {
   return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {TEMPLATES.map(t => (
-        <button key={t.id} type="button" onClick={() => onChange(t.id)} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-          padding: '8px 10px', border: `2px solid ${value === t.id ? t.color : 'var(--border-2)'}`,
-          borderRadius: 'var(--r-md)', background: value === t.id ? `${t.color}15` : 'var(--surface-2)',
-          cursor: 'pointer', transition: 'all 0.15s', minWidth: 70, fontFamily: 'var(--font)',
-        }}>
-          {/* Mini invoice preview */}
-          <div style={{ width: 44, height: 32, borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
-            <div style={{ height: 10, background: t.color }} />
-            <div style={{ padding: '3px 4px' }}>
-              <div style={{ height: 2, background: 'rgba(255,255,255,0.2)', borderRadius: 1, marginBottom: 2 }} />
-              <div style={{ height: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 1, width: '70%' }} />
-            </div>
-          </div>
-          <span style={{ fontSize: 11, fontWeight: value === t.id ? 700 : 400, color: value === t.id ? t.color : 'var(--text-3)' }}>{t.name}</span>
-        </button>
+    <svg width="80" height="104" viewBox="0 0 80 104" xmlns="http://www.w3.org/2000/svg">
+      <rect width="80" height="104" fill="#ffffff" rx="3"/>
+      <rect width="80" height="26" fill={color} rx="3"/>
+      <rect x="0" y="20" width="80" height="6" fill={color}/>
+      <rect x="6" y="6" width="18" height="8" fill="rgba(255,255,255,0.3)" rx="1"/>
+      <rect x="50" y="8" width="24" height="3.5" fill="rgba(255,255,255,0.9)" rx="1"/>
+      <rect x="54" y="13" width="18" height="2" fill="rgba(255,255,255,0.5)" rx="1"/>
+      <rect x="6" y="31" width="16" height="2" fill="#bbb" rx="1"/>
+      <rect x="6" y="35" width="28" height="2.5" fill="#333" rx="1"/>
+      <rect x="6" y="39" width="20" height="2" fill="#aaa" rx="1"/>
+      <rect x="6" y="47" width="68" height="7" fill={color + "22"} rx="1"/>
+      <rect x="8" y="50" width="14" height="1.5" fill={color} rx="1"/>
+      <rect x="58" y="50" width="12" height="1.5" fill={color} rx="1"/>
+      {[0,1,2].map(i => (
+        <g key={i}>
+          <rect x="6" y={57+i*9} width="68" height="8" fill={i%2===0?"#f9f9f9":"#fff"}/>
+          <rect x="8" y={60+i*9} width="22" height="2" fill="#555" rx="1"/>
+          <rect x="58" y={60+i*9} width="10" height="2" fill="#333" rx="1"/>
+        </g>
       ))}
+      <rect x="38" y="84" width="36" height="9" fill={color + "22"} rx="1"/>
+      <rect x="40" y="87" width="12" height="2" fill={color} rx="1"/>
+      <rect x="58" y="87" width="12" height="2.5" fill={color} rx="1"/>
+      <rect x="6" y="98" width="68" height="1" fill="#eee"/>
+      <rect x="14" y="101" width="52" height="1.5" fill="#ddd" rx="1"/>
+    </svg>
+  )
+}
+
+function TemplatePicker({ value, onChange }) {
+  const [hovered, setHovered] = useState(null)
+  return (
+    <div>
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:10 }}>
+        {TEMPLATES.map(t => {
+          const isSelected = value === t.id
+          const isHovered  = hovered === t.id
+          return (
+            <button key={t.id} type="button"
+              onClick={() => onChange(t.id)}
+              onMouseEnter={() => setHovered(t.id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                display:'flex', flexDirection:'column', alignItems:'center', gap:6,
+                padding:'8px 8px 6px',
+                border: `2px solid ${isSelected ? t.color : isHovered ? t.color+'60' : 'var(--border-2)'}`,
+                borderRadius:'var(--r-md)',
+                background: isSelected ? t.color+'12' : 'var(--surface-2)',
+                cursor:'pointer', transition:'all 0.15s', fontFamily:'var(--font)',
+                boxShadow: isSelected ? `0 0 0 3px ${t.color}25` : 'none',
+              }}>
+              <div style={{ borderRadius:3, overflow:'hidden', border:`1px solid ${isSelected ? t.color+'50' : 'var(--border)'}`, boxShadow:'0 1px 4px rgba(0,0,0,0.1)' }}>
+                <MiniInvoice color={t.color}/>
+              </div>
+              <span style={{ fontSize:11, fontWeight: isSelected ? 700 : 500, color: isSelected ? t.color : 'var(--text-2)', whiteSpace:'nowrap' }}>
+                {isSelected ? '✓ ' : ''}{t.name}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ fontSize:12, color:'var(--text-3)', padding:'6px 10px', background:'var(--surface-2)', borderRadius:'var(--r)', border:'1px solid var(--border)' }}>
+        <span style={{ fontWeight:600, color: TEMPLATES.find(t=>t.id===value)?.color }}>
+          {TEMPLATES.find(t=>t.id===value)?.name}
+        </span>
+        {' — '}{TEMPLATES.find(t=>t.id===value)?.desc}
+      </div>
     </div>
   )
 }
+
 
 export default function InvoiceForm({ org, headers, toast, editItem, onClose }) {
   const [custName,    setCustName]    = useState('')
@@ -152,8 +201,6 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
   const [productDropdown, setProductDropdown] = useState(null) // index of open dropdown
   const [template,    setTemplate]    = useState('classic')
   const [saving,      setSaving]      = useState(false)
-  const [configLoaded,setConfigLoaded]= useState(false)
-
   useEffect(() => {
     if (editItem) {
       setCustName(editItem.customer?.name || '')
@@ -169,7 +216,6 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
       setTerms(editItem.terms || '')
       setLineItems(editItem.lineItems?.length ? editItem.lineItems : [newLine()])
       setTemplate(editItem.template || 'classic')
-      setConfigLoaded(true)
       return
     }
     Promise.all([
@@ -185,8 +231,7 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
       const due = new Date(); due.setDate(due.getDate() + 30)
       setDueDate(due.toISOString().split('T')[0])
       if (cfg.defaultTax) setLineItems([{ ...newLine(), tax: cfg.defaultTax }])
-      setConfigLoaded(true)
-    }).catch(() => setConfigLoaded(true))
+    }).catch(() => {})
   }, [editItem?._id])
 
   const setCustomer = c => { setCustName(c.name || ''); setCustEmail(c.email || ''); setCustAddress(c.address || ''); setCustGstin((c.gstin || '').toUpperCase()) }
@@ -236,11 +281,7 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
     setSaving(false)
   }
 
-  if (!configLoaded) return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
-      {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 80, marginBottom: 14, borderRadius: 'var(--r-lg)' }} />)}
-    </div>
-  )
+
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -319,7 +360,7 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
                         </div>
                         <div style={{ textAlign:'right', flexShrink:0, marginLeft:8 }}>
                           <div style={{ fontSize:12, fontFamily:'var(--mono)', fontWeight:600, color:'var(--accent-2)' }}>₹{p.price}</div>
-                          <div style={{ fontSize:10, color:'var(--text-3)' }}>{p.tax||18}% GST</div>
+                          <div style={{ fontSize:10, color:'var(--text-3)' }}>{p.taxRate||18}% GST</div>
                         </div>
                       </button>
                     ))}
