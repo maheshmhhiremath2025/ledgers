@@ -23,22 +23,41 @@ import GlobalSearch from '../components/GlobalSearch'
 import SupportPage from '../components/SupportPage'
 import ChatBot from '../components/ChatBot'
 
+// Flat nav for curNav lookup
 const NAV = [
-  { id:'dashboard',       label:'Dashboard',       path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
-  { id:'invoices',        label:'Invoices',         path:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 18H8M16 14H8M10 10H8' },
-  { id:'customers',       label:'Customers',        path:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
-  { id:'purchase-orders', label:'Purchase Orders',  path:'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3.8 6h16.4M16 10a4 4 0 01-8 0' },
-  { id:'vendors',         label:'Vendors',          path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' },
-  { id:'payments',        label:'Payments',         path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-  { id:'expenses',        label:'Expenses',         path:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id:'products',        label:'Products',         path:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10' },
-  { id:'credit-notes',    label:'Credit Notes',     path:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
-  { id:'recurring',       label:'Recurring',        path:'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
-  { id:'ledgers',         label:'Ledgers',          path:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-  { id:'reports',         label:'Reports',          path:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { id:'config',          label:'Configuration',    path:'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
-  { id:'team',            label:'Team',             path:'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' },
-  { id:'billing',         label:'Billing',          path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { id:'dashboard' },{ id:'invoices' },{ id:'customers' },{ id:'purchase-orders' },
+  { id:'vendors' },{ id:'payments' },{ id:'expenses' },{ id:'products' },
+  { id:'credit-notes' },{ id:'recurring' },{ id:'ledgers' },{ id:'reports' },
+  { id:'config' },{ id:'team' },{ id:'billing' },
+]
+
+// Grouped nav for sidebar rendering
+const NAV_GROUPS = [
+  { id:'main', label:'Main', items:[
+    { id:'dashboard', label:'Dashboard', path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
+  ]},
+  { id:'sales', label:'Sales', items:[
+    { id:'invoices',        label:'Invoices',        path:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 18H8M16 14H8M10 10H8' },
+    { id:'customers',       label:'Customers',       path:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
+    { id:'credit-notes',    label:'Credit Notes',    path:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+    { id:'recurring',       label:'Recurring',       path:'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
+  ]},
+  { id:'purchases', label:'Purchases', items:[
+    { id:'purchase-orders', label:'Purchase Orders', path:'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3.8 6h16.4M16 10a4 4 0 01-8 0' },
+    { id:'vendors',         label:'Vendors',         path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' },
+    { id:'products',        label:'Products',        path:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10' },
+  ]},
+  { id:'accounting', label:'Accounting', items:[
+    { id:'payments',  label:'Payments',  path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id:'expenses',  label:'Expenses',  path:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+    { id:'ledgers',   label:'Ledgers',   path:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+    { id:'reports',   label:'Reports',   path:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  ]},
+  { id:'settings', label:'Settings', items:[
+    { id:'config',  label:'Configuration', path:'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
+    { id:'team',    label:'Team',          path:'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' },
+    { id:'billing', label:'Billing',       path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  ]},
 ]
 
 // Helper: always send token in header + cookie credentials
@@ -53,6 +72,126 @@ function authFetch(url, options = {}) {
       ...(options.headers || {}),
     },
   })
+}
+
+
+function NavGroups({ page, navigate, collapsed }) {
+  // Auto-open group that contains the active page
+  const activeGroup = NAV_GROUPS.find(g => g.items.some(i => i.id === page))?.id || 'main'
+  const [open, setOpen] = React.useState({ [activeGroup]: true })
+
+  const toggle = id => setOpen(o => ({ ...o, [id]: !o[id] }))
+
+  React.useEffect(() => {
+    const ag = NAV_GROUPS.find(g => g.items.some(i => i.id === page))?.id
+    if (ag) setOpen(o => ({ ...o, [ag]: true }))
+  }, [page])
+
+  return (
+    <nav style={{ flex:1, padding:'8px 6px', overflowY:'auto', background:'var(--sidebar-bg)' }}>
+      {NAV_GROUPS.map(group => {
+        const isOpen    = !!open[group.id]
+        const hasActive = group.items.some(i => i.id === page)
+
+        // Collapsed sidebar: just show icons with no groups
+        if (collapsed) {
+          return group.items.map(n => {
+            const active = page === n.id
+            return (
+              <button key={n.id} onClick={() => navigate(n.id)} title={n.label} style={{
+                width:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+                padding:'10px', background: active ? 'var(--accent-dim)' : 'transparent',
+                color: active ? 'var(--accent-2)' : 'var(--text-3)',
+                border:'none', borderRadius:'var(--r)', cursor:'pointer', transition:'all 0.12s', marginBottom:2,
+                outline: active ? '1px solid rgba(99,102,241,0.2)' : 'none',
+              }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background='var(--surface)'; e.currentTarget.style.color='var(--text-2)' }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-3)' }}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={n.path}/>
+                </svg>
+              </button>
+            )
+          })
+        }
+
+        // Dashboard: no group header, just the item
+        if (group.id === 'main') {
+          const n = group.items[0]
+          const active = page === n.id
+          return (
+            <button key={n.id} onClick={() => navigate(n.id)} style={{
+              width:'100%', display:'flex', alignItems:'center', gap:9, padding:'9px 10px',
+              background: active ? 'var(--accent-dim)' : 'transparent',
+              color: active ? 'var(--accent-2)' : 'var(--text-3)',
+              border:'none', borderRadius:'var(--r)', fontWeight: active ? 600 : 400,
+              fontSize:13, cursor:'pointer', transition:'all 0.12s', marginBottom:4,
+              outline: active ? '1px solid rgba(99,102,241,0.2)' : 'none', fontFamily:'var(--font)',
+            }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.background='var(--surface)'; e.currentTarget.style.color='var(--text-2)' }}}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-3)' }}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+                <path d={n.path}/>
+              </svg>
+              <span style={{ whiteSpace:'nowrap' }}>{n.label}</span>
+            </button>
+          )
+        }
+
+        return (
+          <div key={group.id} style={{ marginBottom:2 }}>
+            {/* Group header */}
+            <button onClick={() => toggle(group.id)} style={{
+              width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+              padding:'8px 10px', marginBottom:2,
+              background: hasActive ? 'var(--accent-dim)' : 'transparent',
+              border: hasActive ? '1px solid rgba(99,102,241,0.15)' : '1px solid transparent',
+              cursor:'pointer', fontFamily:'var(--font)', transition:'all 0.15s', borderRadius:'var(--r)',
+            }}
+              onMouseEnter={e => { if(!hasActive) e.currentTarget.style.background='var(--surface)' }}
+              onMouseLeave={e => { if(!hasActive) e.currentTarget.style.background='transparent' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ width:5, height:5, borderRadius:'50%', background: hasActive ? 'var(--accent-2)' : 'var(--text-4)', flexShrink:0 }}/>
+                <span style={{ fontSize:12, fontWeight:600, color: hasActive ? 'var(--accent-2)' : 'var(--text-3)', letterSpacing:'0.01em' }}>
+                  {group.label}
+                </span>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={hasActive ? 'var(--accent-2)' : 'var(--text-3)'} strokeWidth="2.5" strokeLinecap="round"
+                style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', flexShrink:0 }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            {/* Group items */}
+            {isOpen && (
+              <div style={{ paddingLeft:6 }}>
+                {group.items.map(n => {
+                  const active = page === n.id
+                  return (
+                    <button key={n.id} onClick={() => navigate(n.id)} style={{
+                      width:'100%', display:'flex', alignItems:'center', gap:9, padding:'8px 10px',
+                      background: active ? 'var(--accent-dim)' : 'transparent',
+                      color: active ? 'var(--accent-2)' : 'var(--text-3)',
+                      border:'none', borderRadius:'var(--r)', fontWeight: active ? 600 : 400,
+                      fontSize:13, cursor:'pointer', transition:'all 0.12s', marginBottom:1,
+                      outline: active ? '1px solid rgba(99,102,241,0.2)' : 'none', fontFamily:'var(--font)',
+                    }}
+                      onMouseEnter={e => { if (!active) { e.currentTarget.style.background='var(--surface)'; e.currentTarget.style.color='var(--text-2)' }}}
+                      onMouseLeave={e => { if (!active) { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-3)' }}}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, opacity: active ? 1 : 0.8 }}>
+                        <path d={n.path}/>
+                      </svg>
+                      <span style={{ whiteSpace:'nowrap' }}>{n.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </nav>
+  )
 }
 
 export default function Home() {
@@ -180,7 +319,7 @@ export default function Home() {
   }
 
   const orgProp = { id: user?.orgId || 'default', name: user?.orgId || 'default' }
-  const curNav  = NAV.find(n => n.id === page)
+  const curNav  = NAV_GROUPS.flatMap(g => g.items).find(n => n.id === page)
 
   if (authLoading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -231,35 +370,7 @@ export default function Home() {
           </div>
 
           {/* Nav */}
-          <nav style={{ flex: 1, padding: '10px 6px', overflowY: 'auto', background: 'var(--sidebar-bg)' }}>
-            {!collapsed && <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 10px 8px' }}>Navigation</div>}
-            {NAV.map(n => {
-              const active = page === n.id
-              return (
-                <React.Fragment key={n.id}>
-                  {n.id === 'config' && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '6px 4px 8px' }} />}
-                  <button onClick={() => navigate(n.id)} title={collapsed ? n.label : ''} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                    padding: collapsed ? '10px' : '9px 10px',
-                    justifyContent: collapsed ? 'center' : 'flex-start',
-                    background: active ? 'var(--accent-dim)' : 'transparent',
-                    color: active ? 'var(--accent-2)' : 'var(--text-3)',
-                    border: 'none', borderRadius: 'var(--r)',
-                    fontWeight: active ? 600 : 400, fontSize: 13, cursor: 'pointer',
-                    transition: 'all 0.12s', marginBottom: 2,
-                    outline: active ? '1px solid rgba(99,102,241,0.2)' : 'none',
-                  }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.color = 'var(--text-2)' } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-3)' } }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <path d={n.path} />
-                    </svg>
-                    {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{n.label}</span>}
-                  </button>
-                </React.Fragment>
-              )
-            })}
-          </nav>
+          <NavGroups page={page} navigate={navigate} collapsed={collapsed} />
 
           {/* Org Switcher */}
           {/* Support button — just above user avatar */}
