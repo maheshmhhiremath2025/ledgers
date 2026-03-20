@@ -39,6 +39,7 @@ function Field({ label, value, onChange, type = 'text', placeholder, hint, mono 
       />
       {hint && <div style={hintStyle}>{hint}</div>}
     </div>
+    </ROCtx.Provider>
   )
 }
 
@@ -90,7 +91,7 @@ function ValidationBadge({ value, length, label }) {
   )
 }
 
-export default function ConfigPage({ org, headers, toast, readOnly = false }) {
+export default function ConfigPage({ org, headers, toast, readOnly = false, onSave }) {
   const [tab, setTab]       = useState('business')
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty]   = useState(false)
@@ -204,8 +205,10 @@ export default function ConfigPage({ org, headers, toast, readOnly = false }) {
         body: JSON.stringify(buildPayload()),
       })
       if (!res.ok) throw new Error('Save failed')
+      const saved = await res.json()
       setDirty(false)
       toast('Configuration saved!')
+      if (onSave) onSave(saved)
     } catch (e) {
       toast(e.message || 'Save failed', 'error')
     }
@@ -224,11 +227,12 @@ export default function ConfigPage({ org, headers, toast, readOnly = false }) {
       setDirty(true)
       setUploading(false)
       toast('Logo uploaded — click Save to apply')
+      if (onSave) onSave({ logoUrl: dataUrl })
     }
     reader.readAsDataURL(file)
   }
 
-  const removeLogo = () => { setLogoUrl(''); setDirty(true) }
+  const removeLogo = () => { setLogoUrl(''); setDirty(true); if (onSave) onSave({ logoUrl: '' }) }
 
   if (loading) return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
