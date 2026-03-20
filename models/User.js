@@ -14,6 +14,8 @@ const UserSchema = new mongoose.Schema({
   inviteExpiry: { type: Date,   default: null },
   invitedBy:    { type: String, default: null },
   status:       { type: String, enum: ['active', 'invited', 'disabled'], default: 'active' },
+  razorpaySubId:     { type: String, default: null },
+  subscriptionPlan:  { type: String, default: null },
 
   // Plan
   plan:         { type: String, enum: ['starter', 'professional', 'business'], default: 'starter' },

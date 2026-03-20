@@ -15,6 +15,7 @@ import RecurringList from '../components/RecurringList'
 import ReportsPage from '../components/ReportsPage'
 import TeamPage from '../components/TeamPage'
 import CustomerPage from '../components/CustomerPage'
+import VendorPage from '../components/VendorPage'
 import ExpensePage from '../components/ExpensePage'
 
 const NAV = [
@@ -22,6 +23,7 @@ const NAV = [
   { id:'invoices',        label:'Invoices',         path:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 18H8M16 14H8M10 10H8' },
   { id:'customers',       label:'Customers',        path:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
   { id:'purchase-orders', label:'Purchase Orders',  path:'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3.8 6h16.4M16 10a4 4 0 01-8 0' },
+  { id:'vendors',         label:'Vendors',          path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' },
   { id:'payments',        label:'Payments',         path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
   { id:'expenses',        label:'Expenses',         path:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
   { id:'recurring',       label:'Recurring',         path:'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
@@ -57,6 +59,7 @@ export default function Home() {
   const [userMenuOpen, setUMO]  = useState(false)
   const [theme, setTheme]       = useState('dark')
   const [orgConfig, setOrgConfig] = useState(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const userMenuRef = useRef()
 
   // Refetch org config whenever user leaves config page (logo may have changed)
@@ -162,7 +165,10 @@ export default function Home() {
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
 
         {/* Sidebar */}
-        <aside style={{ width: collapsed ? 56 : 220, flexShrink: 0, background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-2)', display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease', overflow: 'hidden' }}>
+        {/* Mobile overlay */}
+        <div className={`sb-overlay`} style={{ display: mobileOpen ? 'block' : 'none' }} onClick={() => setMobileOpen(false)} />
+
+        <aside className={`sb-sidebar${mobileOpen ? ' open' : ''}`} style={{ width: collapsed ? 56 : 220, flexShrink: 0, background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-2)', display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease', overflow: 'hidden' }}>
 
           {/* Brand */}
           <div style={{ height: 56, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
@@ -263,11 +269,11 @@ export default function Home() {
         </aside>
 
         {/* Main */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, background: 'var(--bg)' }}>
+        <div className="sb-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, background: 'var(--bg)' }}>
 
           {/* Topbar */}
           <header style={{ height: 56, borderBottom: '1px solid var(--border-2)', background: 'var(--topbar-bg)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 14, flexShrink: 0 }}>
-            <button onClick={() => setCollapsed(c => !c)} style={{ width: 30, height: 30, border: 'none', background: 'var(--surface)', borderRadius: 'var(--r)', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
+            <button onClick={() => { if (window.innerWidth <= 768) setMobileOpen(o => !o); else setCollapsed(c => !c) }} style={{ width: 30, height: 30, border: 'none', background: 'var(--surface)', borderRadius: 'var(--r)', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.color = 'var(--text)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.color = 'var(--text-3)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -309,7 +315,7 @@ export default function Home() {
               {(() => { const now = new Date(); const y = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1; return `FY ${y}–${String(y + 1).slice(2)}` })()}
             </div>
 
-            {view === 'list' && page !== 'dashboard' && page !== 'ledgers' && page !== 'config' && page !== 'billing' && page !== 'recurring' && page !== 'reports' && page !== 'team' && page !== 'customers' && page !== 'expenses' && user?.role !== 'viewer' && (
+            {view === 'list' && page !== 'dashboard' && page !== 'ledgers' && page !== 'config' && page !== 'billing' && page !== 'recurring' && page !== 'reports' && page !== 'team' && page !== 'customers' && page !== 'expenses' && page !== 'vendors' && user?.role !== 'viewer' && (
               <button onClick={() => openForm()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r)', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 12px rgba(99,102,241,0.35)', transition: 'all 0.15s', flexShrink: 0, fontFamily: 'var(--font)' }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.5)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 12px rgba(99,102,241,0.35)'}>
@@ -320,12 +326,13 @@ export default function Home() {
           </header>
 
           {/* Content */}
-          <main style={{ flex: 1, overflow: 'auto', padding: '24px', background: 'var(--bg)' }}>
+          <main className="sb-content" style={{ flex: 1, overflow: 'auto', padding: '24px', background: 'var(--bg)' }}>
             <div key={page + view} className="fade-up">
               {page === 'dashboard'       &&                    <Dashboard    org={orgProp} headers={headers} toast={toast} onNavigate={navigate} />}
               {page === 'invoices'        && view === 'list' && <InvoiceList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
               {page === 'invoices'        && view === 'form' && <InvoiceForm  org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'customers'       &&                    <CustomerPage org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'vendors'         &&                    <VendorPage   org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'list' && <POList       org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'form' && <POForm       org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'payments'        && view === 'list' && <PaymentList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
