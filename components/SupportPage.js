@@ -76,17 +76,26 @@ export default function SupportPage({ user }) {
         </div>
 
         {/* Phone */}
-        <div style={contactCard('#10B981')}>
+        <div style={{ ...contactCard('#10B981'), opacity: isBizOrPro ? 1 : 0.5, position:'relative', overflow:'hidden' }}>
+          {!isBizOrPro && (
+            <div style={{ position:'absolute', top:8, right:8, fontSize:10, fontWeight:700, background:'rgba(245,158,11,0.2)', color:'var(--amber-text)', padding:'2px 8px', borderRadius:99, border:'1px solid rgba(245,158,11,0.3)' }}>
+              Pro & Business
+            </div>
+          )}
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:34, height:34, borderRadius:'var(--r)', background:'rgba(16,185,129,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>📞</div>
             <div>
               <div style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>Phone Support</div>
-              <div style={{ fontSize:11, color:'var(--text-3)' }}>All plans · Mon–Sat 9am–6pm</div>
+              <div style={{ fontSize:11, color:'var(--text-3)' }}>{isBizOrPro ? 'Mon–Sat 9am–6pm IST' : 'Upgrade to unlock'}</div>
             </div>
           </div>
-          <a href="tel:+918884907660" style={{ fontSize:13, color:'var(--green-text)', fontWeight:600, textDecoration:'none', marginTop:4 }}>
-            +91 88849 07660
-          </a>
+          {isBizOrPro ? (
+            <a href="tel:+918884907660" style={{ fontSize:13, color:'var(--green-text)', fontWeight:600, textDecoration:'none', marginTop:4 }}>
+              +91 88849 07660
+            </a>
+          ) : (
+            <div style={{ fontSize:12, color:'var(--text-4)', marginTop:4 }}>Upgrade to Professional or Business plan</div>
+          )}
         </div>
 
         {/* WhatsApp */}
@@ -215,7 +224,7 @@ export default function SupportPage({ user }) {
             <div style={{ fontSize:12, color:'var(--text-3)', lineHeight:1.7 }}>
               {user?.plan === 'business'     ? '✅ Priority WhatsApp + Email + Phone' :
                user?.plan === 'professional' ? '✅ WhatsApp + Email + Phone support' :
-               '✅ Email + Phone support'}
+               '✅ Email support only'}
             </div>
           </div>
 
