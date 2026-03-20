@@ -31,6 +31,7 @@ const PLANS_META = [
 
 function PlanPicker({ user, token, onDone }) {
   const [selecting, setSelecting] = useState(null)
+  const [logoErr, setLogoErr]     = useState(false)
 
   const choosePlan = async (planId) => {
     setSelecting(planId)
@@ -62,10 +63,15 @@ function PlanPicker({ user, token, onDone }) {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>Synergific Books</span>
+            {!logoErr
+              ? <img src="/logo.png" alt="Synergific Books" onError={() => setLogoErr(true)} style={{ height: 32, objectFit: 'contain', display: 'block' }} />
+              : <>
+                  <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                  </div>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>Synergific Books</span>
+                </>
+            }
           </div>
           <div style={{ fontSize: 11, color: 'var(--green-text)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10, background: 'var(--green-dim)', display: 'inline-block', padding: '3px 12px', borderRadius: 99, border: '1px solid rgba(16,185,129,0.2)' }}>
             ✓ Account created successfully
@@ -163,6 +169,7 @@ function PlanPicker({ user, token, onDone }) {
 }
 
 export default function AuthPage({ onAuth }) {
+  const [logoErr, setLogoErr]   = useState(false)
   const [mode, setMode]       = useState('login')
   const [name, setName]       = useState('')
   const [email, setEmail]     = useState('')
@@ -248,10 +255,15 @@ export default function AuthPage({ onAuth }) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 64px', position: 'relative', minWidth: 0 }}>
           <div style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 28px rgba(99,102,241,0.45)', flexShrink: 0 }}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4v12" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
-              </div>
-              <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>Synergific Books</span>
+              {!logoErr
+                ? <img src="/logo.png" alt="Synergific Books" onError={() => setLogoErr(true)} style={{ height: 36, objectFit: 'contain', display: 'block' }} />
+                : <>
+                    <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 28px rgba(99,102,241,0.45)', flexShrink: 0 }}>
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4v12" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    </div>
+                    <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>Synergific Books</span>
+                  </>
+              }
             </div>
 
             <div style={{ marginBottom: 40 }}>

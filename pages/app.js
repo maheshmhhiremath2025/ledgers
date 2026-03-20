@@ -122,7 +122,7 @@ export default function Home() {
   const logout = async () => {
     await fetch('/api/auth/me', { method: 'POST', credentials: 'include' })
     localStorage.removeItem('sb_token')
-    setUser(null)
+    window.location.href = '/'
   }
 
   const navigate = p => { setPage(p); setView('list'); setEditItem(null) }
@@ -167,12 +167,14 @@ export default function Home() {
           {/* Brand */}
           <div style={{ height: 56, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
             {orgConfig?.logoUrl ? (
+              // Logo uploaded — show logo only, no text
               <img
                 src={orgConfig.logoUrl}
                 alt={orgConfig.businessName || 'Logo'}
-                style={{ height: 32, maxWidth: collapsed ? 28 : 140, objectFit: 'contain', borderRadius: 4 }}
+                style={{ height: 32, maxWidth: collapsed ? 28 : 148, objectFit: 'contain', borderRadius: 4 }}
               />
             ) : (
+              // No logo — show icon + org name
               <>
                 <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 14px rgba(99,102,241,0.35)' }}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
