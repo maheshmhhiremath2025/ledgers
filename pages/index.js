@@ -153,22 +153,21 @@ export default function Home() {
           {/* Brand */}
           <div style={{ height: 56, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
             {orgConfig?.logoUrl ? (
-              // Show uploaded logo
-              <>
-                <img src={orgConfig.logoUrl} alt={orgConfig.businessName || 'Logo'} style={{ height: 30, maxWidth: collapsed ? 28 : 120, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
-                {!collapsed && orgConfig.businessName && (
-                  <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.2px' }}>
-                    {orgConfig.businessName}
-                  </span>
-                )}
-              </>
+              <img
+                src={orgConfig.logoUrl}
+                alt={orgConfig.businessName || 'Logo'}
+                style={{ height: 32, maxWidth: collapsed ? 28 : 140, objectFit: 'contain', borderRadius: 4 }}
+              />
             ) : (
-              // Default icon + text
               <>
                 <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 14px rgba(99,102,241,0.35)' }}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
                 </div>
-                {!collapsed && <span style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)', whiteSpace: 'nowrap', letterSpacing: '-0.3px' }}>{orgConfig?.businessName || 'Synergific Books'}</span>}
+                {!collapsed && (
+                  <span style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.3px' }}>
+                    {orgConfig?.businessName || 'Synergific Books'}
+                  </span>
+                )}
               </>
             )}
           </div>

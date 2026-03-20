@@ -256,6 +256,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
     )
   }
   return (
+    <ROCtx.Provider value={readOnly}>
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       {/* Page header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -594,5 +595,6 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
         </div>
       </div>
     </div>
+    </ROCtx.Provider>
   )
 }
