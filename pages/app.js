@@ -21,6 +21,7 @@ import ProductCatalogue from '../components/ProductCatalogue'
 import CreditNotes from '../components/CreditNotes'
 import GlobalSearch from '../components/GlobalSearch'
 import SupportPage from '../components/SupportPage'
+import ChatBot from '../components/ChatBot'
 
 const NAV = [
   { id:'dashboard',       label:'Dashboard',       path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
@@ -456,6 +457,9 @@ export default function Home() {
         </div>
       </div>
 
+
+      {/* AI Chatbot */}
+      {user && <ChatBot user={user} headers={headers} />}
 
       {/* New org modal */}
       {showNewOrg && (() => {
