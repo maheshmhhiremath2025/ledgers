@@ -13,6 +13,7 @@ function getAuth(req) {
 }
 
 const MAX_ORGS = 3 // Business plan max
+const ORG_LIMITS = { starter: 1, professional: 2, business: 3 }
 
 export default async function handler(req, res) {
   await connectDB()
@@ -51,11 +52,12 @@ export default async function handler(req, res) {
       })
     }
 
-    // ── Org limit: max 3 per email ──
+    // ── Org limit: plan-based ──
     const existingOrgs = await User.find({ email: currentUser.email, status: { $ne: 'disabled' } })
-    if (existingOrgs.length >= MAX_ORGS) {
+    const planLimit = ORG_LIMITS[currentUser.plan] || 1
+    if (existingOrgs.length >= planLimit) {
       return res.status(403).json({
-        error: `Business plan allows up to ${MAX_ORGS} organisations. You have reached the limit.`,
+        error: `Your ${currentUser.plan} plan allows up to ${planLimit} organisation${planLimit > 1 ? 's' : ''}. You have reached the limit.`,
         limitReached: true,
       })
     }

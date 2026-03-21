@@ -17,13 +17,13 @@ const PLANS = [
   {
     id: 'professional', name: 'Professional', price: 999, display: '₹999', period: '/month',
     tagline: 'Growing businesses', popular: true,
-    features: ['Unlimited invoices & POs', '3 organisations', 'All 5 PDF templates', 'Logo on invoices', 'GST, PAN, bank & UPI config', 'Saved customers & vendors', 'Authorized signatory on PDF'],
+    features: ['Unlimited invoices & POs', '2 organisations', 'All 5 PDF templates', 'Logo on invoices', 'GST, PAN, bank & UPI config', 'Saved customers & vendors', 'Authorized signatory on PDF'],
     locked: ['Team members', 'CSV export', 'API access'],
   },
   {
     id: 'business', name: 'Business', price: 2499, display: '₹2,499', period: '/month',
     tagline: 'Teams & enterprises',
-    features: ['Everything in Professional', 'Unlimited organisations', '5 team members', 'Role-based access', 'CSV / Excel export', 'API access', 'Priority support'],
+    features: ['Everything in Professional', '3 organisations', '5 team members', 'Role-based access', 'CSV / Excel export', 'API access', 'Priority support'],
     locked: [],
   },
 ]
@@ -247,6 +247,11 @@ export default function BillingPage({ headers, toast, user }) {
               <Btn size="sm" variant="danger" onClick={doDowngrade} disabled={downgrading}>{downgrading ? 'Downgrading…' : 'Downgrade to Free'}</Btn>
             </>}
             {isBiz && <Btn size="sm" variant="danger" onClick={doDowngrade} disabled={downgrading}>{downgrading ? 'Downgrading…' : 'Downgrade to Free'}</Btn>}
+            {!isStarter && (
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
+                💡 <b>Auto-renewal:</b> Your plan renews automatically each month. Contact support to cancel.
+              </div>
+            )}
           </div>
         )}
         {!isAdmin && (

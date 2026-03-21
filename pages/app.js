@@ -346,14 +346,23 @@ export default function Home() {
         <aside className={`sb-sidebar${mobileOpen ? ' open' : ''}`} style={{ width: collapsed ? 56 : 220, flexShrink: 0, background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-2)', display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease', overflow: 'hidden' }}>
 
           {/* Brand */}
-          <div style={{ height: 56, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
+          <div style={{ height: 56, padding: '0 10px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
             {orgConfig?.logoUrl ? (
-              // Logo uploaded — show logo only, no text
-              <img
-                src={orgConfig.logoUrl}
-                alt={orgConfig.businessName || 'Logo'}
-                style={{ height: 32, maxWidth: collapsed ? 28 : 148, objectFit: 'contain', borderRadius: 4 }}
-              />
+              // Logo uploaded — scale to fill sidebar header
+              <div style={{ width: '100%', height: 48, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+                <img
+                  src={orgConfig.logoUrl}
+                  alt={orgConfig.businessName || 'Logo'}
+                  style={{
+                    height: 48,
+                    width: collapsed ? 'auto' : '100%',
+                    maxWidth: collapsed ? 36 : '100%',
+                    objectFit: collapsed ? 'contain' : 'fill',
+                    objectPosition: 'center',
+                    display: 'block',
+                  }}
+                />
+              </div>
             ) : (
               // No logo — show icon + org name
               <>

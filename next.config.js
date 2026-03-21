@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
+    serverComponentsExternalPackages: ['mongoose', '@sparticuz/chromium', 'puppeteer-core'],
   },
   // Allow images from any domain for logo uploads
   images: {
