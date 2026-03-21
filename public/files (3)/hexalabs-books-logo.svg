@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1f3a"/>
+      <stop offset="100%" style="stop-color:#0f1225"/>
+    </linearGradient>
+    <linearGradient id="bookGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="bookGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8"/>
+      <stop offset="100%" style="stop-color:#6366F1"/>
+    </linearGradient>
+    <linearGradient id="bookGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C7D2FE"/>
+      <stop offset="100%" style="stop-color:#A5B4FC"/>
+    </linearGradient>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#4F46E5;stop-opacity:0.05"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#6366F1" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+
+  <!-- Subtle hex pattern in background -->
+  <polygon points="256,60 310,90 310,150 256,180 202,150 202,90" fill="url(#hexGrad)" stroke="#6366F1" stroke-width="1" opacity="0.4"/>
+  <polygon points="256,332 310,362 310,422 256,452 202,422 202,362" fill="url(#hexGrad)" stroke="#6366F1" stroke-width="1" opacity="0.2"/>
+
+  <!-- Books stack - 3 books -->
+
+  <!-- Book 3 (back, lightest) -->
+  <g filter="url(#softShadow)">
+    <!-- Book spine -->
+    <rect x="148" y="168" width="22" height="188" rx="4" fill="url(#bookGrad3)" opacity="0.7"/>
+    <!-- Book body -->
+    <rect x="170" y="168" width="148" height="188" rx="0 4 4 0" fill="#C7D2FE" opacity="0.5"/>
+    <!-- Book pages edge -->
+    <rect x="314" y="172" width="6" height="180" rx="0 2 2 0" fill="#E0E7FF" opacity="0.4"/>
+    <!-- Lines on cover -->
+    <rect x="182" y="198" width="80" height="4" rx="2" fill="#818CF8" opacity="0.5"/>
+    <rect x="182" y="210" width="56" height="3" rx="2" fill="#818CF8" opacity="0.3"/>
+  </g>
+
+  <!-- Book 2 (middle) -->
+  <g filter="url(#softShadow)">
+    <rect x="140" y="190" width="22" height="176" rx="4" fill="url(#bookGrad2)"/>
+    <rect x="162" y="190" width="152" height="176" rx="0 4 4 0" fill="#818CF8" opacity="0.85"/>
+    <rect x="310" y="194" width="6" height="168" rx="0 2 2 0" fill="#C7D2FE" opacity="0.6"/>
+    <!-- Lines on cover -->
+    <rect x="174" y="218" width="88" height="4" rx="2" fill="white" opacity="0.5"/>
+    <rect x="174" y="230" width="64" height="3" rx="2" fill="white" opacity="0.3"/>
+    <rect x="174" y="240" width="72" height="3" rx="2" fill="white" opacity="0.2"/>
+  </g>
+
+  <!-- Book 1 (front, most prominent) -->
+  <g filter="url(#softShadow)">
+    <rect x="132" y="210" width="24" height="162" rx="5" fill="url(#bookGrad1)"/>
+    <!-- Spine highlight -->
+    <rect x="132" y="210" width="5" height="162" rx="5 0 0 5" fill="white" opacity="0.15"/>
+    <!-- Book body -->
+    <rect x="156" y="210" width="158" height="162" rx="0 5 5 0" fill="#4F46E5"/>
+    <!-- Page edges -->
+    <rect x="310" y="214" width="8" height="154" rx="0 2 2 0" fill="#E0E7FF" opacity="0.5"/>
+    <!-- Cover design - H letter mark -->
+    <text x="185" y="268" font-family="Georgia, serif" font-size="52" font-weight="700" fill="white" opacity="0.9" filter="url(#glow)">HL</text>
+    <!-- Subtitle lines -->
+    <rect x="185" y="278" width="100" height="3" rx="2" fill="white" opacity="0.4"/>
+    <rect x="185" y="287" width="72" height="2.5" rx="2" fill="white" opacity="0.25"/>
+    <rect x="185" y="295" width="84" height="2.5" rx="2" fill="white" opacity="0.2"/>
+    <rect x="185" y="303" width="60" height="2.5" rx="2" fill="white" opacity="0.15"/>
+    <!-- Small bookmark ribbon -->
+    <polygon points="290,210 302,210 302,250 296,244 290,250" fill="#F59E0B"/>
+  </g>
+
+  <!-- Floating sparkle dots -->
+  <circle cx="108" cy="200" r="4" fill="#6366F1" opacity="0.6" filter="url(#glow)"/>
+  <circle cx="404" cy="280" r="3" fill="#818CF8" opacity="0.5" filter="url(#glow)"/>
+  <circle cx="390" cy="180" r="2" fill="#C7D2FE" opacity="0.7"/>
+  <circle cx="120" cy="340" r="2.5" fill="#6366F1" opacity="0.4"/>
+
+  <!-- Bottom accent line -->
+  <rect x="180" y="400" width="152" height="3" rx="2" fill="url(#bookGrad1)" opacity="0.6"/>
+  <rect x="220" y="408" width="72" height="2" rx="2" fill="#6366F1" opacity="0.3"/>
+</svg>

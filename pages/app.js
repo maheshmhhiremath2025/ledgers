@@ -392,7 +392,12 @@ export default function Home() {
 
   return (
     <>
-      <Head><title>Synergific Books</title></Head>
+      <Head>
+        <title>Synergific Books</title>
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+      </Head>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
 
         {/* Sidebar */}
