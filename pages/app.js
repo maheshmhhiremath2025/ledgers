@@ -404,17 +404,16 @@ export default function Home() {
           {/* Brand */}
           <div style={{ height: 56, padding: '0 10px', display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-2)', flexShrink: 0, background: 'var(--sidebar-bg)' }}>
             {orgConfig?.logoUrl ? (
-              // Logo uploaded — scale to fill sidebar header
-              <div style={{ width: '100%', height: 48, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+              // Logo uploaded — fixed small size, contained
+              <div style={{ width: '100%', height: 36, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start' }}>
                 <img
                   src={orgConfig.logoUrl}
                   alt={orgConfig.businessName || 'Logo'}
                   style={{
-                    height: 48,
-                    width: collapsed ? 'auto' : '100%',
-                    maxWidth: collapsed ? 36 : '100%',
-                    objectFit: collapsed ? 'contain' : 'fill',
-                    objectPosition: 'center',
+                    height: 32,
+                    maxWidth: collapsed ? 32 : 140,
+                    objectFit: 'contain',
+                    objectPosition: 'left center',
                     display: 'block',
                   }}
                 />

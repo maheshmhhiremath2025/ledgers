@@ -341,7 +341,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
                     {logoUrl ? 'Logo uploaded ✓' : 'Upload your company logo'}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
-                    PNG, JPG or SVG · Max 500KB · Replaces company name in PDF header
+                    PNG or SVG · Recommended: 240×60 px (4:1 ratio) · Max 500KB
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input ref={fileRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
