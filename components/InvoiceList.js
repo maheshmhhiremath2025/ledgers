@@ -224,6 +224,25 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
     }
   }
 
+  const shareWhatsApp = async (e, inv) => {
+    e.stopPropagation()
+    try {
+      const r = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: inv._id }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error)
+      const amt = new Intl.NumberFormat('en-IN', { style:'currency', currency: inv.currency||'INR', maximumFractionDigits:0 }).format(inv.total || 0)
+      const custName = inv.customer?.name || 'there'
+      const msg = `Hi ${custName},\n\nPlease find your invoice *${inv.invoiceNumber}* for *${amt}*.\n\nClick the link below to view and pay securely:\n${d.url}\n\nThank you for your business!`
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+    } catch (err) {
+      toast(err.message || 'Failed to generate WhatsApp link', 'error')
+    }
+  }
+
   const sendReminder = async (e, inv) => {
     e.stopPropagation()
     try {
@@ -384,14 +403,12 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
                           )}
                           {inv.status==='Sent' && (
                             <>
-                              <Btn size="sm" onClick={e => { e.stopPropagation(); setEmailModal(inv) }}>✉ Resend</Btn>
                               <Btn size="sm" variant="primary" onClick={e => { e.stopPropagation(); setPaymentModal(inv) }}>💳 Pay</Btn>
                             </>
                           )}
                           {inv.status==='Overdue' && (
                             <>
-                              <Btn size="sm" onClick={e => sendReminder(e, inv)} title="Send overdue reminder email">⚠ Remind</Btn>
-                              <Btn size="sm" onClick={e => { e.stopPropagation(); setEmailModal(inv) }}>✉ Email</Btn>
+                              <Btn size="sm" variant="danger" onClick={e => sendReminder(e, inv)} title="Send overdue reminder email">⚠ Remind</Btn>
                               <Btn size="sm" variant="primary" onClick={e => { e.stopPropagation(); setPaymentModal(inv) }}>💳 Pay</Btn>
                             </>
                           )}
@@ -403,8 +420,15 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
                             }}>
                             PDF ▾
                           </Btn>
+                          {inv.status !== 'Paid' && inv.status !== 'Cancelled' && (
+                            <button onClick={e => shareWhatsApp(e, inv)} title="Share via WhatsApp"
+                              style={{ padding:'4px 8px', background:'#25D366', border:'none', borderRadius:'var(--r-sm)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', gap:4, color:'#fff', fontWeight:600, fontFamily:'var(--font)' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.112 1.523 5.84L0 24l6.336-1.502A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.878 9.878 0 01-5.031-1.378l-.36-.214-3.733.885.933-3.608-.235-.372A9.844 9.844 0 012.118 12C2.118 6.98 6.98 2.118 12 2.118c5.019 0 9.882 4.862 9.882 9.882 0 5.019-4.863 9.882-9.882 9.882z"/></svg>
+                              WA
+                            </button>
+                          )}
                           <Btn size="sm" onClick={e => { e.stopPropagation(); setEmailModal(inv) }}>✉</Btn>
-          <Btn size="sm" onClick={e => { e.stopPropagation(); onEdit(inv) }}>Edit</Btn>
+                          <Btn size="sm" onClick={e => { e.stopPropagation(); onEdit(inv) }}>Edit</Btn>
                           <Btn size="sm" variant="danger" onClick={e => del(e,inv)}>✕</Btn>
                         </div>
                       )}
