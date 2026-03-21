@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         businessPhone: cfg?.businessPhone || '',
         upiId: cfg?.upiId || '',
       },
-      razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+      razorpayKeyId: cfg?.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
     })
   }
 
@@ -58,7 +58,11 @@ export default async function handler(req, res) {
       const balance = (invoice.total || 0) - (invoice.paidAmount || 0)
       if (balance <= 0) return res.status(400).json({ error: 'No balance due' })
 
-      const auth = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64')
+      const cfg = await OrgConfig.findOne({ orgId: invoice.orgId })
+      const rzpKeyId     = cfg?.razorpayKeyId     || process.env.RAZORPAY_KEY_ID
+      const rzpKeySecret = cfg?.razorpaySecret     || process.env.RAZORPAY_KEY_SECRET
+      if (!rzpKeyId || !rzpKeySecret) return res.status(400).json({ error: 'Payment not configured for this organisation. Please contact the business.' })
+      const auth = Buffer.from(`${rzpKeyId}:${rzpKeySecret}`).toString('base64')
       const shortId = String(invoice._id).slice(-6)
       const ts = String(Date.now()).slice(-6)
       const receipt = `pay_${shortId}_${ts}` // max 40 chars
@@ -82,6 +86,7 @@ export default async function handler(req, res) {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
+        razorpayKeyId: rzpKeyId,
         prefill: { name: invoice.customer?.name, email: invoice.customer?.email },
       })
     }
@@ -89,7 +94,9 @@ export default async function handler(req, res) {
     if (action === 'verify') {
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body
       const body = `${razorpay_order_id}|${razorpay_payment_id}`
-      const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET).update(body).digest('hex')
+      const verifyCfg = await OrgConfig.findOne({ orgId: invoice.orgId })
+      const verifySecret = verifyCfg?.razorpaySecret || process.env.RAZORPAY_KEY_SECRET
+      const expected = crypto.createHmac('sha256', verifySecret).update(body).digest('hex')
       if (expected !== razorpay_signature) return res.status(400).json({ error: 'Invalid payment signature' })
 
       const balance = (invoice.total || 0) - (invoice.paidAmount || 0)

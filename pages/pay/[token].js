@@ -49,7 +49,7 @@ export default function PaymentPortal({ token }) {
       if (!orderRes.ok) throw new Error(order.error)
 
       const options = {
-        key: data.razorpayKeyId,
+        key: order.razorpayKeyId || data.razorpayKeyId,
         amount: order.amount,
         currency: order.currency,
         name: data.org.businessName,

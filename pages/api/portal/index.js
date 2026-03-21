@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
+import OrgConfig from '../../../models/OrgConfig'
 
 // Generate a secure token for an invoice
 export default async function handler(req, res) {
@@ -20,9 +21,21 @@ export default async function handler(req, res) {
     await invoice.save()
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  // Build baseUrl from request host so it works on Vercel without port numbers
+  const proto = req.headers['x-forwarded-proto'] || 'https'
+  const host  = req.headers['x-forwarded-host'] || req.headers['host'] || ''
+  // Strip any port from the host (e.g. localhost:3000 → use env instead)
+  const isLocal = host.includes('localhost') || host.includes('127.0.0.1')
+  const baseUrl = isLocal
+    ? (process.env.NEXT_PUBLIC_APP_URL || `http://${host}`)
+    : `${proto}://${host.split(':')[0]}`
+
+  const cfg = await OrgConfig.findOne({ orgId })
+  const paymentConfigured = !!(cfg?.razorpayKeyId && cfg?.razorpaySecret)
+
   return res.status(200).json({
     token: invoice.paymentToken,
     url: `${baseUrl}/pay/${invoice.paymentToken}`,
+    paymentConfigured,
   })
 }

@@ -17,6 +17,8 @@ const OrgConfigSchema = new mongoose.Schema({
   ifscCode:        { type: String, default: '' },
   bankBranch:      { type: String, default: '' },
   upiId:           { type: String, default: '' },   // optional
+  razorpayKeyId:   { type: String, default: '' },
+  razorpaySecret:  { type: String, default: '' },
   paymentInstructions: { type: String, default: '' },
   invoicePrefix:   { type: String, default: 'INV' },
   poPrefix:        { type: String, default: 'PO' },

@@ -283,7 +283,29 @@ export default function InvoiceList({ org, headers, toast, onEdit, readOnly = fa
       if (!r.ok) throw new Error(d.error)
       const amt = new Intl.NumberFormat('en-IN', { style:'currency', currency: inv.currency||'INR', maximumFractionDigits:0 }).format(inv.total || 0)
       const custName = inv.customer?.name || 'there'
-      const msg = `Hi ${custName},\n\nPlease find your invoice *${inv.invoiceNumber}* for *${amt}*.\n\nClick the link below to view and pay securely:\n${d.url}\n\nThank you for your business!`
+
+      let msg
+      if (d.paymentConfigured) {
+        // Payment gateway configured — include pay link
+        msg = `Hi ${custName},
+
+Please find your invoice *${inv.invoiceNumber}* for *${amt}*.
+
+Click the link below to view and pay securely:
+${d.url}
+
+Thank you for your business!`
+      } else {
+        // No payment gateway — send invoice details only, no link
+        msg = `Hi ${custName},
+
+This is a reminder for invoice *${inv.invoiceNumber}* amounting to *${amt}*.
+
+Kindly arrange the payment at your earliest convenience.
+
+Thank you for your business!`
+      }
+
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
     } catch (err) {
       toast(err.message || 'Failed to generate WhatsApp link', 'error')

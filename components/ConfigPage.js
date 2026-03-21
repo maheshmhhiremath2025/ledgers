@@ -9,6 +9,7 @@ const TABS = [
   { id: 'bank',     label: 'Bank',       icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
   { id: 'defaults', label: 'Defaults',   icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
   { id: 'email',    label: 'Email',      icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
+  { id: 'payments',  label: 'Payments',   icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
 ]
 
 const inputStyle = {
@@ -129,6 +130,10 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
   const [defaultNotes,    setDefaultNotes]    = useState('Thank you for your business!')
   const [footerText,      setFooterText]      = useState('This is a computer-generated invoice.')
 
+  // Payments / Razorpay
+  const [razorpayKeyId,  setRazorpayKeyId]  = useState('')
+  const [razorpaySecret, setRazorpaySecret] = useState('')
+
   // Email / SMTP
   const [smtpHost,    setSmtpHost]    = useState('')
   const [smtpPort,    setSmtpPort]    = useState('587')
@@ -175,6 +180,8 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
         setDefaultTerms(d.defaultTerms || 'Payment due within 30 days.')
         setDefaultNotes(d.defaultNotes || 'Thank you for your business!')
         setFooterText(d.footerText || 'This is a computer-generated invoice.')
+        setRazorpayKeyId(d.razorpayKeyId || '')
+        setRazorpaySecret(d.razorpaySecret || '')
         setSmtpHost(d.smtpHost || '')
         setSmtpPort(String(d.smtpPort || 587))
         setSmtpUser(d.smtpUser || '')
@@ -197,6 +204,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
     bankName, bankBranch, accountName, accountNumber, ifscCode, upiId, paymentInstructions,
     invoicePrefix, poPrefix, defaultCurrency, defaultTax: parseFloat(defaultTax) || 0,
     defaultTerms, defaultNotes, footerText,
+    razorpayKeyId, razorpaySecret,
     smtpHost, smtpPort: parseInt(smtpPort)||587, smtpUser, smtpPass, smtpFrom, smtpSecure,
     emailSubject, emailBody,
   })
@@ -621,6 +629,45 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
                 </div>
               )}
 
+              <SaveBar />
+            </Card>
+          )}
+
+          {/* ── PAYMENTS TAB ── */}
+          {tab === 'payments' && (
+            <Card style={{ padding: 20 }}>
+              <SectionTitle>Razorpay Payment Gateway</SectionTitle>
+              <div style={{ marginBottom: 16, padding: '12px 14px', background: 'var(--accent-dim)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6 }}>
+                💳 Add your Razorpay API keys so customers can pay invoices directly into <strong>your account</strong> via the WhatsApp payment portal link.
+                Get your keys from <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-2)' }}>Razorpay Dashboard → Settings → API Keys</a>.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginBottom: 16 }}>
+                <div>
+                  <label style={labelStyle}>Razorpay Key ID</label>
+                  <input value={razorpayKeyId} onChange={e => { setRazorpayKeyId(e.target.value); setDirty(true) }}
+                    placeholder="rzp_live_xxxxxxxxxxxx" style={inputStyle} disabled={readOnly}
+                    onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                    onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+                  <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>Starts with rzp_live_ (production) or rzp_test_ (testing)</div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Razorpay Key Secret</label>
+                  <input type="password" value={razorpaySecret} onChange={e => { setRazorpaySecret(e.target.value); setDirty(true) }}
+                    placeholder="••••••••••••••••••••••••" style={inputStyle} disabled={readOnly}
+                    onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                    onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+                  <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>Keep this secret — never share it publicly</div>
+                </div>
+              </div>
+              {razorpayKeyId ? (
+                <div style={{ padding: '10px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--green-text)', marginBottom: 16 }}>
+                  ✓ Payment gateway configured — customers will pay directly to your Razorpay account
+                </div>
+              ) : (
+                <div style={{ padding: '10px 14px', background: 'var(--amber-dim)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--amber-text)', marginBottom: 16 }}>
+                  ⚠ No payment gateway configured — the Pay Now button will be hidden on your invoice portal
+                </div>
+              )}
               <SaveBar />
             </Card>
           )}
