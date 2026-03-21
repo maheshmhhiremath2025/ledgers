@@ -2,11 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverComponentsExternalPackages: ['mongoose', '@sparticuz/chromium', 'puppeteer-core'],
+    serverComponentsExternalPackages: ['mongoose', 'pdfkit'],
   },
-  // Allow images from any domain for logo uploads
   images: {
     domains: [],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // pdfkit needs these Node.js built-ins to not be bundled
+      config.externals = [...(config.externals || []), 'pdfkit']
+    }
+    return config
   },
 }
 

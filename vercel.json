@@ -7,6 +7,10 @@
   "functions": {
     "pages/api/**/*.js": {
       "maxDuration": 30
+    },
+    "pages/api/invoices/send-email.js": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "crons": [

@@ -2,7 +2,7 @@ import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import OrgConfig from '../../../models/OrgConfig'
 import nodemailer from 'nodemailer'
-import PDFDocument from 'pdfkit'
+// pdfkit loaded dynamically for Vercel compatibility
 
 function fillTemplate(template, vars) {
   return Object.entries(vars).reduce((s, [k, v]) => s.replace(new RegExp(`{{${k}}}`, 'g'), v || ''), template)
@@ -22,6 +22,7 @@ function fmtDate(d) {
 async function generatePDF(inv, cfg) {
   return new Promise(async (resolve, reject) => {
     try {
+      const { default: PDFDocument } = await import('pdfkit')
       const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true })
       const chunks = []
       doc.on('data', c => chunks.push(c))
