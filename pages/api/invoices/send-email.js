@@ -45,34 +45,64 @@ async function generatePDF(inv, cfg) {
       const CW = W - 80 // content width
       let y = 40
 
-      // ── LOGO ──────────────────────────────────────────────────────────────
+      // ── LOGO (left) + INVOICE title (right) — same row ──────────────────
       const logoB64 = cfg.logoUrl || ''
       if (logoB64 && logoB64.startsWith('data:image')) {
         try {
-          const parts = logoB64.split(',')
-          const buf = Buffer.from(parts[1], 'base64')
-          doc.image(buf, L, y, { fit: [120, 40], align: 'left' })
+          const buf = Buffer.from(logoB64.split(',')[1], 'base64')
+          doc.image(buf, L, y, { fit: [130, 44], align: 'left' })
         } catch {}
       }
-
-      // ── INVOICE title (right side) ──────────────────────────────────────
       doc.font('Bold').fontSize(22).fillColor(ACCENT)
         .text('INVOICE', L, y, { align: 'right', width: CW })
       doc.font('Regular').fontSize(10).fillColor(MUTED)
         .text(inv.invoiceNumber || '', L, y + 26, { align: 'right', width: CW })
       doc.font('Regular').fontSize(9).fillColor('#185FA5')
         .text((inv.status || '').toUpperCase(), L, y + 40, { align: 'right', width: CW })
-      y += 56
+      y += 52  // below logo/title block
 
       // ── Accent line ─────────────────────────────────────────────────────
       doc.moveTo(L, y).lineTo(R, y).lineWidth(2).strokeColor(ACCENT).stroke()
-      y += 6
+      y += 8
 
-      // ── Business info ───────────────────────────────────────────────────
-      const bizParts = [cfg.businessName, cfg.businessAddress, cfg.businessEmail, cfg.businessPhone, cfg.gstin ? `GST: ${cfg.gstin}` : ''].filter(Boolean)
-      doc.font('Regular').fontSize(8).fillColor(MUTED)
-        .text(bizParts.join('  ·  '), L, y, { width: CW })
-      y += 18
+      // ── Business info BELOW accent line — address, contact, badges ───────
+      if (cfg.businessAddress) {
+        doc.font('Regular').fontSize(8).fillColor(MUTED)
+          .text(cfg.businessAddress.replace(/\n/g, '  '), L, y, { width: CW / 2 })
+        y += 11
+      }
+      const contactParts = [cfg.businessEmail, cfg.businessPhone].filter(Boolean)
+      if (contactParts.length) {
+        doc.font('Regular').fontSize(8).fillColor(MUTED)
+          .text(contactParts.join('  |  '), L, y, { width: CW / 2 })
+        y += 11
+      }
+      // Auto-size GSTIN and PAN badges based on text length
+      const charW = 5.2  // approx px per char at fontSize 7.5 bold
+      if (cfg.gstin) {
+        const gstText = 'GSTIN: ' + cfg.gstin
+        const gstW = Math.max(72, gstText.length * charW + 10)
+        doc.rect(L, y, gstW, 14).fillAndStroke('#1E2140', '#1E2140')
+        doc.font('Bold').fontSize(7.5).fillColor('#fff')
+          .text(gstText, L + 5, y + 3.5, { width: gstW - 8, lineBreak: false })
+        if (cfg.pan) {
+          const panText = 'PAN: ' + cfg.pan
+          const panW = Math.max(60, panText.length * charW + 10)
+          const panX = L + gstW + 5
+          doc.rect(panX, y, panW, 14).fillAndStroke('#FEF3C7', '#F59E0B')
+          doc.font('Bold').fontSize(7.5).fillColor('#92400E')
+            .text(panText, panX + 5, y + 3.5, { width: panW - 8, lineBreak: false })
+        }
+        y += 22
+      } else if (cfg.pan) {
+        const panText = 'PAN: ' + cfg.pan
+        const panW = Math.max(60, panText.length * charW + 10)
+        doc.rect(L, y, panW, 14).fillAndStroke('#FEF3C7', '#F59E0B')
+        doc.font('Bold').fontSize(7.5).fillColor('#92400E')
+          .text(panText, L + 5, y + 3.5, { width: panW - 8, lineBreak: false })
+        y += 22
+      }
+      y += 6
 
       // ── BILL TO / INVOICE DETAILS ─────────────────────────────────────
       const colMid = L + CW / 2 + 4

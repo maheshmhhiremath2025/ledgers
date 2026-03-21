@@ -53,13 +53,36 @@ async function generatePDF(inv, cfg) {
       doc.font('Regular').fontSize(9).fillColor('#185FA5').text((inv.status || '').toUpperCase(), L, y + 40, { align: 'right', width: CW })
       y += 56
 
+      // ── Business info — address, contact, GSTIN/PAN badges ──
+      let biy = y
+      if (cfg.businessAddress) {
+        doc.font('Regular').fontSize(8).fillColor(MUTED)
+          .text(cfg.businessAddress.replace(/\n/g, '  '), L, biy, { width: CW / 2 })
+        biy += 11
+      }
+      const contactParts = [cfg.businessEmail, cfg.businessPhone].filter(Boolean)
+      if (contactParts.length) {
+        doc.font('Regular').fontSize(8).fillColor(MUTED)
+          .text(contactParts.join('  |  '), L, biy, { width: CW / 2 })
+        biy += 11
+      }
+      if (cfg.gstin) {
+        doc.rect(L, biy, 70, 13).fillAndStroke('#1E2140', '#1E2140')
+        doc.font('Bold').fontSize(7.5).fillColor('#fff').text('GSTIN: ' + cfg.gstin, L + 4, biy + 3, { width: 62 })
+        if (cfg.pan) {
+          doc.rect(L + 74, biy, 55, 13).fillAndStroke('#FEF3C7', '#F59E0B')
+          doc.font('Bold').fontSize(7.5).fillColor('#92400E').text('PAN: ' + cfg.pan, L + 78, biy + 3, { width: 47 })
+        }
+        biy += 18
+      } else if (cfg.pan) {
+        doc.rect(L, biy, 55, 13).fillAndStroke('#FEF3C7', '#F59E0B')
+        doc.font('Bold').fontSize(7.5).fillColor('#92400E').text('PAN: ' + cfg.pan, L + 4, biy + 3, { width: 47 })
+        biy += 18
+      }
+      y = Math.max(y + 56, biy + 6)
+
       doc.moveTo(L, y).lineTo(R, y).lineWidth(2).strokeColor(ACCENT).stroke()
       y += 6
-
-      // ── Business info ──
-      const bizParts = [cfg.businessName, cfg.businessAddress, cfg.businessEmail, cfg.businessPhone, cfg.gstin ? `GST: ${cfg.gstin}` : ''].filter(Boolean)
-      doc.font('Regular').fontSize(8).fillColor(MUTED).text(bizParts.join('  ·  '), L, y, { width: CW })
-      y += 18
 
       // ── BILL TO / INVOICE DETAILS ──
       const colMid = L + CW / 2 + 4
