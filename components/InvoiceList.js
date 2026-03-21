@@ -52,6 +52,28 @@ function PDFDropdown({ invoiceId, invoiceNumber, orgId, anchorEl, onClose, onOpe
         const container = document.createElement('div')
         container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:white;'
         container.innerHTML = html
+        // Add class so dark-template CSS overrides kick in
+        container.classList.add('html2pdf-render')
+        // Force white bg on body inside container
+        const innerBody = container.querySelector('.page')
+        if (innerBody) {
+          innerBody.style.background = '#ffffff'
+          innerBody.style.color = '#1a1a1a'
+          // Fix dark pboxes
+          innerBody.querySelectorAll('.pbox, .bank-box, .note-box, .tot-wrap').forEach(el => {
+            const bg = window.getComputedStyle(el).backgroundColor
+            // If background is very dark, override it
+            if (bg && (bg.includes('30,') || bg.includes('14,') || bg.includes('13,'))) {
+              el.style.background = '#f5f5f5'
+              el.style.color = '#1a1a1a'
+            }
+          })
+          // Fix dark text colors
+          innerBody.querySelectorAll('.td, .pname, .pdetail, .mgrid .mv').forEach(el => {
+            const col = el.style.color
+            if (!col || col === 'rgb(236, 238, 248)') el.style.color = '#1a1a1a'
+          })
+        }
         document.body.appendChild(container)
 
         // Generate and download PDF
@@ -59,7 +81,7 @@ function PDFDropdown({ invoiceId, invoiceNumber, orgId, anchorEl, onClose, onOpe
           margin: 0,
           filename: `${invoiceNumber}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         }).from(container.querySelector('.page') || container).save()
 
@@ -337,7 +359,7 @@ Thank you for your business!`
 
   const PILLS = [
     { label: 'Due',     filter: 'Draft',   color: 'var(--amber-text)' },
-    { label: 'Sent',    filter: 'Sent',    color: 'var(--blue-text)' },
+    { label: 'Due',     filter: 'Due',     color: 'var(--amber-text)' },
     { label: 'Paid',    filter: 'Paid',    color: 'var(--green-text)' },
     { label: 'Overdue', filter: 'Overdue', color: 'var(--red-text)' },
   ]
@@ -452,7 +474,7 @@ Thank you for your business!`
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-2)', fontSize: 12 }}>{fmtDate(inv.issueDate)}</td>
                       <td style={{ padding: '12px 14px', fontSize: 12, color: inv.status==='Overdue'?'var(--red-text)':'var(--text-3)' }}>{fmtDate(inv.dueDate)}</td>
-                      <td style={{ padding: '12px 14px' }}><Badge status={inv.status==='Draft'?'Due':inv.status} /></td>
+                      <td style={{ padding: '12px 14px' }}><Badge status={inv.status==='Draft'||inv.status==='Sent'?'Due':inv.status} /></td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text)' }}>{fmt(inv.total)}</td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'var(--mono)', fontSize: 12, color: (inv.paidAmount||0)>=(inv.total||0)?'var(--green-text)':(inv.paidAmount||0)>0?'var(--amber-text)':'var(--text-4)' }}>
                         {fmt(inv.paidAmount||0)}

@@ -18,12 +18,65 @@ function PDFDropdown({ poId, poNumber, orgId, anchorEl, onClose, onOpen }) {
     return () => document.removeEventListener('mousedown', h)
   }, [anchorEl])
 
-  const openPDF = (mode) => {
+  const openPDF = async (mode) => {
     onClose()
     const params = new URLSearchParams({ orgId })
-    if (mode === 'print') params.set('print', '1')
-    window.open(`/api/purchase-orders/${poId}/pdf?${params}`, '_blank')
-    onOpen(mode === 'print' ? 'Opening print dialog…' : 'PDF opened — Ctrl+P to save', 'info')
+
+    if (mode === 'print') {
+      params.set('print', '1')
+      window.open(`/api/purchase-orders/${poId}/pdf?${params}`, '_blank')
+      onOpen('Opening print dialog…', 'info')
+    } else if (mode === 'download') {
+      try {
+        onOpen('Generating PDF…', 'info')
+        const res = await fetch(`/api/purchase-orders/${poId}/pdf?${params}`)
+        if (!res.ok) throw new Error('Failed to fetch PO')
+        const html = await res.text()
+
+        await new Promise((resolve, reject) => {
+          if (window.html2pdf) return resolve()
+          const s = document.createElement('script')
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+          s.onload = resolve; s.onerror = reject
+          document.head.appendChild(s)
+        })
+
+        const container = document.createElement('div')
+        container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:white;'
+        container.innerHTML = html
+        // Fix dark backgrounds for Bold template
+        const page = container.querySelector('.page')
+        if (page) {
+          page.style.background = '#ffffff'
+          page.style.color = '#1a1a1a'
+          page.querySelectorAll('.pbox,.bank-box,.note-box,.tot-wrap').forEach(el => {
+            const bg = window.getComputedStyle ? window.getComputedStyle(el).backgroundColor : ''
+            if (bg && (bg.includes('30,') || bg.includes('14,') || bg.includes('13,'))) {
+              el.style.background = '#f5f5f5'
+              el.style.color = '#1a1a1a'
+            }
+          })
+        }
+        document.body.appendChild(container)
+
+        await window.html2pdf().set({
+          margin: 0,
+          filename: `${poNumber}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        }).from(container.querySelector('.page') || container).save()
+
+        document.body.removeChild(container)
+        onOpen('PDF downloaded!', 'success')
+      } catch(e) {
+        console.error(e)
+        onOpen('Download failed', 'error')
+      }
+    } else {
+      window.open(`/api/purchase-orders/${poId}/pdf?${params}`, '_blank')
+      onOpen('PDF opened in new tab', 'info')
+    }
   }
 
   if (typeof window === 'undefined') return null
@@ -39,9 +92,9 @@ function PDFDropdown({ poId, poNumber, orgId, anchorEl, onClose, onOpen }) {
         {poNumber}
       </div>
       {[
-        { mode: 'view',  icon: '👁', label: 'View PDF',    sub: 'Opens in new tab' },
-        { mode: 'save',  icon: '💾', label: 'Save as PDF', sub: 'Ctrl+P → Save as PDF' },
-        { mode: 'print', icon: '🖨', label: 'Print',       sub: 'Opens print dialog' },
+        { mode: 'view',     icon: '👁', label: 'View PDF',      sub: 'Opens in new tab' },
+        { mode: 'download', icon: '⬇️', label: 'Download PDF',  sub: 'Direct PDF download' },
+        { mode: 'print',    icon: '🖨', label: 'Print',         sub: 'Opens print dialog' },
       ].map(({ mode, icon, label, sub }) => (
         <button key={mode} onClick={() => openPDF(mode)}
           style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#9EA3BF', fontFamily: 'inherit' }}
@@ -178,7 +231,7 @@ export default function POList({ org, headers, toast, onEdit, readOnly = false }
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-2)', fontSize: 12 }}>{fmtDate(po.issueDate)}</td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-3)', fontSize: 12 }}>{fmtDate(po.expectedDate)}</td>
-                      <td style={{ padding: '12px 14px' }}><Badge status={po.status} /></td>
+                      <td style={{ padding: '12px 14px' }}><Badge status={po.status==='Sent'?'Draft':po.status} /></td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text)' }}>{fmt(po.total)}</td>
                       <td style={{ padding: '12px 14px' }} onClick={e => e.stopPropagation()}>
                         {readOnly ? (

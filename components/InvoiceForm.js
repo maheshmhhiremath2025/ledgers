@@ -320,7 +320,7 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <F label="Invoice Number" value={invNumber} onChange={setInvNumber} placeholder="INV-0001" span={2} />
             <Sel label="Status" value={status === 'Draft' ? 'Due' : status} onChange={v => setStatus(v === 'Due' ? 'Draft' : v)}
-              options={['Due','Sent','Paid','Overdue','Cancelled']} />
+              options={['Due','Paid','Overdue','Cancelled']} />
             <Sel label="Currency" value={currency} onChange={setCurrency} options={['INR','USD','EUR','GBP','AED','SGD']} />
             <F label="Issue Date *" value={issueDate} onChange={setIssueDate} type="date" />
             <F label="Due Date" value={dueDate} onChange={setDueDate} type="date" />

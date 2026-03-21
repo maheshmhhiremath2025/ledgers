@@ -262,7 +262,7 @@ export default function POForm({ org, headers, toast, editItem, onClose }) {
           <SectionTitle>Order Details</SectionTitle>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <F label="PO Number" value={poNumber} onChange={setPoNumber} placeholder="PO-0001" span={2} />
-            <Sel label="Status" value={status} onChange={setStatus} options={['Draft','Sent','Paid','Partial','Cancelled']} />
+            <Sel label="Status" value={status} onChange={setStatus} options={['Draft','Paid','Partial','Received','Cancelled']} />
             <Sel label="Currency" value={currency} onChange={setCurrency} options={['INR','USD','EUR','GBP','AED','SGD']} />
             <F label="Issue Date *" value={issueDate} onChange={setIssueDate} type="date" />
             <F label="Expected Delivery" value={expectedDate} onChange={setExpectedDate} type="date" />

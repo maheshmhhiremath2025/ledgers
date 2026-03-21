@@ -70,8 +70,9 @@ const TEMPLATES = {
 function buildHTML(inv, cfg, t) {
   const fmt = n => '₹' + Number(n||0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
   const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
-  const statusColor = { Draft:'#888', Due:'#BA7517', Sent:'#185FA5', Paid:'#3B6D11', Overdue:'#A32D2D', Cancelled:'#888' }
-  const sc = statusColor[inv.status] || '#888'
+  const statusColor = { Draft:'#BA7517', Due:'#BA7517', Sent:'#BA7517', Paid:'#3B6D11', Overdue:'#A32D2D', Cancelled:'#888' }
+  const displayStatus = (inv.status==='Sent'||inv.status==='Draft') ? 'Due' : (inv.status||'Due')
+  const sc = statusColor[displayStatus] || '#888'
   const dueBalance = (inv.total||0) - (inv.paidAmount||0)
   const dark = t.dark || false
 
@@ -167,6 +168,11 @@ function buildHTML(inv, cfg, t) {
   .footer-brand{font-weight:700;color:${t.footerColor}}
   @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:28px 36px}}
   @page { size: A4; margin: 0; }
+  /* html2pdf override: force readable colors in dark templates */
+  .html2pdf-render body { background: #fff !important; color: #1a1a1a !important; }
+  .html2pdf-render .pbox, .html2pdf-render .bank-box, .html2pdf-render .note-box,
+  .html2pdf-render .tot-wrap { background: #f5f5f5 !important; color: #1a1a1a !important; }
+  .html2pdf-render .td, .html2pdf-render .th { color: inherit !important; }
 </style></head><body>
 <div class="page">
   <div class="hdr">
@@ -174,7 +180,7 @@ function buildHTML(inv, cfg, t) {
     <div class="inv-right">
       <div class="inv-title">INVOICE</div>
       <div style="font-size:13px;font-weight:600;color:${mutedColor};margin-top:3px">${inv.invoiceNumber}</div>
-      <div><span class="status-pill">${inv.status==='Draft'?'Due':inv.status}</span></div>
+      <div><span class="status-pill">${displayStatus}</span></div>
     </div>
   </div>
 

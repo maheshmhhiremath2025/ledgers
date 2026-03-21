@@ -5,8 +5,9 @@ import OrgConfig from '../../../../models/OrgConfig'
 function buildPOHTML(po, cfg) {
   const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
-  const statusColor = { Draft:'#888', Sent:'#185FA5', Received:'#3B6D11', Partial:'#BA7517', Cancelled:'#A32D2D' }
-  const sc = statusColor[po.status] || '#888'
+  const statusColor = { Draft:'#888', Sent:'#888', Received:'#3B6D11', Partial:'#BA7517', Cancelled:'#A32D2D' }
+  const displayStatus = po.status==='Sent' ? 'Draft' : (po.status||'Draft')
+  const sc = statusColor[displayStatus] || '#888'
 
   const bizName    = cfg?.businessName    || 'Synergific'
   const bizEmail   = cfg?.businessEmail   || ''
@@ -114,7 +115,7 @@ function buildPOHTML(po, cfg) {
     <div class="po-right">
       <div class="po-title">PURCHASE ORDER</div>
       <div class="po-num">${po.poNumber}</div>
-      <div><span class="status-pill">${po.status}</span></div>
+      <div><span class="status-pill">${displayStatus}</span></div>
     </div>
   </div>
 
