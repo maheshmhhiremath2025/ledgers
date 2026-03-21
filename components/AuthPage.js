@@ -185,6 +185,10 @@ export default function AuthPage({ onAuth }) {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    if (mode === 'signup' && !orgId.trim()) {
+      setError('Organisation name is required.')
+      return
+    }
     setLoading(true)
     try {
       const body = mode === 'login'
@@ -362,11 +366,11 @@ export default function AuthPage({ onAuth }) {
 
               {mode === 'signup' && (
                 <div style={{ marginBottom: 20 }}>
-                  <label style={labelStyle}>Organization ID <span style={{ color: 'var(--text-4)', fontWeight: 400 }}>(optional)</span></label>
-                  <input name="orgId" autoComplete="organization" type="text" value={orgId} onChange={e => setOrgId(e.target.value)} placeholder="e.g. acme-corp" style={inputStyle}
+                  <label style={labelStyle}>Organisation Name <span style={{ color: '#e53e3e' }}>*</span></label>
+                  <input name="orgId" autoComplete="organization" type="text" value={orgId} onChange={e => setOrgId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g,'-'))} placeholder="e.g. acme-corp" required style={inputStyle}
                     onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)' }}
                     onBlur={e => { e.target.style.borderColor = 'var(--border-2)'; e.target.style.boxShadow = 'none' }} />
-                  <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 5, lineHeight: 1.5 }}>Auto-generated if blank. Share with teammates to collaborate.</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 5, lineHeight: 1.5 }}>Lowercase letters, numbers and hyphens only. Used to identify your workspace.</div>
                 </div>
               )}
 

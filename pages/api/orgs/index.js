@@ -12,8 +12,8 @@ function getAuth(req) {
   return session
 }
 
-const MAX_ORGS = 3 // Business plan max
-const ORG_LIMITS = { starter: 1, professional: 2, business: 3 }
+const MAX_ORGS = 2 // Business plan max
+const ORG_LIMITS = { starter: 1, professional: 1, business: 2 }
 
 export default async function handler(req, res) {
   await connectDB()
@@ -38,15 +38,16 @@ export default async function handler(req, res) {
         isCurrent:    String(u._id) === session.userId,
       }
     }))
-    return res.status(200).json({ orgs, maxOrgs: MAX_ORGS })
+    const userPlanLimit = ORG_LIMITS[currentUser.plan] || 1
+    return res.status(200).json({ orgs, maxOrgs: userPlanLimit })
   }
 
   // POST — create a new org
   if (req.method === 'POST') {
-    // ── Plan check: Business only ──
+    // ── Plan check: Business only for multi-org ──
     if (currentUser.plan !== 'business') {
       return res.status(403).json({
-        error: 'Multiple organisations require the Business plan (₹2,499/month)',
+        error: 'Multiple organisations require the Business plan.',
         upgrade: true,
         requiredPlan: 'business',
       })

@@ -8,11 +8,18 @@ export default async function handler(req, res) {
 
   const { name, email, password, orgId } = req.body
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' })
+  if (!orgId || !orgId.trim()) return res.status(400).json({ error: 'Organisation name is required' })
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' })
 
-  const cleanOrgId = orgId || email.split('@')[1].replace(/\./g, '-')
-  const existing = await User.findOne({ email, orgId: cleanOrgId })
-  if (existing) return res.status(400).json({ error: 'Email already registered for this organisation' })
+  const cleanOrgId = orgId.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+  if (!cleanOrgId) return res.status(400).json({ error: 'Invalid organisation name. Use letters, numbers and hyphens.' })
+  // Block if same email already exists anywhere
+  const existingEmail = await User.findOne({ email })
+  if (existingEmail) return res.status(400).json({ error: 'An account with this email already exists. Please log in.' })
+
+  // Block if orgId is already taken by anyone — orgs are private workspaces
+  const existingOrg = await User.findOne({ orgId: cleanOrgId })
+  if (existingOrg) return res.status(400).json({ error: 'This organisation ID is already taken. Please choose a different one.' })
 
   const user = new User({
     name,

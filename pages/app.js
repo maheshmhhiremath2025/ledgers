@@ -194,6 +194,59 @@ function NavGroups({ page, navigate, collapsed }) {
   )
 }
 
+
+function NewOrgModal({ newOrgId, setNewOrgId, bizName, setBizName, creating, setCreating, onClose, onSuccess, toast }) {
+  const doCreate = async () => {
+    if (!newOrgId.trim()) { toast('Organisation ID required', 'error'); return }
+    setCreating(true)
+    try {
+      const token = localStorage.getItem('sb_token')
+      const r = await fetch('/api/orgs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ orgId: newOrgId.trim(), businessName: bizName.trim() }),
+      })
+      const d = await r.json()
+      if (!r.ok) { toast(d.error || 'Failed', 'error'); setCreating(false); return }
+      toast('✓ Organisation created!')
+      onClose()
+      const sr = await fetch('/api/orgs/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ targetOrgId: d.orgId }),
+      })
+      const sd = await sr.json()
+      if (sd.token) localStorage.setItem('sb_token', sd.token)
+      onSuccess(sd.user)
+    } catch(e) { toast(e.message, 'error') }
+    setCreating(false)
+  }
+  const inp = { width:'100%', padding:'9px 12px', background:'var(--surface-2)', border:'1px solid var(--border-2)', borderRadius:'var(--r)', fontSize:13, color:'var(--text)', outline:'none', fontFamily:'var(--font)' }
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:99998, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+      <div style={{ background:'var(--surface)', border:'1px solid var(--border-2)', borderRadius:'var(--r-xl)', width:'100%', maxWidth:400, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
+        <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>New Organisation</div>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', fontSize:18, fontFamily:'var(--font)' }}>×</button>
+        </div>
+        <div style={{ padding:18, display:'flex', flexDirection:'column', gap:12 }}>
+          <div><label style={{ display:'block', fontSize:12, color:'var(--text-3)', marginBottom:5 }}>Business Name</label>
+            <input value={bizName} onChange={e=>setBizName(e.target.value)} placeholder="Acme Corp" style={inp} onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border-2)'}/></div>
+          <div><label style={{ display:'block', fontSize:12, color:'var(--text-3)', marginBottom:5 }}>Organisation ID *</label>
+            <input value={newOrgId} onChange={e=>setNewOrgId(e.target.value)} placeholder="acme-corp" style={inp} onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border-2)'}/></div>
+          <div style={{ fontSize:11, color:'var(--text-3)', padding:'8px 10px', background:'var(--accent-dim)', borderRadius:'var(--r)', border:'1px solid rgba(99,102,241,0.2)' }}>
+            🔒 Business plan · Max 2 organisations
+          </div>
+        </div>
+        <div style={{ padding:'12px 18px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8, background:'var(--bg-3)' }}>
+          <button onClick={onClose} style={{ padding:'8px 14px', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, color:'var(--text-2)', fontFamily:'var(--font)' }}>Cancel</button>
+          <button onClick={doCreate} disabled={creating} style={{ padding:'8px 16px', background:'var(--accent)', color:'#fff', border:'none', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'var(--font)' }}>{creating ? 'Creating…' : '+ Create'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [user, setUser]         = useState(null)
   const [authLoading, setAL]    = useState(true)
@@ -208,6 +261,9 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [orgs, setOrgs] = useState([])
   const [showNewOrg, setShowNewOrg] = useState(false)
+  const [newOrgId, setNewOrgId] = useState('')
+  const [newBizName, setNewBizName] = useState('')
+  const [newOrgCreating, setNewOrgCreating] = useState(false)
   const [switchingOrg, setSwitchingOrg] = useState(null)
   const userMenuRef = useRef()
 
@@ -465,13 +521,13 @@ export default function Home() {
                     </button>
                   ))}
                   {/* Add new org */}
-                  {user.plan === 'business' && orgs.length < 3 && (
+                  {user.plan === 'business' && orgs.length < 2 && (
                     <button onClick={() => { setUMO(false); setShowNewOrg(true) }}
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', color: 'var(--text-3)', fontSize: 12 }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--accent-2)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-3)' }}>
                       <div style={{ width: 24, height: 24, borderRadius: 6, border: '1.5px dashed var(--border-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>+</div>
-                      <span style={{ fontWeight: 500 }}>Add organisation <span style={{ fontSize: 10, color: 'var(--text-4)' }}>({orgs.length}/3)</span></span>
+                      <span style={{ fontWeight: 500 }}>Add organisation <span style={{ fontSize: 10, color: 'var(--text-4)' }}>({orgs.length}/2)</span></span>
                     </button>
                   )}
                   {user.plan !== 'business' && (
@@ -585,57 +641,13 @@ export default function Home() {
       {user && <ChatBot user={user} headers={headers} />}
 
       {/* New org modal */}
-      {showNewOrg && (() => {
-        const [newOrgId, setNewOrgId] = React.useState('')
-        const [bizName, setBizName]   = React.useState('')
-        const [creating, setCreating] = React.useState(false)
-        const doCreate = async () => {
-          if (!newOrgId.trim()) { toast('Organisation ID required', 'error'); return }
-          setCreating(true)
-          try {
-            const token = localStorage.getItem('sb_token')
-            const r = await fetch('/api/orgs', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
-              body: JSON.stringify({ orgId: newOrgId.trim(), businessName: bizName.trim() }),
-            })
-            const d = await r.json()
-            if (!r.ok) { toast(d.error || 'Failed', 'error'); setCreating(false); return }
-            toast(`✓ Organisation created!`)
-            setShowNewOrg(false)
-            // Switch to new org
-            const sr = await fetch('/api/orgs/switch', { method:'POST', headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})}, body:JSON.stringify({targetOrgId:d.orgId}) })
-            const sd = await sr.json()
-            if (sd.token) localStorage.setItem('sb_token', sd.token)
-            handleOrgSwitch(sd.user)
-          } catch(e) { toast(e.message,'error') }
-          setCreating(false)
-        }
-        const inp = { width:'100%', padding:'9px 12px', background:'var(--surface-2)', border:'1px solid var(--border-2)', borderRadius:'var(--r)', fontSize:13, color:'var(--text)', outline:'none', fontFamily:'var(--font)' }
-        return (
-          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:99998, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-            <div style={{ background:'var(--surface)', border:'1px solid var(--border-2)', borderRadius:'var(--r-xl)', width:'100%', maxWidth:400, boxShadow:'var(--shadow-lg)', overflow:'hidden' }}>
-              <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>New Organisation</div>
-                <button onClick={()=>setShowNewOrg(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', fontSize:18, fontFamily:'var(--font)' }}>×</button>
-              </div>
-              <div style={{ padding:18, display:'flex', flexDirection:'column', gap:12 }}>
-                <div><label style={{ display:'block', fontSize:12, color:'var(--text-3)', marginBottom:5 }}>Business Name</label>
-                  <input value={bizName} onChange={e=>setBizName(e.target.value)} placeholder="Acme Corp" style={inp} onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border-2)'}/></div>
-                <div><label style={{ display:'block', fontSize:12, color:'var(--text-3)', marginBottom:5 }}>Organisation ID *</label>
-                  <input value={newOrgId} onChange={e=>setNewOrgId(e.target.value)} placeholder="acme-corp" style={inp} onFocus={e=>e.target.style.borderColor='var(--accent)'} onBlur={e=>e.target.style.borderColor='var(--border-2)'}/></div>
-                <div style={{ fontSize:11, color:'var(--text-3)', padding:'8px 10px', background:'var(--accent-dim)', borderRadius:'var(--r)', border:'1px solid rgba(99,102,241,0.2)' }}>
-                  🔒 Business plan · Max 3 organisations
-                </div>
-              </div>
-              <div style={{ padding:'12px 18px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8, background:'var(--bg-3)' }}>
-                <button onClick={()=>setShowNewOrg(false)} style={{ padding:'8px 14px', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, color:'var(--text-2)', fontFamily:'var(--font)' }}>Cancel</button>
-                <button onClick={doCreate} disabled={creating} style={{ padding:'8px 16px', background:'var(--accent)', color:'#fff', border:'none', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'var(--font)' }}>{creating?'Creating…':'+ Create'}</button>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
+      {showNewOrg && <NewOrgModal
+        newOrgId={newOrgId} setNewOrgId={setNewOrgId}
+        bizName={newBizName} setBizName={setNewBizName}
+        creating={newOrgCreating} setCreating={setNewOrgCreating}
+        onClose={() => { setShowNewOrg(false); setNewOrgId(''); setNewBizName('') }}
+        onSuccess={handleOrgSwitch} toast={toast}
+      />}
 
       <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 99999, display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'none' }}>
         {toasts.map(t => (

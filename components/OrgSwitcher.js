@@ -25,7 +25,7 @@ function NewOrgModal({ headers, toast, onClose, onCreated }) {
       const d = await r.json()
       if (!r.ok) {
         if (d.upgrade) toast('Business plan required (₹2,499/mo) — upgrade in Billing to add more organisations', 'error')
-        else if (d.limitReached) toast('You have reached the maximum of 3 organisations on the Business plan', 'error')
+        else if (d.limitReached) toast('You have reached the maximum of 2 organisations on the Business plan', 'error')
         else toast(d.error || 'Failed', 'error')
         setSaving(false); return
       }
@@ -64,7 +64,7 @@ function NewOrgModal({ headers, toast, onClose, onCreated }) {
           </div>
           <div style={{ padding:'10px 12px', background:'var(--accent-dim)', border:'1px solid rgba(99,102,241,0.2)', borderRadius:'var(--r)', fontSize:12, color:'var(--accent-3)', display:'flex', flexDirection:'column', gap:4 }}>
             <div>💡 Each organisation has its own invoices, customers, ledger and settings.</div>
-            <div style={{ color:'var(--text-3)' }}>🔒 Requires <strong style={{color:'var(--accent-2)'}}>Business plan</strong> · Max <strong style={{color:'var(--accent-2)'}}>3 organisations</strong> per account</div>
+            <div style={{ color:'var(--text-3)' }}>🔒 Requires <strong style={{color:'var(--accent-2)'}}>Business plan</strong> · Max <strong style={{color:'var(--accent-2)'}}>2 organisations</strong> per account</div>
           </div>
         </div>
         <div style={{ padding:'14px 20px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8, background:'var(--bg-3)' }}>
@@ -79,7 +79,7 @@ function NewOrgModal({ headers, toast, onClose, onCreated }) {
 
 export default function OrgSwitcher({ user, headers, collapsed, onSwitch, toast }) {
   const [orgs,        setOrgs]      = useState([])
-  const [maxOrgs,     setMaxOrgs]   = useState(3)
+  const [maxOrgs,     setMaxOrgs]   = useState(2)
   const [open,        setOpen]      = useState(false)
   const [showNew,     setShowNew]   = useState(false)
   const [switching,   setSwitching] = useState(null)
@@ -89,7 +89,7 @@ export default function OrgSwitcher({ user, headers, collapsed, onSwitch, toast 
     if (!user) return
     fetch('/api/orgs', { headers })
       .then(r => r.json())
-      .then(d => { setOrgs(d.orgs || []); setMaxOrgs(d.maxOrgs || 3) })
+      .then(d => { setOrgs(d.orgs || []); setMaxOrgs(d.maxOrgs || 2) })
       .catch(() => {})
   }, [user?.orgId])
 
@@ -209,7 +209,7 @@ export default function OrgSwitcher({ user, headers, collapsed, onSwitch, toast 
                     <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 1 }}>{orgs.length}/{maxOrgs} orgs used</div>
                   )}
                   {atLimit && !notBusiness && (
-                    <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 1 }}>Max 3 organisations on Business plan</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 1 }}>Max 2 organisations on Business plan</div>
                   )}
                 </div>
               </button>
@@ -227,7 +227,7 @@ export default function OrgSwitcher({ user, headers, collapsed, onSwitch, toast 
             // Refresh org list
             const r = await fetch('/api/orgs', { headers })
             const d = await r.json()
-            setOrgs(d.orgs || []); setMaxOrgs(d.maxOrgs || 3)
+            setOrgs(d.orgs || []); setMaxOrgs(d.maxOrgs || 2)
             // Switch to new org
             await switchOrg(newOrgId)
           }} />
