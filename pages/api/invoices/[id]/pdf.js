@@ -84,13 +84,14 @@ function buildHTML(inv, cfg, t) {
 
   const rows = (inv.lineItems||[]).map((item,i) => {
     const lt = (item.qty||0)*(item.rate||0), ta = lt*(item.tax||0)/100
-    return `<tr>
-      <td class="td tc">${i+1}</td>
-      <td class="td">${item.description||''}</td>
-      <td class="td tr">${item.qty}</td>
-      <td class="td tr">${fmt(item.rate)}</td>
-      <td class="td tc">${item.tax||0}%</td>
-      <td class="td tr fw">${fmt(lt+ta)}</td>
+    const rowBg = dark ? (i%2===0 ? '#1E2140' : '#252848') : (i%2===0 ? '#fff' : t.billBg)
+    return `<tr style="background:${rowBg}">
+      <td class="td tc" style="color:${bodyColor}">${i+1}</td>
+      <td class="td" style="color:${bodyColor}">${item.description||''}</td>
+      <td class="td tr" style="color:${bodyColor}">${item.qty}</td>
+      <td class="td tr" style="color:${bodyColor}">${fmt(item.rate)}</td>
+      <td class="td tc" style="color:${bodyColor}">${item.tax||0}%</td>
+      <td class="td tr fw" style="color:${bodyColor}">${fmt(lt+ta)}</td>
     </tr>`
   }).join('')
 
@@ -165,6 +166,7 @@ function buildHTML(inv, cfg, t) {
   .footer{margin-top:18px;padding-top:12px;border-top:1px solid ${dark?'rgba(255,255,255,0.06)':'#eee'};display:flex;justify-content:space-between;align-items:center;font-size:10px;color:${faintColor}}
   .footer-brand{font-weight:700;color:${t.footerColor}}
   @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:28px 36px}}
+  @page { size: A4; margin: 0; }
 </style></head><body>
 <div class="page">
   <div class="hdr">
@@ -260,7 +262,14 @@ function buildHTML(inv, cfg, t) {
     <span><span class="footer-brand">${biz}</span> &middot; ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</span>
   </div>
 </div>
-<script>if(window.location.search.includes('print=1')){ window.onload=()=>window.print() }</script>
+<script>
+if(window.location.search.includes('print=1')){
+  window.onload = () => {
+    // Small delay to ensure images/fonts load
+    setTimeout(() => window.print(), 500)
+  }
+}
+</script>
 </body></html>`
 }
 
@@ -279,8 +288,13 @@ export default async function handler(req, res) {
     // Convert to plain objects so all fields including signatureImage are accessible
     const cfgObj = config ? (config.toObject ? config.toObject() : config) : {}
     console.log('[pdf] orgId:', orgId, 'signatureName:', cfgObj.signatureName, 'signatureImage len:', cfgObj.signatureImage?.length || 0)
+    const html = buildHTML(invoice, cfgObj, t)
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    return res.send(buildHTML(invoice, cfgObj, t))
+    // If download=1, add Content-Disposition so browser prompts save dialog
+    if (req.query.download === '1') {
+      res.setHeader('Content-Disposition', `attachment; filename="${invoice.invoiceNumber}.html"`)
+    }
+    return res.send(html)
   } catch (e) {
     return res.status(500).json({ error: e.message })
   }
