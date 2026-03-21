@@ -112,9 +112,15 @@ export default async function handler(req, res) {
     ])
 
     const cashAcc    = accounts.find(a => a.code === '1010')
-    const arAcc      = accounts.find(a => a.code === '1020')
     const incomeTotal = accounts.filter(a => a.type === 'Income').reduce((s, a) => s + (a.balance || 0), 0)
     const expTotal    = accounts.filter(a => a.type === 'Expense').reduce((s, a) => s + (a.balance || 0), 0)
+
+    // AR = sum of (total - paidAmount) for all unpaid invoices (Sent + Overdue)
+    const arResult = await Invoice.aggregate([
+      { $match: { orgId, status: { $in: ['Sent', 'Overdue'] } } },
+      { $group: { _id: null, ar: { $sum: { $subtract: ['$total', { $ifNull: ['$paidAmount', 0] }] } } } }
+    ])
+    const arBalance = arResult[0]?.ar || 0
 
     const summary = {
       invoices: {
@@ -135,7 +141,7 @@ export default async function handler(req, res) {
         collected:   fyInvoices[0]?.paid  || 0,
         netProfit:   incomeTotal - expTotal,
         cashBalance: cashAcc?.balance || 0,
-        arBalance:   arAcc?.balance   || 0,
+        arBalance,
       },
       chartData,
       topCustomers,
