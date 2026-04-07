@@ -12,6 +12,10 @@ const UserSchema = new mongoose.Schema({
   // Invite flow
   inviteToken:  { type: String, default: null, index: true },
   inviteExpiry: { type: Date,   default: null },
+
+  // Password reset
+  resetToken:   { type: String, default: null, index: true },
+  resetExpiry:  { type: Date,   default: null },
   invitedBy:    { type: String, default: null },
   status:       { type: String, enum: ['active', 'invited', 'disabled'], default: 'active' },
   razorpaySubId:     { type: String, default: null },

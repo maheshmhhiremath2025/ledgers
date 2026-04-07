@@ -413,6 +413,11 @@ export default function AuthPage({ onAuth }) {
                     {showPass ? 'Hide' : 'Show'}
                   </button>
                 </div>
+                {mode === 'login' && (
+                  <div style={{ textAlign: 'right', marginTop: 6 }}>
+                    <a href="/forgot" style={{ fontSize: 11, color: 'var(--accent-2)', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</a>
+                  </div>
+                )}
               </div>
 
               {mode === 'signup' && (
