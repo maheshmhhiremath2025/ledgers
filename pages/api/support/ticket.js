@@ -25,7 +25,6 @@ export default async function handler(req, res) {
       host: smtpHost, port: Number(smtpPort),
       secure: smtpPort == 465,
       auth: { user: smtpUser, pass: smtpPass },
-      tls: { rejectUnauthorized: false },
     })
 
     await transporter.sendMail({

@@ -4,6 +4,7 @@ import PurchaseOrder from '../../../models/PurchaseOrder'
 import Payment from '../../../models/Payment'
 import JournalEntry from '../../../models/JournalEntry'
 import { postInvoiceRaised, postPaymentReceived, postPaymentMade } from '../../../lib/journal'
+import { requireAuth } from '../../../lib/auth'
 
 async function autoCreateReceipt(orgId, invoice) {
   const count = await Payment.countDocuments({ orgId })
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
   await connectDB()
 
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
   const results = {
     invoiceJournals: 0,
     invoicePayments: 0,

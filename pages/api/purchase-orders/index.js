@@ -3,6 +3,7 @@ import PurchaseOrder from '../../../models/PurchaseOrder'
 import Vendor from '../../../models/Vendor'
 import { withPlan, checkLimit } from '../../../lib/plans'
 import { getSession, verifyToken } from '../../../lib/session'
+import { nextNumber, computeLineTotals } from '../../../lib/sequence'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -49,21 +50,14 @@ export default async function handler(req, res) {
 
       const data = req.body
       if (!data.poNumber) {
-        const count = await PurchaseOrder.countDocuments({ orgId })
-        data.poNumber = `PO-${String(count + 1).padStart(4, '0')}`
+        data.poNumber = await nextNumber(orgId, 'po', 'PO', 4)
       }
       data.orgId = orgId
-      let subtotal = 0, taxTotal = 0
-      data.lineItems = (data.lineItems || []).map(item => {
-        const amount = (item.qty || 0) * (item.rate || 0)
-        const taxAmt = (amount * (item.tax || 0)) / 100
-        subtotal += amount
-        taxTotal += taxAmt
-        return { ...item, amount }
-      })
-      data.subtotal = subtotal
-      data.taxTotal = taxTotal
-      data.total = subtotal + taxTotal
+      const totals = computeLineTotals(data.lineItems)
+      data.lineItems = totals.items
+      data.subtotal  = totals.subtotal
+      data.taxTotal  = totals.taxTotal
+      data.total     = totals.total
       const order = await PurchaseOrder.create(data)
 
       // Auto-create or update vendor from PO

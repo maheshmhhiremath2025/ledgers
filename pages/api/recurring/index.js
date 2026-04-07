@@ -1,5 +1,6 @@
 import { connectDB } from '../../../lib/mongodb'
 import RecurringInvoice from '../../../models/RecurringInvoice'
+import { requireAuth } from '../../../lib/auth'
 
 function nextDate(from, frequency) {
   const d = new Date(from)
@@ -14,7 +15,7 @@ function nextDate(from, frequency) {
 
 export default async function handler(req, res) {
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
     try {

@@ -4,11 +4,12 @@ import PurchaseOrder from '../../../models/PurchaseOrder'
 import Payment from '../../../models/Payment'
 import Account from '../../../models/Account'
 import Expense from '../../../models/Expense'
+import { requireAuth } from '../../../lib/auth'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   try {
     const now = new Date()

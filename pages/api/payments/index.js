@@ -2,10 +2,12 @@ import { connectDB } from '../../../lib/mongodb'
 import Payment from '../../../models/Payment'
 import Invoice from '../../../models/Invoice'
 import { postPaymentReceived, postPaymentMade } from '../../../lib/journal'
+import { requireAuth } from '../../../lib/auth'
+import { nextNumber } from '../../../lib/sequence'
 
 export default async function handler(req, res) {
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
     try {
@@ -29,9 +31,9 @@ export default async function handler(req, res) {
     try {
       const data = { ...req.body, orgId }
       if (!data.paymentNumber) {
-        const count = await Payment.countDocuments({ orgId })
         const prefix = data.type === 'Receipt' ? 'RCP' : 'PAY'
-        data.paymentNumber = `${prefix}-${String(count + 1).padStart(4, '0')}`
+        const kind   = data.type === 'Receipt' ? 'receipt' : 'payment'
+        data.paymentNumber = await nextNumber(orgId, kind, prefix, 4)
       }
       const payment = await Payment.create(data)
 

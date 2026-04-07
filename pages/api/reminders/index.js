@@ -2,6 +2,7 @@ import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import OrgConfig from '../../../models/OrgConfig'
 import nodemailer from 'nodemailer'
+import { requireAuth } from '../../../lib/auth'
 
 const fmt = n => '₹' + Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2})
 
@@ -24,7 +25,6 @@ async function sendReminder(invoice, cfg, daysOverdue) {
     host: smtpHost, port: cfg?.smtpPort||587,
     secure: cfg?.smtpSecure||false,
     auth: { user: smtpUser, pass: smtpPass },
-    tls: { rejectUnauthorized: false },
   })
 
   const portalLink = invoice.paymentToken
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     // Return overdue invoices summary
     await connectDB()
-    const orgId = req.headers['x-org-id'] || 'default'
+    const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
     const now = new Date()
     const overdue = await Invoice.find({
       orgId,
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     await connectDB()
-    const orgId = req.headers['x-org-id'] || 'default'
+    const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
     const { invoiceId, sendToAll } = req.body
 
     const cfg = await OrgConfig.findOne({ orgId })

@@ -1,10 +1,11 @@
 import { connectDB } from '../../../lib/mongodb'
 import OrgConfig from '../../../models/OrgConfig'
+import { requireAuth } from '../../../lib/auth'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   try {
     const { signatureImage } = req.body

@@ -1,12 +1,13 @@
 import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import OrgConfig from '../../../models/OrgConfig'
+import { requireAuth } from '../../../lib/auth'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   await connectDB()
 
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
   const { month, year } = req.query // e.g. month=3&year=2026
 
   if (!month || !year) return res.status(400).json({ error: 'month and year required' })

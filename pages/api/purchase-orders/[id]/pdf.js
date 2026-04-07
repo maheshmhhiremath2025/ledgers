@@ -1,6 +1,7 @@
 import { connectDB } from '../../../../lib/mongodb'
 import PurchaseOrder from '../../../../models/PurchaseOrder'
 import OrgConfig from '../../../../models/OrgConfig'
+import { requireAuth } from '../../../../lib/auth'
 
 function buildPOHTML(po, cfg) {
   const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
@@ -194,7 +195,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   try {
     await connectDB()
-    const orgId = req.headers['x-org-id'] || req.query.orgId || 'default'
+    const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
     const [po, config] = await Promise.all([
       PurchaseOrder.findById(req.query.id),
       OrgConfig.findOne({ orgId }),

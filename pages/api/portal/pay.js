@@ -4,6 +4,7 @@ import Invoice from '../../../models/Invoice'
 import Payment from '../../../models/Payment'
 import OrgConfig from '../../../models/OrgConfig'
 import { postPaymentReceived, postInvoiceRaised } from '../../../lib/journal'
+import { nextNumber } from '../../../lib/sequence'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -11,10 +12,22 @@ export default async function handler(req, res) {
 
   if (!token) return res.status(400).json({ error: 'Token required' })
 
+  // Token is considered expired 60 days after due date (or 90 days after issue if no due date)
+  const isTokenExpired = (invoice) => {
+    if (!invoice) return false
+    const ref = invoice.dueDate
+      ? new Date(new Date(invoice.dueDate).getTime() + 60 * 24 * 60 * 60 * 1000)
+      : invoice.issueDate
+        ? new Date(new Date(invoice.issueDate).getTime() + 90 * 24 * 60 * 60 * 1000)
+        : null
+    return ref ? new Date() > ref : false
+  }
+
   // GET — return invoice + org info for the portal page
   if (req.method === 'GET') {
     const invoice = await Invoice.findOne({ paymentToken: token })
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+    if (isTokenExpired(invoice)) return res.status(410).json({ error: 'This payment link has expired. Please contact the business to request a new one.' })
     const cfg = await OrgConfig.findOne({ orgId: invoice.orgId })
 
     return res.status(200).json({
@@ -50,6 +63,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const invoice = await Invoice.findOne({ paymentToken: token })
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+    if (isTokenExpired(invoice)) return res.status(410).json({ error: 'This payment link has expired.' })
     if (invoice.status === 'Paid') return res.status(400).json({ error: 'Invoice already paid' })
 
     const { action } = req.body
@@ -124,10 +138,9 @@ export default async function handler(req, res) {
       if (paidNow > balance + 0.01) paidNow = balance
 
       // Record payment
-      const count = await Payment.countDocuments({ orgId: invoice.orgId })
       const payment = await Payment.create({
         orgId: invoice.orgId,
-        paymentNumber: `RCP-${String(count + 1).padStart(4, '0')}`,
+        paymentNumber: await nextNumber(invoice.orgId, 'receipt', 'RCP', 4),
         type: 'Receipt',
         paymentDate: new Date(),
         amount: paidNow,

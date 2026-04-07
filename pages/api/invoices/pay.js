@@ -3,6 +3,7 @@ import Invoice from '../../../models/Invoice'
 import Payment from '../../../models/Payment'
 import { postPaymentReceived, postInvoiceRaised } from '../../../lib/journal'
 import { getSession, verifyToken } from '../../../lib/session'
+import { nextNumber } from '../../../lib/sequence'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -31,10 +32,9 @@ export default async function handler(req, res) {
 
   try {
     // Create payment record
-    const count = await Payment.countDocuments({ orgId })
     const payment = await Payment.create({
       orgId,
-      paymentNumber: `RCP-${String(count + 1).padStart(4, '0')}`,
+      paymentNumber: await nextNumber(orgId, 'receipt', 'RCP', 4),
       type: 'Receipt',
       paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
       amount: paying,

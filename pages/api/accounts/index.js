@@ -1,5 +1,6 @@
 import { connectDB } from '../../../lib/mongodb'
 import Account from '../../../models/Account'
+import { requireAuth } from '../../../lib/auth'
 
 const DEFAULT_ACCOUNTS = [
   { code: '1010', name: 'Cash & Cash Equivalents', type: 'Asset', group: 'Current Assets', balance: 0 },
@@ -21,7 +22,7 @@ const DEFAULT_ACCOUNTS = [
 
 export default async function handler(req, res) {
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
     try {

@@ -1,11 +1,12 @@
 import { connectDB } from '../../../lib/mongodb'
 import Vendor from '../../../models/Vendor'
 import PurchaseOrder from '../../../models/PurchaseOrder'
+import { requireAuth } from '../../../lib/auth'
 
 export default async function handler(req, res) {
   await connectDB()
   const { id } = req.query
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
     const vendor = await Vendor.findOne({ _id: id, orgId })

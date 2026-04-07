@@ -56,7 +56,6 @@ export default async function handler(req, res) {
       port:   smtpPort,
       secure: smtpPort === 465,
       auth:   { user: smtpUser, pass: smtpPass },
-      tls:    { rejectUnauthorized: false },
     })
 
     const html = `<!DOCTYPE html>

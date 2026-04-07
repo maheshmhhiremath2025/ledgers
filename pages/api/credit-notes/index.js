@@ -3,10 +3,12 @@ import CreditNote from '../../../models/CreditNote'
 import Invoice from '../../../models/Invoice'
 import { postJournalEntry } from '../../../lib/journal'
 import Account from '../../../models/Account'
+import { requireAuth } from '../../../lib/auth'
+import { nextNumber, computeLineTotals } from '../../../lib/sequence'
 
 export default async function handler(req, res) {
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
     const notes = await CreditNote.find({ orgId }).sort({ createdAt: -1 }).limit(200)
@@ -15,44 +17,57 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const count  = await CreditNote.countDocuments({ orgId })
-      const prefix = 'CN'
-      const number = `${prefix}-${String(count + 1).padStart(4, '0')}`
-
       const { invoiceId, lineItems, reason, notes, date } = req.body
+      if (!Array.isArray(lineItems) || lineItems.length === 0) {
+        return res.status(400).json({ error: 'At least one line item is required' })
+      }
 
       // Get customer from invoice if linked
       let customer = req.body.customer || {}
+      let invoiceDoc = null
       if (invoiceId) {
-        const inv = await Invoice.findOne({ _id: invoiceId, orgId })
-        if (inv) {
-          customer = inv.customer
-          // Reduce invoice paid amount if applied
-        }
+        invoiceDoc = await Invoice.findOne({ _id: invoiceId, orgId })
+        if (invoiceDoc) customer = invoiceDoc.customer
       }
 
-      const subtotal = lineItems.reduce((s, l) => s + (l.qty||1)*(l.rate||0), 0)
-      const taxTotal  = lineItems.reduce((s, l) => s + (l.qty||1)*(l.rate||0)*(l.tax||0)/100, 0)
-      const total     = subtotal + taxTotal
+      const totals = computeLineTotals(lineItems)
 
-      const cn = await CreditNote.create({
-        orgId, creditNoteNumber: number,
-        invoiceId: invoiceId || null,
-        invoiceNumber: req.body.invoiceNumber || '',
-        customer, date: date ? new Date(date) : new Date(),
-        reason, lineItems, subtotal, taxTotal, total,
-        status: 'Issued', notes,
-      })
-
-      // If linked to invoice, reduce its outstanding
-      if (invoiceId) {
-        const inv = await Invoice.findOne({ _id: invoiceId, orgId })
-        if (inv) {
-          const newPaid = Math.min((inv.paidAmount||0) + total, inv.total||0)
-          const newStatus = newPaid >= (inv.total||0) ? 'Paid' : inv.status
-          await Invoice.findByIdAndUpdate(invoiceId, { paidAmount: newPaid, status: newStatus })
-        }
+      // Atomically reduce invoice outstanding FIRST so we never create a CN whose
+      // companion invoice update silently failed. If this fails, no CN is created.
+      if (invoiceDoc) {
+        const newPaid   = Math.min((invoiceDoc.paidAmount || 0) + totals.total, invoiceDoc.total || 0)
+        const newStatus = newPaid >= (invoiceDoc.total || 0) ? 'Paid' : invoiceDoc.status
+        const updated = await Invoice.findOneAndUpdate(
+          { _id: invoiceId, orgId },
+          { paidAmount: newPaid, status: newStatus },
+          { new: true }
+        )
+        if (!updated) return res.status(409).json({ error: 'Could not update linked invoice' })
       }
+
+      let cn
+      try {
+        cn = await CreditNote.create({
+          orgId,
+          creditNoteNumber: await nextNumber(orgId, 'creditnote', 'CN', 4),
+          invoiceId: invoiceId || null,
+          invoiceNumber: req.body.invoiceNumber || (invoiceDoc?.invoiceNumber || ''),
+          customer, date: date ? new Date(date) : new Date(),
+          reason, lineItems: totals.items,
+          subtotal: totals.subtotal, taxTotal: totals.taxTotal, total: totals.total,
+          status: 'Issued', notes,
+        })
+      } catch (createErr) {
+        // Roll back the invoice update if CN creation failed
+        if (invoiceDoc) {
+          await Invoice.findOneAndUpdate(
+            { _id: invoiceId, orgId },
+            { paidAmount: invoiceDoc.paidAmount || 0, status: invoiceDoc.status }
+          ).catch(e => console.error('[credit-notes] rollback failed:', e.message))
+        }
+        throw createErr
+      }
+      const total = totals.total
 
       // Post journal entry: DR Revenue (reverse), CR Accounts Receivable
       try {

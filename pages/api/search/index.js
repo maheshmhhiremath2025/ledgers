@@ -5,11 +5,12 @@ import Vendor from '../../../models/Vendor'
 import Expense from '../../../models/Expense'
 import Payment from '../../../models/Payment'
 import PurchaseOrder from '../../../models/PurchaseOrder'
+import { requireAuth } from '../../../lib/auth'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
   const { q } = req.query
   if (!q || q.length < 2) return res.status(200).json({ results: [] })
 

@@ -2,6 +2,7 @@ import { connectDB } from '../../../../lib/mongodb'
 import Invoice from '../../../../models/Invoice'
 import Payment from '../../../../models/Payment'
 import { postInvoiceRaised, postPaymentReceived } from '../../../../lib/journal'
+import { requireAuth } from '../../../../lib/auth'
 
 async function autoCreateReceipt(orgId, invoice) {
   try {
@@ -32,7 +33,7 @@ async function autoCreateReceipt(orgId, invoice) {
 export default async function handler(req, res) {
   await connectDB()
   const { method, query: { id } } = req
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (method === 'GET') {
     try {

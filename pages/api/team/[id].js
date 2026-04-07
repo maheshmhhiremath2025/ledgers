@@ -1,6 +1,7 @@
 import { connectDB } from '../../../lib/mongodb'
 import User from '../../../models/User'
 import { getSession, verifyToken } from '../../../lib/session'
+import { requireAuth } from '../../../lib/auth'
 
 function getAuth(req) {
   let session = getSession(req)
@@ -17,7 +18,7 @@ export default async function handler(req, res) {
   if (!session) return res.status(401).json({ error: 'Not authenticated' })
 
   const { id } = req.query
-  const orgId = req.headers['x-org-id'] || session.orgId || 'default'
+  const orgId = session.orgId
 
   const me = await User.findById(session.userId)
   if (me?.role !== 'admin') return res.status(403).json({ error: 'Only admins can manage members' })

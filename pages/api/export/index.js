@@ -6,6 +6,7 @@ import Customer from '../../../models/Customer'
 import Expense from '../../../models/Expense'
 import JournalEntry from '../../../models/JournalEntry'
 import Account from '../../../models/Account'
+import { requireAuth } from '../../../lib/auth'
 
 const fmt = n => Number(n || 0).toFixed(2)
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   await connectDB()
 
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
   const { type } = req.query
 
   try {

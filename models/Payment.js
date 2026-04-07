@@ -22,4 +22,8 @@ const PaymentSchema = new mongoose.Schema({
   status: { type: String, enum: ['Pending', 'Cleared', 'Bounced'], default: 'Cleared' },
 }, { timestamps: true })
 
+// Compound index for fast date-range reports per org
+PaymentSchema.index({ orgId: 1, paymentDate: -1 })
+PaymentSchema.index({ orgId: 1, paymentNumber: 1 }, { unique: true })
+
 export default mongoose.models.Payment || mongoose.model('Payment', PaymentSchema)

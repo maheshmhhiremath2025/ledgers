@@ -93,7 +93,6 @@ export default async function handler(req, res) {
           host: smtpHost, port: cfg?.smtpPort || 587,
           secure: cfg?.smtpSecure || false,
           auth: { user: smtpUser, pass: smtpPass },
-          tls: { rejectUnauthorized: false },
         })
         await transport.sendMail({
           from:    smtpFrom,

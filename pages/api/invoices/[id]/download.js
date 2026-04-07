@@ -45,7 +45,7 @@ async function generatePDF(inv, cfg) {
         try {
           const buf = Buffer.from(logoB64.split(',')[1], 'base64')
           doc.image(buf, L, y, { fit: [120, 40], align: 'left' })
-        } catch {}
+        } catch (e) { console.error("[" + __filename + "] swallowed error:", e.message) }
       }
 
       // ── INVOICE title ──

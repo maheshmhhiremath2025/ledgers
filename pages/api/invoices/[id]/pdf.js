@@ -1,6 +1,7 @@
 import { connectDB } from '../../../../lib/mongodb'
 import Invoice from '../../../../models/Invoice'
 import OrgConfig from '../../../../models/OrgConfig'
+import { requireAuth } from '../../../../lib/auth'
 
 const TEMPLATES = {
   classic: {
@@ -283,7 +284,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   try {
     await connectDB()
-    const orgId = req.headers['x-org-id'] || req.query.orgId || 'default'
+    const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
     const [invoice, config] = await Promise.all([
       Invoice.findById(req.query.id),
       OrgConfig.findOne({ orgId }),

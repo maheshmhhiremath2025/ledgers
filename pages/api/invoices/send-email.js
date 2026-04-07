@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({ invoiceId }),
     })
     if (pr.ok) { const pd = await pr.json(); portalUrl = pd.url || '' }
-  } catch {}
+  } catch (e) { console.error("[" + __filename + "] swallowed error:", e.message) }
 
   // Build line items rows
   const lineRows = (invoice.lineItems || []).map((item, i) => {
@@ -192,7 +192,6 @@ export default async function handler(req, res) {
       port:   Number(smtpPort),
       secure: cfg?.smtpSecure || smtpPort == 465,
       auth:   { user: smtpUser, pass: smtpPass },
-      tls:    { rejectUnauthorized: false },
     })
 
     await transporter.sendMail({

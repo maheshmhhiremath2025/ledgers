@@ -1,10 +1,12 @@
 import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import { withPlan, checkLimit } from '../../../lib/plans'
+import { requireAuth } from '../../../lib/auth'
+import { nextNumber, computeLineTotals } from '../../../lib/sequence'
 
 export default async function handler(req, res) {
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+  const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
     try {
@@ -42,21 +44,14 @@ export default async function handler(req, res) {
 
       const data = req.body
       if (!data.invoiceNumber) {
-        const count = await Invoice.countDocuments({ orgId })
-        data.invoiceNumber = `INV-${String(count + 1).padStart(4, '0')}`
+        data.invoiceNumber = await nextNumber(orgId, 'invoice', 'INV', 4)
       }
       data.orgId = orgId
-      let subtotal = 0, taxTotal = 0
-      data.lineItems = (data.lineItems || []).map(item => {
-        const amount = (item.qty || 0) * (item.rate || 0)
-        const taxAmt = (amount * (item.tax || 0)) / 100
-        subtotal += amount
-        taxTotal += taxAmt
-        return { ...item, amount }
-      })
-      data.subtotal = subtotal
-      data.taxTotal = taxTotal
-      data.total = subtotal + taxTotal
+      const totals = computeLineTotals(data.lineItems)
+      data.lineItems = totals.items
+      data.subtotal  = totals.subtotal
+      data.taxTotal  = totals.taxTotal
+      data.total     = totals.total
       if (!data.template) data.template = 'classic'
 
       const invoice = await Invoice.create(data)
