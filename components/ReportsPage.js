@@ -504,7 +504,11 @@ export default function ReportsPage({ org, headers, toast }) {
       if (type === 'gst') {
         const [m, y] = (period || gstPeriod).split(':')
         url = `/api/reports/gst?month=${m}&year=${y}`
-      } else {
+      } else if (type === 'ar')  url = '/api/reports/aged-receivables'
+      else if (type === 'ap')    url = '/api/reports/aged-payables'
+      else if (type === 'cf')    url = '/api/reports/cash-flow'
+      else if (type === 'tds')   url = '/api/reports/tds-summary'
+      else {
         url = `/api/reports/financial?type=${type}`
       }
       const r = await fetch(url, { headers })
@@ -521,6 +525,10 @@ export default function ReportsPage({ org, headers, toast }) {
     { id: 'pl',  label: 'Profit & Loss',  icon: '📈' },
     { id: 'bs',  label: 'Balance Sheet',  icon: '⚖' },
     { id: 'tb',  label: 'Trial Balance',  icon: '📋' },
+    { id: 'ar',  label: 'Aged AR',        icon: '📬' },
+    { id: 'ap',  label: 'Aged AP',        icon: '📭' },
+    { id: 'cf',  label: 'Cash Flow',      icon: '💸' },
+    { id: 'tds', label: 'TDS',            icon: '🧾' },
     { id: 'gst', label: 'GST Reports',    icon: '🇮🇳' },
   ]
 
@@ -569,8 +577,122 @@ export default function ReportsPage({ org, headers, toast }) {
           {report === 'bs'  && <BSReport  data={data} />}
           {report === 'tb'  && <TBReport  data={data} />}
           {report === 'gst' && <GSTReport data={data} />}
+          {report === 'ar'  && <AgedReport data={data} kind="customer" />}
+          {report === 'ap'  && <AgedReport data={data} kind="vendor" />}
+          {report === 'cf'  && <CashFlowReport data={data} />}
+          {report === 'tds' && <TDSReport data={data} />}
         </div>
       )}
+    </div>
+  )
+}
+// ── Aged AR / AP ──
+function AgedReport({ data, kind }) {
+  const items = kind === 'customer' ? (data.byCustomer || []) : (data.byVendor || [])
+  const buckets = data.buckets || {}
+  return (
+    <div>
+      <Card style={{ padding: 18, marginBottom: 16 }}>
+        <SectionTitle>{kind === 'customer' ? 'Aged Receivables' : 'Aged Payables'}</SectionTitle>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginTop: 12 }}>
+          {Object.entries(buckets).map(([k, b]) => (
+            <div key={k} style={{ background: 'var(--surface-2)', borderRadius: 'var(--r)', padding: 12, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{b.label}</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--mono)', marginTop: 4 }}>{fmt(b.amount)}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 2 }}>{b.count} item{b.count === 1 ? '' : 's'}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 16, padding: 12, background: 'var(--accent-dim)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 'var(--r)', fontSize: 13, color: 'var(--accent-2)' }}>
+          Total Outstanding: <b style={{ fontFamily: 'var(--mono)' }}>{fmt(data.totalOutstanding)}</b>
+        </div>
+      </Card>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <ReportTable
+          columns={[
+            { key: 'name', label: kind === 'customer' ? 'Customer' : 'Vendor' },
+            { key: 'current', label: 'Current' },
+            { key: 'd1_30',   label: '1-30' },
+            { key: 'd31_60',  label: '31-60' },
+            { key: 'd61_90',  label: '61-90' },
+            { key: 'd90plus', label: '90+' },
+            { key: 'total',   label: 'Total' },
+          ]}
+          rows={items.map(it => ({
+            name: it[kind] || it.customer || it.vendor || '—',
+            current: fmt(it.current), d1_30: fmt(it.d1_30), d31_60: fmt(it.d31_60),
+            d61_90: fmt(it.d61_90), d90plus: fmt(it.d90plus), total: fmt(it.total),
+          }))}
+        />
+      </Card>
+    </div>
+  )
+}
+
+// ── Cash Flow ──
+function CashFlowReport({ data }) {
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
+        {[
+          { l: 'Cash In',      v: data.cashIn,      c: 'var(--green)' },
+          { l: 'Cash Out',     v: data.cashOut,     c: 'var(--red)' },
+          { l: 'Net Cash Flow',v: data.netCashFlow, c: data.netCashFlow >= 0 ? 'var(--green)' : 'var(--red)' },
+        ].map(s => (
+          <Card key={s.l} style={{ padding: 16 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase' }}>{s.l}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: s.c, fontFamily: 'var(--mono)', marginTop: 4 }}>{fmt(s.v)}</div>
+          </Card>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Card style={{ padding: 16 }}>
+          <SectionTitle>Inflow by mode</SectionTitle>
+          <ReportTable columns={[{ key: 'mode', label: 'Mode' }, { key: 'amount', label: 'Amount' }]}
+            rows={(data.inflow || []).map(r => ({ mode: r.mode, amount: fmt(r.amount) }))} />
+        </Card>
+        <Card style={{ padding: 16 }}>
+          <SectionTitle>Outflow by mode</SectionTitle>
+          <ReportTable columns={[{ key: 'mode', label: 'Mode' }, { key: 'amount', label: 'Amount' }]}
+            rows={(data.outflow || []).map(r => ({ mode: r.mode, amount: fmt(r.amount) }))} />
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+// ── TDS Summary ──
+function TDSReport({ data }) {
+  const ded = data.deductedFromVendors || { bills: [], bySection: [], total: 0 }
+  const col = data.deductedByCustomers || { invoices: [], bySection: [], total: 0 }
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <Card style={{ padding: 16 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase' }}>TDS Deducted From Vendors</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{fmt(ded.total)}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-4)' }}>You owe this to the government</div>
+        </Card>
+        <Card style={{ padding: 16 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase' }}>TDS Deducted By Customers</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{fmt(col.total)}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-4)' }}>Claimable on Form 26AS</div>
+        </Card>
+      </div>
+      <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+        <SectionTitle style={{ padding: '12px 16px' }}>By Section — Vendor Bills</SectionTitle>
+        <ReportTable columns={[
+          { key: 'section', label: 'Section' }, { key: 'count', label: '#' },
+          { key: 'taxable', label: 'Taxable' }, { key: 'tds', label: 'TDS' },
+        ]} rows={ded.bySection.map(r => ({ section: r.section, count: r.count, taxable: fmt(r.taxable), tds: fmt(r.tds) }))} />
+      </Card>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <SectionTitle style={{ padding: '12px 16px' }}>By Section — Customer Invoices</SectionTitle>
+        <ReportTable columns={[
+          { key: 'section', label: 'Section' }, { key: 'count', label: '#' },
+          { key: 'taxable', label: 'Taxable' }, { key: 'tds', label: 'TDS' },
+        ]} rows={col.bySection.map(r => ({ section: r.section, count: r.count, taxable: fmt(r.taxable), tds: fmt(r.tds) }))} />
+      </Card>
     </div>
   )
 }

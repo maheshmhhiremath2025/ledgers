@@ -13,6 +13,9 @@ import ConfigPage from '../components/ConfigPage'
 import BillingPage from '../components/BillingPage'
 import RecurringList from '../components/RecurringList'
 import ReportsPage from '../components/ReportsPage'
+import EstimatesList from '../components/EstimatesList'
+import BillsList from '../components/BillsList'
+import BankAccountsList from '../components/BankAccountsList'
 import TeamPage from '../components/TeamPage'
 import CustomerPage from '../components/CustomerPage'
 import VendorPage from '../components/VendorPage'
@@ -25,9 +28,10 @@ import ChatBot from '../components/ChatBot'
 
 // Flat nav for curNav lookup
 const NAV = [
-  { id:'dashboard' },{ id:'invoices' },{ id:'customers' },{ id:'purchase-orders' },
-  { id:'vendors' },{ id:'payments' },{ id:'expenses' },{ id:'products' },
-  { id:'credit-notes' },{ id:'recurring' },{ id:'ledgers' },{ id:'reports' },
+  { id:'dashboard' },{ id:'invoices' },{ id:'estimates' },{ id:'customers' },
+  { id:'purchase-orders' },{ id:'bills' },{ id:'vendors' },{ id:'payments' },
+  { id:'expenses' },{ id:'products' },{ id:'credit-notes' },{ id:'recurring' },
+  { id:'bank-accounts' },{ id:'ledgers' },{ id:'reports' },
   { id:'config' },{ id:'team' },{ id:'billing' },
 ]
 
@@ -37,6 +41,7 @@ const NAV_GROUPS = [
     { id:'dashboard', label:'Dashboard', path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
   ]},
   { id:'sales', label:'Sales', items:[
+    { id:'estimates',       label:'Estimates',       path:'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     { id:'invoices',        label:'Invoices',        path:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 18H8M16 14H8M10 10H8' },
     { id:'customers',       label:'Customers',       path:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
     { id:'credit-notes',    label:'Credit Notes',    path:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
@@ -44,10 +49,12 @@ const NAV_GROUPS = [
   ]},
   { id:'purchases', label:'Purchases', items:[
     { id:'purchase-orders', label:'Purchase Orders', path:'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3.8 6h16.4M16 10a4 4 0 01-8 0' },
+    { id:'bills',           label:'Vendor Bills',    path:'M9 7h6m-6 4h6m-6 4h4m-9 5h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z' },
     { id:'vendors',         label:'Vendors',         path:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' },
     { id:'products',        label:'Products',        path:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10' },
   ]},
   { id:'accounting', label:'Accounting', items:[
+    { id:'bank-accounts', label:'Bank & Cash', path:'M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3' },
     { id:'payments',  label:'Payments',  path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { id:'expenses',  label:'Expenses',  path:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
     { id:'ledgers',   label:'Ledgers',   path:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
@@ -623,6 +630,9 @@ export default function Home() {
               {page === 'vendors'         &&                    <VendorPage      org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'products'        &&                    <ProductCatalogue org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'credit-notes'    &&                    <CreditNotes     org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'estimates'       &&                    <EstimatesList   org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'bills'           &&                    <BillsList       org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'bank-accounts'   &&                    <BankAccountsList org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'list' && <POList       org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'form' && <POForm       org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'payments'        && view === 'list' && <PaymentList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
