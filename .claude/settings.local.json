@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -c \"from.*lib/auth\" pages/api/customers/index.js pages/api/invoices/[id]/pdf.js pages/api/purchase-orders/[id]/pdf.js pages/api/purchase-orders/[id].js)",
-      "Bash(head -10 pages/api/invoices/[id]/pdf.js)"
-    ]
-  }
-}

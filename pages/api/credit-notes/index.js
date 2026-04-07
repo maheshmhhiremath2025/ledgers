@@ -5,14 +5,20 @@ import { postJournalEntry } from '../../../lib/journal'
 import Account from '../../../models/Account'
 import { requireAuth } from '../../../lib/auth'
 import { nextNumber, computeLineTotals } from '../../../lib/sequence'
+import { audit } from '../../../lib/audit'
 
 export default async function handler(req, res) {
   await connectDB()
   const __auth = requireAuth(req, res); if (!__auth) return; const orgId = __auth.orgId
 
   if (req.method === 'GET') {
-    const notes = await CreditNote.find({ orgId }).sort({ createdAt: -1 }).limit(200)
-    return res.status(200).json(notes)
+    const { page = 1, limit = 50 } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const [notes, total] = await Promise.all([
+      CreditNote.find({ orgId }).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+      CreditNote.countDocuments({ orgId }),
+    ])
+    return res.status(200).json({ notes, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) })
   }
 
   if (req.method === 'POST') {
@@ -68,6 +74,13 @@ export default async function handler(req, res) {
         throw createErr
       }
       const total = totals.total
+
+      audit(req, __auth, {
+        action: 'creditnote.create', entityType: 'CreditNote',
+        entityId: cn._id, entityRef: cn.creditNoteNumber,
+        amount: cn.total, after: cn.toObject(),
+        meta: { invoiceId: invoiceId || null, invoiceNumber: cn.invoiceNumber || '' },
+      })
 
       // Post journal entry: DR Revenue (reverse), CR Accounts Receivable
       try {

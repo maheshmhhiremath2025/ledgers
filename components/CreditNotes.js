@@ -154,7 +154,7 @@ export default function CreditNotes({ org, headers, toast, readOnly=false }) {
   const load = () => {
     setLoading(true)
     fetch('/api/credit-notes', { headers })
-      .then(r=>r.json()).then(d=>{ setNotes(Array.isArray(d)?d:[]); setLoading(false) })
+      .then(r=>r.json()).then(d=>{ setNotes(Array.isArray(d) ? d : (d.notes || [])); setLoading(false) })
       .catch(()=>setLoading(false))
   }
 

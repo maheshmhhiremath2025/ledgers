@@ -72,7 +72,6 @@ UserSchema.methods.needsPasswordRehash = function() {
 
 UserSchema.methods.isActive = function() {
   if (this.plan === 'starter') return true
-  if (this.trialEndsAt && new Date() < this.trialEndsAt) return true
   if (this.planExpiry && new Date() < this.planExpiry) return true
   return false
 }

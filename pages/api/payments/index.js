@@ -4,6 +4,7 @@ import Invoice from '../../../models/Invoice'
 import { postPaymentReceived, postPaymentMade } from '../../../lib/journal'
 import { requireAuth } from '../../../lib/auth'
 import { nextNumber } from '../../../lib/sequence'
+import { audit } from '../../../lib/audit'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -36,6 +37,12 @@ export default async function handler(req, res) {
         data.paymentNumber = await nextNumber(orgId, kind, prefix, 4)
       }
       const payment = await Payment.create(data)
+
+      audit(req, __auth, {
+        action: data.type === 'Receipt' ? 'payment.receipt.create' : 'payment.create',
+        entityType: 'Payment', entityId: payment._id, entityRef: payment.paymentNumber,
+        amount: payment.amount, after: payment.toObject(),
+      })
 
       let invoice = null
 

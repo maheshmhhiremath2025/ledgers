@@ -1,8 +1,10 @@
 import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
+import Customer from '../../../models/Customer'
 import { withPlan, checkLimit } from '../../../lib/plans'
 import { requireAuth } from '../../../lib/auth'
 import { nextNumber, computeLineTotals } from '../../../lib/sequence'
+import { audit } from '../../../lib/audit'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -55,6 +57,38 @@ export default async function handler(req, res) {
       if (!data.template) data.template = 'classic'
 
       const invoice = await Invoice.create(data)
+
+      audit(req, __auth, {
+        action: 'invoice.create', entityType: 'Invoice',
+        entityId: invoice._id, entityRef: invoice.invoiceNumber,
+        amount: invoice.total, after: invoice.toObject(),
+      })
+
+      // Auto-create or update customer from invoice
+      const cname = (data.customer?.name || '').trim()
+      if (cname) {
+        try {
+          const existing = await Customer.findOne({ orgId, name: { $regex: `^${cname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } })
+          if (!existing) {
+            await Customer.create({
+              orgId,
+              name:    cname,
+              email:   data.customer?.email   || '',
+              phone:   data.customer?.phone   || '',
+              address: data.customer?.address || '',
+              gstin:   data.customer?.gstin   || '',
+            })
+          } else {
+            const updates = {}
+            if (!existing.email   && data.customer?.email)   updates.email   = data.customer.email
+            if (!existing.phone   && data.customer?.phone)   updates.phone   = data.customer.phone
+            if (!existing.address && data.customer?.address) updates.address = data.customer.address
+            if (!existing.gstin   && data.customer?.gstin)   updates.gstin   = data.customer.gstin
+            if (Object.keys(updates).length) await Customer.updateOne({ _id: existing._id }, { $set: updates })
+          }
+        } catch (e) { console.error('[invoices] customer auto-save failed:', e.message) }
+      }
+
       return res.status(201).json(invoice)
     } catch (e) {
       return res.status(400).json({ error: e.message })
