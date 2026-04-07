@@ -1,10 +1,19 @@
 import { connectDB } from '../../../lib/mongodb'
 import PurchaseOrder from '../../../models/PurchaseOrder'
+import Vendor from '../../../models/Vendor'
 import { withPlan, checkLimit } from '../../../lib/plans'
+import { getSession, verifyToken } from '../../../lib/session'
 
 export default async function handler(req, res) {
   await connectDB()
-  const orgId = req.headers['x-org-id'] || 'default'
+
+  let session = getSession(req)
+  if (!session) {
+    const auth = req.headers['authorization'] || ''
+    if (auth.startsWith('Bearer ')) session = verifyToken(auth.slice(7))
+  }
+  if (!session) return res.status(401).json({ error: 'Not authenticated' })
+  const orgId = session.orgId
 
   if (req.method === 'GET') {
     try {
@@ -56,6 +65,33 @@ export default async function handler(req, res) {
       data.taxTotal = taxTotal
       data.total = subtotal + taxTotal
       const order = await PurchaseOrder.create(data)
+
+      // Auto-create or update vendor from PO
+      const vname = (data.vendor?.name || '').trim()
+      if (vname) {
+        try {
+          const existing = await Vendor.findOne({ orgId, name: { $regex: `^${vname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } })
+          if (!existing) {
+            await Vendor.create({
+              orgId,
+              name:    vname,
+              email:   data.vendor?.email   || '',
+              phone:   data.vendor?.phone   || '',
+              address: data.vendor?.address || '',
+              gstin:   data.vendor?.gstin   || '',
+            })
+          } else {
+            // Backfill any newly-supplied fields without overwriting existing values
+            const updates = {}
+            if (!existing.email   && data.vendor?.email)   updates.email   = data.vendor.email
+            if (!existing.phone   && data.vendor?.phone)   updates.phone   = data.vendor.phone
+            if (!existing.address && data.vendor?.address) updates.address = data.vendor.address
+            if (!existing.gstin   && data.vendor?.gstin)   updates.gstin   = data.vendor.gstin
+            if (Object.keys(updates).length) await Vendor.updateOne({ _id: existing._id }, { $set: updates })
+          }
+        } catch (e) { console.error('[PO] vendor auto-save failed:', e.message) }
+      }
+
       return res.status(201).json(order)
     } catch (e) {
       return res.status(400).json({ error: e.message })

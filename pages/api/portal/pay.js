@@ -98,11 +98,30 @@ export default async function handler(req, res) {
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body
       const body = `${razorpay_order_id}|${razorpay_payment_id}`
       const verifyCfg = await OrgConfig.findOne({ orgId: invoice.orgId })
+      const verifyKeyId  = verifyCfg?.razorpayKeyId || process.env.RAZORPAY_KEY_ID
       const verifySecret = verifyCfg?.razorpaySecret || process.env.RAZORPAY_KEY_SECRET
       const expected = crypto.createHmac('sha256', verifySecret).update(body).digest('hex')
       if (expected !== razorpay_signature) return res.status(400).json({ error: 'Invalid payment signature' })
 
+      // Fetch the actual amount captured from Razorpay (server-side, can't be tampered)
+      let paidNow
+      try {
+        const auth = Buffer.from(`${verifyKeyId}:${verifySecret}`).toString('base64')
+        const r = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
+          headers: { Authorization: `Basic ${auth}` },
+        })
+        const pj = await r.json()
+        if (!r.ok || pj.status !== 'captured') {
+          return res.status(400).json({ error: 'Payment not captured' })
+        }
+        paidNow = (pj.amount || 0) / 100
+      } catch (e) {
+        return res.status(500).json({ error: 'Could not verify payment with Razorpay: ' + e.message })
+      }
+
       const balance = (invoice.total || 0) - (invoice.paidAmount || 0)
+      // Cap at outstanding balance — never overpay
+      if (paidNow > balance + 0.01) paidNow = balance
 
       // Record payment
       const count = await Payment.countDocuments({ orgId: invoice.orgId })
@@ -111,7 +130,7 @@ export default async function handler(req, res) {
         paymentNumber: `RCP-${String(count + 1).padStart(4, '0')}`,
         type: 'Receipt',
         paymentDate: new Date(),
-        amount: balance,
+        amount: paidNow,
         currency: invoice.currency || 'INR',
         party: { name: invoice.customer?.name || 'Customer', email: invoice.customer?.email },
         referenceType: 'Invoice',
@@ -122,10 +141,9 @@ export default async function handler(req, res) {
       })
 
       // Update invoice
-      // Use order amount (supports partial payment)
-      const paidNow = order ? order.amount / 100 : balance
-      invoice.paidAmount = (invoice.paidAmount || 0) + paidNow
-      invoice.status = 'Paid'
+      const newPaidAmount = (invoice.paidAmount || 0) + paidNow
+      invoice.paidAmount = newPaidAmount
+      invoice.status = newPaidAmount >= (invoice.total || 0) - 0.01 ? 'Paid' : 'Sent'
       await invoice.save()
 
       // Post journal entries
