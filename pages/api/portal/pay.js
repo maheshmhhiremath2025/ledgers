@@ -57,6 +57,9 @@ export default async function handler(req, res) {
     if (action === 'create-order') {
       const balance = (invoice.total || 0) - (invoice.paidAmount || 0)
       if (balance <= 0) return res.status(400).json({ error: 'No balance due' })
+      // Support partial payment amount
+      const requestedAmount = req.body.amount ? parseFloat(req.body.amount) : balance
+      const payAmount = Math.min(Math.max(requestedAmount, 1), balance)
 
       const cfg = await OrgConfig.findOne({ orgId: invoice.orgId })
       const rzpKeyId     = cfg?.razorpayKeyId     || process.env.RAZORPAY_KEY_ID
@@ -71,7 +74,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: Math.round(balance * 100), // paise
+          amount: Math.round(payAmount * 100), // paise
           currency: invoice.currency || 'INR',
           receipt,
           notes: { invoiceId: String(invoice._id), invoiceNumber: invoice.invoiceNumber, token },
@@ -119,7 +122,9 @@ export default async function handler(req, res) {
       })
 
       // Update invoice
-      invoice.paidAmount = (invoice.paidAmount || 0) + balance
+      // Use order amount (supports partial payment)
+      const paidNow = order ? order.amount / 100 : balance
+      invoice.paidAmount = (invoice.paidAmount || 0) + paidNow
       invoice.status = 'Paid'
       await invoice.save()
 

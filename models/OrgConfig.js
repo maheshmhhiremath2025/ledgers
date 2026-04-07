@@ -38,7 +38,7 @@ const OrgConfigSchema = new mongoose.Schema({
   smtpFrom:        { type: String, default: '' },  // "Company Name <email@domain.com>"
   smtpSecure:      { type: Boolean, default: false },
   emailSubject:    { type: String, default: 'Invoice {{invoiceNumber}} from {{businessName}}' },
-  emailBody:       { type: String, default: 'Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\n{{notes}}\n\nThank you for your business!\n\n{{businessName}}' },
+  emailBody:       { type: String, default: 'Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nKindly make the payment by {{dueDate}}.\n\nThank you for your business!\n\n{{businessName}}' },
 }, { timestamps: true })
 
 export default mongoose.models.OrgConfig || mongoose.model('OrgConfig', OrgConfigSchema)

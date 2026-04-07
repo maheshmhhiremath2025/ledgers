@@ -18,9 +18,11 @@ export default function PaymentPortal({ token }) {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
-  const [paying, setPaying]   = useState(false)
-  const [paid, setPaid]       = useState(false)
-  const [msg, setMsg]         = useState('')
+  const [paying, setPaying]     = useState(false)
+  const [paid, setPaid]         = useState(false)
+  const [msg, setMsg]           = useState('')
+  const [partialMode, setPartialMode] = useState(false)
+  const [partialAmt, setPartialAmt]   = useState('')
 
   useEffect(() => {
     if (!token) return
@@ -34,7 +36,7 @@ export default function PaymentPortal({ token }) {
       .catch(() => { setError('Failed to load invoice'); setLoading(false) })
   }, [token])
 
-  const handlePay = async () => {
+  const handlePay = async (customAmount) => {
     setPaying(true)
     try {
       const loaded = await loadRazorpay()
@@ -43,7 +45,7 @@ export default function PaymentPortal({ token }) {
       const orderRes = await fetch(`/api/portal/pay?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create-order' }),
+        body: JSON.stringify({ action: 'create-order', amount: customAmount || undefined }),
       })
       const order = await orderRes.json()
       if (!orderRes.ok) throw new Error(order.error)
@@ -240,10 +242,33 @@ export default function PaymentPortal({ token }) {
             {/* Pay button */}
             {!isPaid && balance > 0 && data.razorpayKeyId && (
               <div style={{ padding: '20px 24px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                {msg && <div style={{ marginBottom: 12, fontSize: 13, color: '#FCA5A5', textAlign: 'center' }}>{msg}</div>}
-                <button onClick={handlePay} disabled={paying}
+                {msg && <div style={{ marginBottom: 12, fontSize: 13, color: msg.includes('failed') || msg.includes('error') ? '#FCA5A5' : '#6EE7B7', textAlign: 'center' }}>{msg}</div>}
+
+                {/* Partial payment toggle */}
+                {!partialMode ? (
+                  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={() => { setPartialMode(true); setPartialAmt(String(Math.floor(balance/2))) }}
+                      style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', color: '#9EA3BF', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Pay partial amount
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: 14, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 12, color: '#9EA3BF', marginBottom: 6 }}>Enter amount to pay now (balance: {fmt(balance)})</div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input type="number" value={partialAmt} onChange={e => setPartialAmt(e.target.value)}
+                        min="1" max={balance} step="0.01"
+                        style={{ flex: 1, background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 12px', color: '#ECEEF8', fontSize: 14, fontFamily: 'monospace', outline: 'none' }}
+                        placeholder="Enter amount"/>
+                      <button onClick={() => setPartialMode(false)}
+                        style={{ background: 'none', border: 'none', color: '#636880', cursor: 'pointer', fontSize: 18, fontFamily: 'inherit' }}>×</button>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={() => handlePay(partialMode && partialAmt ? parseFloat(partialAmt) : null)} disabled={paying}
                   style={{ width: '100%', padding: '14px', background: paying ? '#3A3E5C' : '#6366F1', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: paying ? 'none' : '0 4px 24px rgba(99,102,241,0.4)', transition: 'all 0.15s' }}>
-                  {paying ? 'Opening payment…' : `Pay ${fmt(balance)} securely →`}
+                  {paying ? 'Opening payment…' : partialMode && partialAmt ? `Pay ${fmt(partialAmt)} now →` : `Pay ${fmt(balance)} securely →`}
                 </button>
                 <div style={{ textAlign: 'center', fontSize: 11, color: '#636880', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   🔒 Secured by Razorpay · UPI · Cards · Net Banking · Wallets

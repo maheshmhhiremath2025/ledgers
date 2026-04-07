@@ -91,13 +91,38 @@ function exportCSV(filename, headers, rows) {
   a.click()
 }
 
+async function exportXLSX(filename, sheets) {
+  // Dynamically load SheetJS
+  if (!window.XLSX) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script')
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+      s.onload = res; s.onerror = rej
+      document.head.appendChild(s)
+    })
+  }
+  const wb = window.XLSX.utils.book_new()
+  for (const { name, headers, rows } of sheets) {
+    const data = [headers, ...rows]
+    const ws = window.XLSX.utils.aoa_to_sheet(data)
+    // Style header row bold
+    const range = window.XLSX.utils.decode_range(ws['!ref'])
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell = ws[window.XLSX.utils.encode_cell({ r: 0, c: C })]
+      if (cell) cell.s = { font: { bold: true } }
+    }
+    window.XLSX.utils.book_append_sheet(wb, ws, name)
+  }
+  window.XLSX.writeFile(wb, filename)
+}
+
 // ── P&L Report ──
 function PLReport({ data }) {
   if (!data) return null
   const { income = [], expenses = [], summary = {}, monthlyData = [], period, org } = data
 
-  const doExport = () => {
-    const headers = ['Code', 'Account', 'Group', 'Amount']
+  const doExport = async (fmt = 'csv') => {
+    const hdrs = ['Code', 'Account', 'Group', 'Amount (INR)']
     const rows = [
       ['', 'INCOME', '', ''],
       ...income.map(a => [a.code, a.name, a.group, a.balance.toFixed(2)]),
@@ -107,9 +132,17 @@ function PLReport({ data }) {
       ...expenses.map(a => [a.code, a.name, a.group, a.balance.toFixed(2)]),
       ['', 'Total Expenses', '', summary.totalExpenses.toFixed(2)],
       ['', '', '', ''],
-      ['', 'NET PROFIT', '', summary.netProfit.toFixed(2)],
+      ['', 'NET PROFIT / LOSS', '', summary.netProfit.toFixed(2)],
     ]
-    exportCSV(`PL_${period.replace(/\s/g,'_')}.csv`, headers, rows)
+    if (fmt === 'xlsx') {
+      const monthRows = (monthlyData || []).map(m => [m.month, m.income?.toFixed(2)||'0', m.expenses?.toFixed(2)||'0', m.profit?.toFixed(2)||'0'])
+      await exportXLSX(`PL_${period.replace(/\s/g,'_')}.xlsx`, [
+        { name: 'P&L Summary', headers: hdrs, rows },
+        { name: 'Monthly Trend', headers: ['Month','Income','Expenses','Net Profit'], rows: monthRows },
+      ])
+    } else {
+      exportCSV(`PL_${period.replace(/\s/g,'_')}.csv`, hdrs, rows)
+    }
   }
 
   return (
@@ -182,7 +215,7 @@ function PLReport({ data }) {
       </div>
 
       <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-        <button onClick={doExport} style={{ padding: '7px 14px', background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', fontFamily: 'var(--font)' }}>
+        <button onClick={() => doExport('csv')} style={{ padding: '7px 14px', background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', fontFamily: 'var(--font)' }}>
           ⬇ Export CSV
         </button>
       </div>

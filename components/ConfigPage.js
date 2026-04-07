@@ -142,7 +142,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
   const [smtpFrom,    setSmtpFrom]    = useState('')
   const [smtpSecure,  setSmtpSecure]  = useState(false)
   const [emailSubject, setEmailSubject] = useState('Invoice {{invoiceNumber}} from {{businessName}}')
-  const [emailBody,    setEmailBody]    = useState('Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\n{{notes}}\n\nThank you for your business!\n\n{{businessName}}')
+  const [emailBody,    setEmailBody]    = useState('Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nKindly make the payment by {{dueDate}}.\n\nThank you for your business!\n\n{{businessName}}')
   const [testingEmail, setTestingEmail] = useState(false)
 
   const [loading, setLoading] = useState(true)
@@ -189,7 +189,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
         setSmtpFrom(d.smtpFrom || '')
         setSmtpSecure(d.smtpSecure || false)
         setEmailSubject(d.emailSubject || 'Invoice {{invoiceNumber}} from {{businessName}}')
-        setEmailBody(d.emailBody || 'Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nThank you for your business!\n\n{{businessName}}')
+        setEmailBody(d.emailBody || 'Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nKindly make the payment by {{dueDate}}.\n\nThank you for your business!\n\n{{businessName}}')
         setLoading(false)
       })
       .catch(() => setLoading(false))

@@ -99,7 +99,20 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
   const [paymentMode, setPaymentMode] = useState(editItem?.paymentMode || 'Bank Transfer')
   const [reference,   setReference]   = useState(editItem?.reference || '')
   const [notes,       setNotes]       = useState(editItem?.notes || '')
+  const [receiptImage, setReceiptImage] = useState(editItem?.receiptImage || '')
+  const [uploadingReceipt, setUploadingReceipt] = useState(false)
+  const receiptRef = React.useRef()
   const [saving,      setSaving]      = useState(false)
+
+  const handleReceiptUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { toast('Receipt image must be under 2MB', 'error'); return }
+    setUploadingReceipt(true)
+    const reader = new FileReader()
+    reader.onload = (ev) => { setReceiptImage(ev.target.result); setUploadingReceipt(false) }
+    reader.readAsDataURL(file)
+  }
 
   const taxAmt = Math.round((parseFloat(amount)||0) * (parseFloat(tax)||0) / 100 * 100) / 100
   const total  = (parseFloat(amount)||0) + taxAmt
@@ -112,7 +125,7 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
       const r = await fetch(isEdit ? `/api/expenses/${editItem._id}` : '/api/expenses', {
         method: isEdit ? 'PUT' : 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, category, vendor, description, amount: parseFloat(amount), tax: parseFloat(tax)||0, paymentMode, reference, notes }),
+        body: JSON.stringify({ date, category, vendor, description, amount: parseFloat(amount), tax: parseFloat(tax)||0, paymentMode, reference, notes, receiptImage }),
       })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error)
@@ -165,6 +178,31 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
             style={{...inputStyle,resize:'vertical'}}
             onFocus={e=>e.target.style.borderColor='var(--accent)'}
             onBlur={e=>e.target.style.borderColor='var(--border-2)'}/>
+        </div>
+        <div style={{marginTop:14}}>
+          <label style={labelStyle}>Receipt / Attachment</label>
+          <input ref={receiptRef} type="file" accept="image/*,application/pdf" onChange={handleReceiptUpload} style={{display:'none'}}/>
+          {receiptImage ? (
+            <div style={{display:'flex',alignItems:'center',gap:10,marginTop:6}}>
+              {receiptImage.startsWith('data:image') && (
+                <img src={receiptImage} alt="receipt" style={{height:56,width:80,objectFit:'cover',borderRadius:'var(--r)',border:'1px solid var(--border)'}}/>
+              )}
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,color:'var(--green-text)',marginBottom:4}}>✓ Receipt attached</div>
+                <div style={{display:'flex',gap:8}}>
+                  {!readOnly && <Btn size="sm" onClick={()=>receiptRef.current?.click()} disabled={uploadingReceipt}>Replace</Btn>}
+                  {!readOnly && <Btn size="sm" variant="danger" onClick={()=>setReceiptImage('')}>Remove</Btn>}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{marginTop:6}}>
+              {!readOnly && <Btn size="sm" onClick={()=>receiptRef.current?.click()} disabled={uploadingReceipt}>
+                {uploadingReceipt ? 'Uploading…' : '📎 Attach Receipt'}
+              </Btn>}
+              <span style={{fontSize:11,color:'var(--text-4)',marginLeft:8}}>JPG, PNG or PDF · Max 2MB</span>
+            </div>
+          )}
         </div>
       </Card>
 

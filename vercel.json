@@ -15,7 +15,7 @@
   },
   "crons": [
     {
-      "path": "/api/recurring/run?secret=REPLACE_WITH_YOUR_CRON_SECRET",
+      "path": "/api/recurring/run?secret=synergific-cron-2026",
       "schedule": "0 6 * * *"
     }
   ]

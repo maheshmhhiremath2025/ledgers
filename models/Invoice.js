@@ -1,38 +1,23 @@
 import mongoose from 'mongoose'
 
-const LineItemSchema = new mongoose.Schema({
-  description: { type: String, required: true },
-  qty: { type: Number, required: true },
-  rate: { type: Number, required: true },
-  tax: { type: Number, default: 0 }, // percentage
-  amount: { type: Number, required: true },
-})
-
-const InvoiceSchema = new mongoose.Schema({
-  orgId: { type: String, required: true, index: true },
-  invoiceNumber: { type: String, required: true },
-  status: { type: String, enum: ['Draft', 'Due', 'Sent', 'Paid', 'Overdue', 'Cancelled'], default: 'Draft' },
-  template: { type: String, default: 'classic' },
-  paymentToken: { type: String, default: null, index: true }, // public portal link token
-  lastReminderAt: { type: Date, default: null },
-  reminderCount:  { type: Number, default: 0 },
-  customer: {
-    name: { type: String, required: true },
-    email: String,
-    address: String,
-    gstin: String,
-  },
-  issueDate: { type: Date, required: true },
-  dueDate: { type: Date, required: true },
-  lineItems: [LineItemSchema],
-  subtotal: Number,
-  taxTotal: Number,
-  total: Number,
-  notes: String,
-  terms: String,
-  currency: { type: String, default: 'INR' },
-  paidAmount: { type: Number, default: 0 },
-  paidDate: Date,
+const ExpenseSchema = new mongoose.Schema({
+  orgId:       { type: String, required: true },
+  expenseNumber: { type: String, required: true },
+  date:        { type: Date, required: true },
+  category:    { type: String, required: true }, // Rent, Salaries, Travel, etc.
+  vendor:      { type: String, default: '' },
+  description: { type: String, default: '' },
+  amount:      { type: Number, required: true },
+  tax:         { type: Number, default: 0 }, // GST %
+  taxAmount:   { type: Number, default: 0 },
+  total:       { type: Number, required: true },
+  paymentMode: { type: String, enum: ['Cash', 'Bank Transfer', 'UPI', 'Cheque', 'Card', 'Other'], default: 'Bank Transfer' },
+  reference:   { type: String, default: '' },
+  notes:       { type: String, default: '' },
+  receiptImage: { type: String, default: '' }, // base64 or URL
+  status:      { type: String, enum: ['Recorded', 'Pending'], default: 'Recorded' },
 }, { timestamps: true })
 
-export default mongoose.models.Invoice || mongoose.model('Invoice', InvoiceSchema)
+ExpenseSchema.index({ orgId: 1, date: -1 })
+
+export default mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema)
