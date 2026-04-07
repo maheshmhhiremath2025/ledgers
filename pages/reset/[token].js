@@ -8,6 +8,7 @@ export default function ResetPage() {
   const { token }             = router.query
   const [password, setPass]   = useState('')
   const [confirm, setConfirm] = useState('')
+  const [showPass, setShow]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg]         = useState('')
   const [err, setErr]         = useState('')
@@ -55,11 +56,21 @@ export default function ResetPage() {
           <form onSubmit={submit}>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>New Password</label>
-              <input type="password" required minLength={6} value={password} onChange={e => setPass(e.target.value)} placeholder="Min 6 characters" style={inputStyle} />
+              <div style={{ position: 'relative' }}>
+                <input type={showPass ? 'text' : 'password'} required minLength={6} value={password} onChange={e => setPass(e.target.value)} placeholder="Min 6 characters" style={{ ...inputStyle, paddingRight: 56 }} />
+                <button type="button" onClick={() => setShow(s => !s)} style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)' }}>
+                  {showPass ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Confirm Password</label>
-              <input type="password" required minLength={6} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Re-enter password" style={inputStyle} />
+              <div style={{ position: 'relative' }}>
+                <input type={showPass ? 'text' : 'password'} required minLength={6} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Re-enter password" style={{ ...inputStyle, paddingRight: 56 }} />
+                <button type="button" onClick={() => setShow(s => !s)} style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)' }}>
+                  {showPass ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={loading || !token} style={{
               width: '100%', padding: '11px', background: loading ? 'var(--surface-3)' : 'var(--accent)',
