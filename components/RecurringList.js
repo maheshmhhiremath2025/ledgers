@@ -271,9 +271,7 @@ export default function RecurringList({ org, headers, toast, readOnly = false })
       <div style={{ padding:'12px 16px', background:'var(--accent-dim)', border:'1px solid rgba(99,102,241,0.2)', borderRadius:'var(--r-md)', marginBottom:18, fontSize:12, color:'var(--accent-3)', lineHeight:1.6 }}>
         <b style={{ color:'var(--accent-2)' }}>🔁 How recurring invoices work</b><br/>
         On each scheduled date, an invoice is automatically created. If auto-send is on, it emails the customer too.
-        Click <b>▶ Run Now</b> to process any due invoices immediately. For production, set up a daily cron job calling
-        <code style={{ background:'rgba(99,102,241,0.15)', padding:'1px 6px', borderRadius:3, fontFamily:'var(--mono)', margin:'0 4px' }}>GET /api/recurring/run?secret=YOUR_CRON_SECRET</code>
-        Add <code style={{ background:'rgba(99,102,241,0.15)', padding:'1px 6px', borderRadius:3, fontFamily:'var(--mono)' }}>CRON_SECRET=your_secret</code> to .env.local.
+        Click <b>▶ Run Now</b> to process any due invoices immediately.
       </div>
 
       {/* Stats */}
