@@ -221,11 +221,30 @@ export default function BillingPage({ headers, toast, user }) {
           </div>
         </div>
 
-        {billing.planExpiry && !isStarter && (
-          <div style={{ padding: '10px 14px', background: 'var(--blue-dim)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 'var(--r)', marginBottom: 16, fontSize: 12, color: 'var(--blue-text)' }}>
-            📅 Next billing: {new Date(billing.planExpiry).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
-          </div>
-        )}
+        {billing.planExpiry && !isStarter && (() => {
+          const days = billing.daysUntilExpiry
+          const expired = days !== null && days <= 0
+          const urgent  = !expired && days !== null && days <= 5
+          const bg     = expired ? 'rgba(239,68,68,0.10)' : urgent ? 'rgba(245,158,11,0.10)' : 'var(--blue-dim)'
+          const border = expired ? 'rgba(239,68,68,0.30)' : urgent ? 'rgba(245,158,11,0.30)' : 'rgba(59,130,246,0.2)'
+          const color  = expired ? 'var(--red-text)'      : urgent ? 'var(--amber-text)'    : 'var(--blue-text)'
+          const dateStr = new Date(billing.planExpiry).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })
+          let text
+          if (expired)      text = `⚠ Plan expired on ${dateStr}. Renew now to keep ${planMeta.name} features.`
+          else if (urgent)  text = `⏰ ${days === 1 ? 'Renews tomorrow' : `Renews in ${days} days`} (${dateStr}). Renew now to avoid downgrade to Free.`
+          else              text = `📅 Renews on ${dateStr}`
+          return (
+            <div style={{ padding: '12px 14px', background: bg, border: `1px solid ${border}`, borderRadius: 'var(--r)', marginBottom: 16, fontSize: 12, color, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+              <span>{text}</span>
+              {(expired || urgent) && isAdmin && (
+                <button onClick={() => handleUpgrade(billing.plan)} disabled={paying === billing.plan}
+                  style={{ background: expired ? 'var(--red)' : 'var(--amber)', color:'#fff', border:'none', padding:'7px 16px', borderRadius:'var(--r)', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'var(--font)' }}>
+                  {paying === billing.plan ? 'Opening…' : `🔄 Renew ${planMeta.name}`}
+                </button>
+              )}
+            </div>
+          )
+        })()}
 
         <SectionTitle>Usage — {billing.usage?.period}</SectionTitle>
         <UsageBar label="Invoices created"        used={inv.used} limit={inv.limit} color={pc.color} />
@@ -241,7 +260,7 @@ export default function BillingPage({ headers, toast, user }) {
             {isBiz && <Btn size="sm" variant="danger" onClick={doDowngrade} disabled={downgrading}>{downgrading ? 'Downgrading…' : 'Downgrade to Free'}</Btn>}
             {!isStarter && (
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-                💡 <b>Auto-renewal:</b> Your plan renews automatically each month. Contact support to cancel.
+                💡 No auto-renewal. Your plan stays active for 30 days from the day of payment. Renew anytime from this page — you'll get a reminder 5 days before expiry.
               </div>
             )}
           </div>

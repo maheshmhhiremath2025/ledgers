@@ -1,7 +1,7 @@
 import { connectDB } from '../../../lib/mongodb'
 import User from '../../../models/User'
 import { getSession, verifyToken } from '../../../lib/session'
-import { PLANS, getBillingPeriod, resetIfNewPeriod } from '../../../lib/plans'
+import { PLANS, getBillingPeriod, resetIfNewPeriod, downgradeIfExpired } from '../../../lib/plans'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
+    await downgradeIfExpired(planOwner)
     resetIfNewPeriod(planOwner)
     const plan   = PLANS[planOwner.plan] || PLANS.starter
     const period = getBillingPeriod()
@@ -37,11 +38,21 @@ export default async function handler(req, res) {
     const orgInvoiceCount = planOwner.invoiceCount || 0
     const orgPoCount      = planOwner.poCount      || 0
 
+    // Days until renewal (negative means expired, null means starter/no expiry)
+    let daysUntilExpiry = null
+    if (planOwner.planExpiry && planOwner.plan !== 'starter') {
+      const diffMs = new Date(planOwner.planExpiry) - new Date()
+      daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    }
+    const needsRenewal = daysUntilExpiry !== null && daysUntilExpiry <= 5
+
     return res.status(200).json({
       plan:        planOwner.plan || 'starter',
       planName:    plan.name,
       planPrice:   plan.price,
       planExpiry:  planOwner.planExpiry,
+      daysUntilExpiry,
+      needsRenewal,
       trialEndsAt: planOwner.trialEndsAt,
       isTrialing:  planOwner.trialEndsAt && new Date() < new Date(planOwner.trialEndsAt),
       isTeamMember: user.role !== 'admin',

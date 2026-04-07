@@ -35,12 +35,14 @@ export default async function handler(req, res) {
   const user = await User.findById(session.userId)
   if (!user) return res.status(404).json({ error: 'User not found' })
 
+  // Renewal: extend 30 days from today (simple, predictable)
   const expiry = new Date()
-  expiry.setMonth(expiry.getMonth() + 1)
+  expiry.setDate(expiry.getDate() + 30)
 
   user.plan = plan
   user.planExpiry = expiry
   user.trialEndsAt = null
+  // Reset usage counters on renewal/upgrade
   user.invoiceCount = 0
   user.poCount = 0
   await user.save()
