@@ -1,6 +1,7 @@
 import { connectDB } from '../../../lib/mongodb'
 import User from '../../../models/User'
 import { setSessionCookie, createToken } from '../../../lib/session'
+import { sendSystemMail, welcomeEmailHtml } from '../../../lib/sendmail'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -42,6 +43,13 @@ export default async function handler(req, res) {
 
   setSessionCookie(res, payload)
   const token = createToken(payload)
+
+  // Fire-and-forget welcome email — never fail signup if email fails
+  sendSystemMail({
+    to: user.email,
+    subject: 'Welcome to HexaLabs Books 🎉',
+    html: welcomeEmailHtml({ name: user.name, planId: user.plan }),
+  }).catch(e => console.error('[signup] welcome email failed:', e.message))
 
   return res.status(201).json({
     user: payload,

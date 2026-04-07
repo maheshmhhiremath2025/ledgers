@@ -1,6 +1,7 @@
 import { connectDB } from '../../../../lib/mongodb'
 import Invoice from '../../../../models/Invoice'
 import OrgConfig from '../../../../models/OrgConfig'
+import { getSession, verifyToken } from '../../../../lib/session'
 
 function fmtMoney(n, sym = 'INR ') {
   return sym + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
@@ -227,12 +228,22 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
   try {
     await connectDB()
-    const orgId = req.headers['x-org-id'] || req.query.orgId || 'default'
+
+    // Auth required — derive orgId from session, never trust query/header
+    let session = getSession(req)
+    if (!session) {
+      const auth = req.headers['authorization'] || ''
+      if (auth.startsWith('Bearer ')) session = verifyToken(auth.slice(7))
+    }
+    if (!session) return res.status(401).json({ error: 'Not authenticated' })
+    const orgId = session.orgId
+
     const [invoice, config] = await Promise.all([
       Invoice.findById(req.query.id),
       OrgConfig.findOne({ orgId }),
     ])
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+    if (invoice.orgId !== orgId) return res.status(403).json({ error: 'Forbidden' })
     const cfgObj = config ? (config.toObject ? config.toObject() : config) : {}
     const invObj = invoice.toObject ? invoice.toObject() : invoice
 

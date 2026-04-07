@@ -2,6 +2,7 @@ import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import OrgConfig from '../../../models/OrgConfig'
 import nodemailer from 'nodemailer'
+import { getSession, verifyToken } from '../../../lib/session'
 
 function fillTemplate(template, vars) {
   return Object.entries(vars).reduce((s, [k, v]) => s.replace(new RegExp(`{{${k}}}`, 'g'), v || ''), template)
@@ -19,9 +20,16 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
   await connectDB()
 
-  const orgId = req.headers['x-org-id'] || 'default'
-  const { invoiceId, to, subject, body, cc } = req.body
+  // Auth required — derive orgId from session, never trust headers
+  let session = getSession(req)
+  if (!session) {
+    const auth = req.headers['authorization'] || ''
+    if (auth.startsWith('Bearer ')) session = verifyToken(auth.slice(7))
+  }
+  if (!session) return res.status(401).json({ error: 'Not authenticated' })
+  const orgId = session.orgId
 
+  const { invoiceId, to, subject, body, cc } = req.body
   if (!invoiceId || !to) return res.status(400).json({ error: 'invoiceId and to are required' })
 
   const [invoice, cfg] = await Promise.all([
@@ -30,6 +38,7 @@ export default async function handler(req, res) {
   ])
 
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+  if (invoice.orgId !== orgId) return res.status(403).json({ error: 'Forbidden — invoice belongs to a different organisation' })
 
   const smtpHost = cfg?.smtpHost || process.env.SMTP_HOST
   const smtpUser = cfg?.smtpUser || process.env.SMTP_USER

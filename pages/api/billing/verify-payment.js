@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import { connectDB } from '../../../lib/mongodb'
 import User from '../../../models/User'
 import { getSession } from '../../../lib/session'
+import { sendSystemMail, planUpgradeEmailHtml } from '../../../lib/sendmail'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -43,6 +44,12 @@ export default async function handler(req, res) {
   user.invoiceCount = 0
   user.poCount = 0
   await user.save()
+
+  sendSystemMail({
+    to: user.email,
+    subject: `${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated — HexaLabs Books`,
+    html: planUpgradeEmailHtml({ name: user.name, planId: plan }),
+  }).catch(e => console.error('[verify-payment] upgrade email failed:', e.message))
 
   return res.status(200).json({
     success: true,

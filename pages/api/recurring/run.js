@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   // Can be triggered manually (POST from UI) or via cron (GET with secret)
   if (req.method === 'GET') {
     const secret = req.query.secret
-    if (secret !== process.env.CRON_SECRET && secret !== 'dev-run') {
+    if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
   } else if (req.method !== 'POST') {
