@@ -72,18 +72,12 @@ export default async function handler(req, res) {
     if (!['starter', 'professional', 'business'].includes(newPlan)) {
       return res.status(400).json({ error: 'Invalid plan' })
     }
-    planOwner.plan = newPlan
     if (newPlan !== 'starter') {
-      const expiry = new Date()
-      expiry.setMonth(expiry.getMonth() + 1)
-      planOwner.planExpiry = expiry
-      const trial = new Date()
-      trial.setDate(trial.getDate() + 14)
-      planOwner.trialEndsAt = trial
-    } else {
-      planOwner.planExpiry  = null
-      planOwner.trialEndsAt = null
+      return res.status(400).json({ error: 'Paid plans must be activated via Razorpay payment' })
     }
+    planOwner.plan = newPlan
+    planOwner.planExpiry  = null
+    planOwner.trialEndsAt = null
     await planOwner.save()
     return res.status(200).json({ message: `Plan updated to ${newPlan}`, plan: planOwner.plan })
   }

@@ -206,10 +206,7 @@ export default function BillingPage({ headers, toast, user }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
               <span style={{ fontSize: 18, fontWeight: 700, color: pc.color }}>{planMeta.name} Plan</span>
-              {billing.isTrialing && (
-                <span style={{ fontSize: 11, fontWeight: 600, background: 'var(--green-dim)', color: 'var(--green-text)', padding: '2px 9px', borderRadius: 99, border: '1px solid rgba(16,185,129,0.2)' }}>Free trial</span>
-              )}
-              {!isStarter && !billing.isTrialing && (
+              {!isStarter && (
                 <span style={{ fontSize: 11, fontWeight: 600, background: pc.bg, color: pc.color, padding: '2px 9px', borderRadius: 99, border: `1px solid ${pc.border}` }}>Active</span>
               )}
               {isStarter && (
@@ -224,12 +221,7 @@ export default function BillingPage({ headers, toast, user }) {
           </div>
         </div>
 
-        {billing.isTrialing && billing.trialEndsAt && (
-          <div style={{ padding: '10px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--r)', marginBottom: 16, fontSize: 12, color: 'var(--green-text)' }}>
-            ⏰ Trial ends {new Date(billing.trialEndsAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })} — add payment to keep access.
-          </div>
-        )}
-        {billing.planExpiry && !billing.isTrialing && !isStarter && (
+        {billing.planExpiry && !isStarter && (
           <div style={{ padding: '10px 14px', background: 'var(--blue-dim)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 'var(--r)', marginBottom: 16, fontSize: 12, color: 'var(--blue-text)' }}>
             📅 Next billing: {new Date(billing.planExpiry).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
           </div>

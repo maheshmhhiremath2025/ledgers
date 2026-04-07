@@ -16,7 +16,7 @@ const PLANS_META = [
     color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.3)',
     tagline: 'Most popular for growing teams', popular: true,
     features: ['Unlimited invoices & POs', 'All 5 PDF templates', 'Logo & GST config', 'Saved customers'],
-    cta: 'Start 14-day Free Trial',
+    cta: 'Pay & Activate',
     ctaBg: '#3B82F6', ctaColor: '#fff',
   },
   {
@@ -24,33 +24,84 @@ const PLANS_META = [
     color: '#6366F1', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.3)',
     tagline: 'For teams & enterprises',
     features: ['Everything in Pro', '5 team members', 'CSV / Excel export', 'API access'],
-    cta: 'Start 14-day Free Trial',
+    cta: 'Pay & Activate',
     ctaBg: '#6366F1', ctaColor: '#fff',
   },
 ]
+
+function loadRazorpayScript() {
+  return new Promise(resolve => {
+    if (typeof window === 'undefined') return resolve(false)
+    if (window.Razorpay) return resolve(true)
+    const s = document.createElement('script')
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    s.onload = () => resolve(true)
+    s.onerror = () => resolve(false)
+    document.body.appendChild(s)
+  })
+}
 
 function PlanPicker({ user, token, onDone }) {
   const [selecting, setSelecting] = useState(null)
   const [logoErr, setLogoErr]     = useState(false)
 
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  })
+
   const choosePlan = async (planId) => {
     setSelecting(planId)
-    if (planId !== 'starter') {
-      // Activate trial via billing API
-      try {
-        await fetch('/api/billing', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ newPlan: planId, userId: user.userId }),
-        })
-      } catch (e) { /* continue even if fails */ }
+    if (planId === 'starter') {
+      setSelecting(null)
+      onDone({ ...user, plan: 'starter' })
+      return
     }
-    setSelecting(null)
-    onDone({ ...user, plan: planId })
+    try {
+      const loaded = await loadRazorpayScript()
+      if (!loaded) throw new Error('Razorpay failed to load. Check your internet connection.')
+
+      const orderRes = await fetch('/api/billing/create-order', {
+        method: 'POST',
+        credentials: 'include',
+        headers: authHeaders(),
+        body: JSON.stringify({ plan: planId, userId: user.userId }),
+      })
+      const orderData = await orderRes.json()
+      if (!orderRes.ok) throw new Error(orderData.error || 'Order creation failed')
+
+      const rzp = new window.Razorpay({
+        key:         orderData.keyId,
+        amount:      orderData.amount,
+        currency:    orderData.currency,
+        name:        'Synergific Books',
+        description: `${orderData.planName} Plan — Monthly`,
+        order_id:    orderData.orderId,
+        prefill:     orderData.prefill,
+        theme:       { color: '#6366F1' },
+        modal:       { ondismiss: () => setSelecting(null) },
+        handler: async (response) => {
+          const vr = await fetch('/api/billing/verify-payment', {
+            method: 'POST',
+            credentials: 'include',
+            headers: authHeaders(),
+            body: JSON.stringify({ ...response, plan: planId, userId: user.userId }),
+          })
+          const vd = await vr.json()
+          setSelecting(null)
+          if (vr.ok) {
+            onDone({ ...user, plan: planId })
+          } else {
+            alert(vd.error || 'Payment verification failed')
+          }
+        },
+      })
+      rzp.on('payment.failed', r => { alert(`Payment failed: ${r.error.description}`); setSelecting(null) })
+      rzp.open()
+    } catch (e) {
+      alert(e.message || 'Payment failed')
+      setSelecting(null)
+    }
   }
 
   return (
@@ -80,7 +131,7 @@ function PlanPicker({ user, token, onDone }) {
             Welcome, {user.name?.split(' ')[0]}! Choose your plan
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-3)', maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>
-            Start free or unlock the full power of Synergific Books. All paid plans include a 14-day free trial — no credit card needed.
+            Start free or unlock the full power of Synergific Books. Paid plans activate instantly via secure Razorpay payment.
           </p>
         </div>
 
@@ -144,7 +195,7 @@ function PlanPicker({ user, token, onDone }) {
 
               {p.id !== 'starter' && (
                 <div style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: 'var(--text-4)' }}>
-                  14-day free trial · No credit card required
+                  Secure payment via Razorpay · Cancel anytime
                 </div>
               )}
             </div>
