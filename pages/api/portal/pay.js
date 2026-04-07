@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         terms: invoice.terms,
       },
       org: {
-        businessName: cfg?.businessName || 'Synergific',
+        businessName: cfg?.businessName || 'HexaLabs',
         logoUrl: cfg?.logoUrl || '',
         gstin: cfg?.gstin || '',
         businessEmail: cfg?.businessEmail || '',

@@ -29,8 +29,8 @@ export default async function handler(req, res) {
     })
 
     await transporter.sendMail({
-      from: `Synergific Books Support <${smtpUser}>`,
-      to: 'itops@synergificsoftware.com',
+      from: `HexaLabs Books Support <${smtpUser}>`,
+      to: 'itops@hexalabssoftware.com',
       replyTo: email,
       subject: `[${ticketId}] [${priority}] ${category} — ${subject}`,
       html: `<div style="font-family:Arial,sans-serif;max-width:640px;color:#1a1a2e">
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
     })
 
     await transporter.sendMail({
-      from: `Synergific Books <${smtpUser}>`,
+      from: `HexaLabs Books <${smtpUser}>`,
       to: email,
       subject: `[${ticketId}] We received your support request`,
       html: `<div style="font-family:Arial,sans-serif;max-width:580px;color:#1a1a2e">
@@ -82,13 +82,13 @@ export default async function handler(req, res) {
           </div>
           <div style="background:#eef0ff;border-radius:8px;padding:14px">
             <div style="font-size:13px;font-weight:600;color:#6366F1;margin-bottom:10px">Need faster help?</div>
-            <div style="font-size:13px;color:#444;margin-bottom:6px">📧 <a href="mailto:itops@synergificsoftware.com" style="color:#6366F1">itops@synergificsoftware.com</a></div>
+            <div style="font-size:13px;color:#444;margin-bottom:6px">📧 <a href="mailto:itops@hexalabssoftware.com" style="color:#6366F1">itops@hexalabssoftware.com</a></div>
             <div style="font-size:13px;color:#444;margin-bottom:6px">📞 <a href="tel:+918884907660" style="color:#6366F1">+91 88849 07660</a></div>
             <div style="font-size:13px;color:#444">💬 <a href="https://wa.me/918884907660" style="color:#25D366">WhatsApp: +91 88849 07660</a></div>
           </div>
         </div>
         <div style="background:#eef0ff;padding:12px 24px;border-radius:0 0 10px 10px;font-size:12px;color:#666;border:1px solid #e0e0ef;border-top:none;text-align:center">
-          © ${new Date().getFullYear()} Synergific Software
+          © ${new Date().getFullYear()} HexaLabs Software
         </div>
       </div>`,
     })

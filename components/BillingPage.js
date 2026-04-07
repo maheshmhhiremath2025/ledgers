@@ -139,7 +139,7 @@ export default function BillingPage({ headers, toast, user }) {
         key:         orderData.keyId,
         amount:      orderData.amount,
         currency:    orderData.currency,
-        name:        'Synergific Books',
+        name:        'HexaLabs Books',
         description: `${orderData.planName} Plan — Monthly`,
         order_id:    orderData.orderId,
         prefill:     orderData.prefill,

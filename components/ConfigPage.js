@@ -550,7 +550,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
                   <div style={{ color:'var(--text-2)' }}>
                     <b style={{ color:'var(--text)' }}>Step 1:</b> Go to myaccount.google.com → Security<br/>
                     <b style={{ color:'var(--text)' }}>Step 2:</b> Enable 2-Step Verification (required)<br/>
-                    <b style={{ color:'var(--text)' }}>Step 3:</b> Search "App passwords" → Create → Name it "Synergific Books"<br/>
+                    <b style={{ color:'var(--text)' }}>Step 3:</b> Search "App passwords" → Create → Name it "HexaLabs Books"<br/>
                     <b style={{ color:'var(--text)' }}>Step 4:</b> Copy the 16-char password → paste below as your password<br/>
                     <span style={{ color:'var(--text-3)', display:'block', marginTop:4 }}>⚠ Do NOT use your regular Gmail login password — it won't work.</span>
                   </div>
@@ -600,8 +600,8 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
                   placeholder={smtpHost==='smtp.gmail.com' ? 'xxxx xxxx xxxx xxxx' : '••••••••'} type="password" />
               </div>
               <Field label="From Address" value={smtpFrom} onChange={markDirty(setSmtpFrom)}
-                placeholder={smtpHost==='smtp.gmail.com' ? 'Synergific Books <you@gmail.com>' : smtpHost==='smtp.office365.com' ? 'Synergific Books <you@outlook.com>' : 'Synergific Books <accounts@company.com>'}
-                hint="How recipients see the sender — e.g. Synergific Books <accounts@acme.com>" />
+                placeholder={smtpHost==='smtp.gmail.com' ? 'HexaLabs Books <you@gmail.com>' : smtpHost==='smtp.office365.com' ? 'HexaLabs Books <you@outlook.com>' : 'HexaLabs Books <accounts@company.com>'}
+                hint="How recipients see the sender — e.g. HexaLabs Books <accounts@acme.com>" />
 
               <div style={{ marginTop:20 }}>
                 <SectionTitle>Email Template</SectionTitle>

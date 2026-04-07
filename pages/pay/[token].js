@@ -285,7 +285,7 @@ export default function PaymentPortal({ token }) {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: '#3A3E5C' }}>
-            Powered by Synergific Books
+            Powered by HexaLabs Books
           </div>
         </div>
       </div>

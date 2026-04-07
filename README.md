@@ -1,4 +1,4 @@
-# Synergific Books
+# HexaLabs Books
 
 Full-stack accounting app — Invoices, Purchase Orders, Payments, Ledgers with PDF generation. Built with Next.js + MongoDB Atlas, deployable to Vercel.
 
@@ -30,7 +30,7 @@ Full-stack accounting app — Invoices, Purchase Orders, Payments, Ledgers with 
    ```
 8. Add your database name to it:
    ```
-   mongodb+srv://youruser:yourpassword@cluster0.xxxxx.mongodb.net/synergific-books?retryWrites=true&w=majority
+   mongodb+srv://youruser:yourpassword@cluster0.xxxxx.mongodb.net/hexalabs-books?retryWrites=true&w=majority
    ```
 
 ---
@@ -39,7 +39,7 @@ Full-stack accounting app — Invoices, Purchase Orders, Payments, Ledgers with 
 
 ```bash
 # 1. Clone / download project
-cd synergific-books
+cd hexalabs-books
 
 # 2. Install dependencies
 npm install
@@ -81,8 +81,8 @@ vercel --prod
    ```bash
    git init
    git add .
-   git commit -m "Initial Synergific Books"
-   git remote add origin https://github.com/YOUR_USERNAME/synergific-books.git
+   git commit -m "Initial HexaLabs Books"
+   git remote add origin https://github.com/YOUR_USERNAME/hexalabs-books.git
    git push -u origin main
    ```
 
@@ -90,7 +90,7 @@ vercel --prod
 
 3. In **Environment Variables** add:
    - `MONGODB_URI` = your Atlas connection string
-   - `NEXT_PUBLIC_ORG_NAME` = Synergific (or your org name)
+   - `NEXT_PUBLIC_ORG_NAME` = HexaLabs (or your org name)
    - `NEXT_PUBLIC_APP_URL` = https://your-app.vercel.app
 
 4. Click **Deploy** — done!
@@ -112,7 +112,7 @@ Then add to `package.json` dependencies. If PDF download doesn't work on Vercel 
 ## Project Structure
 
 ```
-synergific-books/
+hexalabs-books/
 ├── pages/
 │   ├── index.js              # Main app shell
 │   ├── _app.js               # App wrapper

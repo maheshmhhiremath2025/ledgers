@@ -74,7 +74,7 @@ function PlanPicker({ user, token, onDone }) {
         key:         orderData.keyId,
         amount:      orderData.amount,
         currency:    orderData.currency,
-        name:        'Synergific Books',
+        name:        'HexaLabs Books',
         description: `${orderData.planName} Plan — Monthly`,
         order_id:    orderData.orderId,
         prefill:     orderData.prefill,
@@ -115,12 +115,12 @@ function PlanPicker({ user, token, onDone }) {
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
             {!logoErr
-              ? <img src="/logo.png" alt="Synergific Books" onError={() => setLogoErr(true)} style={{ height: 32, objectFit: 'contain', display: 'block' }} />
+              ? <img src="/logo.png" alt="HexaLabs Books" onError={() => setLogoErr(true)} style={{ height: 32, objectFit: 'contain', display: 'block' }} />
               : <>
                   <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
                   </div>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>Synergific Books</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>HexaLabs Books</span>
                 </>
             }
           </div>
@@ -131,7 +131,7 @@ function PlanPicker({ user, token, onDone }) {
             Welcome, {user.name?.split(' ')[0]}! Choose your plan
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-3)', maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>
-            Start free or unlock the full power of Synergific Books. Paid plans activate instantly via secure Razorpay payment.
+            Start free or unlock the full power of HexaLabs Books. Paid plans activate instantly via secure Razorpay payment.
           </p>
         </div>
 
@@ -299,7 +299,7 @@ export default function AuthPage({ onAuth }) {
 
   return (
     <>
-      <Head><title>Synergific Books — {mode === 'login' ? 'Sign In' : 'Create Account'}</title></Head>
+      <Head><title>HexaLabs Books — {mode === 'login' ? 'Sign In' : 'Create Account'}</title></Head>
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', position: 'relative', overflow: 'hidden' }}>
 
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(99,102,241,0.07) 1px, transparent 0)', backgroundSize: '32px 32px', pointerEvents: 'none' }} />
@@ -311,12 +311,12 @@ export default function AuthPage({ onAuth }) {
           <div style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
               {!logoErr
-                ? <img src="/logo.png" alt="Synergific Books" onError={() => setLogoErr(true)} style={{ height: 36, objectFit: 'contain', display: 'block' }} />
+                ? <img src="/logo.png" alt="HexaLabs Books" onError={() => setLogoErr(true)} style={{ height: 36, objectFit: 'contain', display: 'block' }} />
                 : <>
                     <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 28px rgba(99,102,241,0.45)', flexShrink: 0 }}>
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4v12" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
                     </div>
-                    <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>Synergific Books</span>
+                    <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>HexaLabs Books</span>
                   </>
               }
             </div>
@@ -376,7 +376,7 @@ export default function AuthPage({ onAuth }) {
                 {mode === 'login' ? 'Welcome back' : 'Create your account'}
               </h2>
               <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>
-                {mode === 'login' ? 'Sign in to your Synergific Books account.' : 'Get started for free — no credit card required.'}
+                {mode === 'login' ? 'Sign in to your HexaLabs Books account.' : 'Get started for free — no credit card required.'}
               </p>
             </div>
 

@@ -21,7 +21,7 @@ export default function SupportPage({ user }) {
   const [error,    setError]    = useState('')
 
   const isBizOrPro = ['professional','business'].includes(user?.plan)
-  const waText = encodeURIComponent(`Hi, I need support with Synergific Books (Org: ${user?.orgId||''}, Plan: ${user?.plan||''})`)
+  const waText = encodeURIComponent(`Hi, I need support with HexaLabs Books (Org: ${user?.orgId||''}, Plan: ${user?.plan||''})`)
   const waUrl  = `https://wa.me/918884907660?text=${waText}`
 
   const submit = async () => {
@@ -70,8 +70,8 @@ export default function SupportPage({ user }) {
               <div style={{ fontSize:11, color:'var(--text-3)' }}>All plans · 24–48h response</div>
             </div>
           </div>
-          <a href="mailto:itops@synergificsoftware.com" style={{ fontSize:13, color:'#818CF8', fontWeight:600, textDecoration:'none', marginTop:4 }}>
-            itops@synergificsoftware.com
+          <a href="mailto:itops@hexalabssoftware.com" style={{ fontSize:13, color:'#818CF8', fontWeight:600, textDecoration:'none', marginTop:4 }}>
+            itops@hexalabssoftware.com
           </a>
         </div>
 

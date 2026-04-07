@@ -44,7 +44,7 @@ const STATS = [
 const TESTIMONIALS = [
   { name: 'Priya S.', role: 'Freelance UI/UX Designer', avatar: 'P', color: '#6366F1', text: 'Finally an invoicing tool that actually understands Indian GST. I used to spend hours every month on invoices — now it takes 5 minutes. The recurring billing is a lifesaver.' },
   { name: 'Rahul M.', role: 'Independent Software Consultant', avatar: 'R', color: '#10B981', text: 'The payment portal changed everything for me. Clients used to take 30+ days to pay. Now they click the link in the email and pay the same day. Outstanding feature.' },
-  { name: 'Anita K.', role: 'Chartered Accountant', avatar: 'A', color: '#F59E0B', text: 'I recommend Synergific Books to all my clients. The GSTR-1 export is accurate and the trial balance is always in sync with the journal entries. Genuinely impressive.' },
+  { name: 'Anita K.', role: 'Chartered Accountant', avatar: 'A', color: '#F59E0B', text: 'I recommend HexaLabs Books to all my clients. The GSTR-1 export is accurate and the trial balance is always in sync with the journal entries. Genuinely impressive.' },
 ]
 
 const HOW_IT_WORKS = [
@@ -109,10 +109,10 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>Synergific Books — GST Invoicing & Accounting Software</title>
+        <title>HexaLabs Books — GST Invoicing & Accounting Software</title>
         <meta name="description" content="Professional GST invoicing, double-entry accounting, financial reports and online payments for freelancers and businesses. Free to start." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content="Synergific Books — GST Invoicing for India" />
+        <meta property="og:title" content="HexaLabs Books — GST Invoicing for India" />
         <meta property="og:description" content="Create GST invoices, manage your ledger, generate financial reports and accept online payments — all in one app." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -151,14 +151,14 @@ export default function LandingPage() {
             {/* Logo */}
             <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
               {!logoErr
-                ? <img src="/logo.png" alt="Synergific Books"
+                ? <img src="/logo.png" alt="HexaLabs Books"
                     onError={() => setLogoErr(true)}
-                    style={{ height: 56, objectFit: 'contain', display: 'block' }} />
+                    style={{ height: 32, objectFit: 'contain', display: 'block' }} />
                 : <>
                     <div style={{ width: 32, height: 32, borderRadius: 9, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(99,102,241,0.5)' }}>
                       <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
                     </div>
-                    <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.4px', color: text }}>Synergific Books</span>
+                    <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.4px', color: text }}>HexaLabs Books</span>
                   </>
               }
             </a>
@@ -241,7 +241,7 @@ export default function LandingPage() {
               {['#EF4444','#F59E0B','#10B981'].map((c,i) => <div key={i} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
               <div style={{ flex: 1, height: 24, background: surface, borderRadius: 7, marginLeft: 10, display: 'flex', alignItems: 'center', padding: '0 12px', gap: 6 }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#10B981" strokeWidth="2" fill="none"/></svg>
-                <span style={{ fontSize: 11, color: text3, fontFamily: M }}>app.synergificbooks.com/app</span>
+                <span style={{ fontSize: 11, color: text3, fontFamily: M }}>app.hexalabsbooks.com/app</span>
               </div>
             </div>
             {/* Dashboard mock */}
@@ -447,14 +447,14 @@ export default function LandingPage() {
               <div>
                 <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 16 }}>
                   {!logoErr
-                    ? <img src="/logo.png" alt="Synergific Books"
+                    ? <img src="/logo.png" alt="HexaLabs Books"
                         onError={() => setLogoErr(true)}
                         style={{ height: 28, objectFit: 'contain', display: 'block' }} />
                     : <>
                         <div style={{ width: 28, height: 28, borderRadius: 7, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
                         </div>
-                        <span style={{ fontWeight: 800, fontSize: 15, color: text }}>Synergific Books</span>
+                        <span style={{ fontWeight: 800, fontSize: 15, color: text }}>HexaLabs Books</span>
                       </>
                   }
                 </a>
@@ -501,9 +501,9 @@ export default function LandingPage() {
 
             {/* Bottom bar */}
             <div style={{ borderTop: `1px solid ${border}`, paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <p style={{ fontSize: 13, color: text3 }}>© {new Date().getFullYear()} Synergific Software Pvt. Ltd. All rights reserved.</p>
+              <p style={{ fontSize: 13, color: text3 }}>© {new Date().getFullYear()} HexaLabs Software Pvt. Ltd. All rights reserved.</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <p style={{ fontSize: 13, color: text3 }}>Built with ❤️ by Synergific</p>
+                <p style={{ fontSize: 13, color: text3 }}>Built with ❤️ by HexaLabs</p>
                 <button onClick={toggleTheme} style={{ width: 32, height: 32, borderRadius: 8, background: surface, border: `1px solid ${border}`, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {isDark ? '☀️' : '🌙'}
                 </button>

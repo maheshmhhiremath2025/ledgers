@@ -76,7 +76,7 @@ function buildHTML(inv, cfg, t) {
   const dueBalance = (inv.total||0) - (inv.paidAmount||0)
   const dark = t.dark || false
 
-  const biz = cfg?.businessName || 'Synergific'
+  const biz = cfg?.businessName || 'HexaLabs'
   const logoUrl = cfg?.logoUrl || ''
   const bodyColor   = dark ? '#ECEEF8' : '#1a1a1a'
   const mutedColor  = dark ? '#9EA3BF' : '#666'

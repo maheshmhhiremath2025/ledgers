@@ -69,7 +69,7 @@ export default function InvitePage({ token }) {
 
   return (
     <>
-      <Head><title>Accept Invitation — Synergific Books</title>
+      <Head><title>Accept Invitation — HexaLabs Books</title>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
       <div style={PAGE}>
@@ -79,7 +79,7 @@ export default function InvitePage({ token }) {
             <div style={{ width: 36, height: 36, borderRadius: 9, background: '#6366F1', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(99,102,241,0.4)' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
             </div>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#ECEEF8' }}>Synergific Books</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#ECEEF8' }}>HexaLabs Books</span>
           </div>
 
           <div style={{ marginBottom: 24 }}>

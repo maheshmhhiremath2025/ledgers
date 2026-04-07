@@ -383,7 +383,7 @@ export default function Home() {
         <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--accent)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 0 32px rgba(99,102,241,0.4)' }}>
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11h14M11 4v14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Loading Synergific Books…</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Loading HexaLabs Books…</div>
       </div>
     </div>
   )
@@ -393,7 +393,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Synergific Books</title>
+        <title>HexaLabs Books</title>
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/favicon.png" />
@@ -431,7 +431,7 @@ export default function Home() {
                 </div>
                 {!collapsed && (
                   <span style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.3px' }}>
-                    {orgConfig?.businessName || 'Synergific Books'}
+                    {orgConfig?.businessName || 'HexaLabs Books'}
                   </span>
                 )}
               </>

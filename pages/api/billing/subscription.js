@@ -42,7 +42,7 @@ export default async function handler(req, res) {
           period: 'monthly',
           interval: 1,
           item: {
-            name: `Synergific Books ${planId === 'professional' ? 'Professional' : 'Business'} Plan`,
+            name: `HexaLabs Books ${planId === 'professional' ? 'Professional' : 'Business'} Plan`,
             amount: PLAN_AMOUNTS[planId],
             currency: 'INR',
             description: `Monthly subscription for ${planId} plan`,

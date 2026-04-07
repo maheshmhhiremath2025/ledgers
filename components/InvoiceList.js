@@ -142,14 +142,14 @@ function SendEmailModal({ invoice, headers, toast, onClose }) {
         if (cfg.emailSubject) setSubject(
           cfg.emailSubject
             .replace('{{invoiceNumber}}', invoice.invoiceNumber)
-            .replace('{{businessName}}', cfg.businessName || 'Synergific')
+            .replace('{{businessName}}', cfg.businessName || 'HexaLabs')
         )
         if (cfg.emailBody) setBody(
           cfg.emailBody
             .replace(/{{invoiceNumber}}/g, invoice.invoiceNumber)
             .replace(/{{customerName}}/g, invoice.customer?.name || 'Customer')
             .replace(/{{amount}}/g, '₹' + Number(invoice.total||0).toLocaleString('en-IN', { minimumFractionDigits: 2 }))
-            .replace(/{{businessName}}/g, cfg.businessName || 'Synergific')
+            .replace(/{{businessName}}/g, cfg.businessName || 'HexaLabs')
             .replace(/{{dueDate}}/g, invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '')
             .replace(/{{notes}}/g, invoice.notes || '')
         )

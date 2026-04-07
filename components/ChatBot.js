@@ -47,7 +47,7 @@ function Message({ msg }) {
 export default function ChatBot({ user, headers }) {
   const [open,     setOpen]     = useState(false)
   const [messages, setMessages] = useState([
-    { role:'assistant', content:`Hi ${user?.name?.split(' ')[0] || 'there'}! 👋 I'm your Synergific Books assistant. I can help you with invoicing, GST reports, payments, account settings and more.\n\nWhat can I help you with today?`, time: now() }
+    { role:'assistant', content:`Hi ${user?.name?.split(' ')[0] || 'there'}! 👋 I'm your HexaLabs Books assistant. I can help you with invoicing, GST reports, payments, account settings and more.\n\nWhat can I help you with today?`, time: now() }
   ])
   const [input,    setInput]    = useState('')
   const [loading,  setLoading]  = useState(false)
@@ -92,7 +92,7 @@ export default function ChatBot({ user, headers }) {
       setMessages(prev => [...prev, botMsg])
       if (!open) setUnread(u => u + 1)
     } catch(e) {
-      setMessages(prev => [...prev, { role:'assistant', content:`Sorry, I couldn't process that. Please try again or contact support at itops@synergificsoftware.com`, time: now() }])
+      setMessages(prev => [...prev, { role:'assistant', content:`Sorry, I couldn't process that. Please try again or contact support at itops@hexalabssoftware.com`, time: now() }])
     }
     setLoading(false)
   }
@@ -118,7 +118,7 @@ export default function ChatBot({ user, headers }) {
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🤖</div>
               <div>
-                <div style={{ fontWeight:700, fontSize:14, color:'#fff' }}>Synergific Assistant</div>
+                <div style={{ fontWeight:700, fontSize:14, color:'#fff' }}>HexaLabs Assistant</div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.75)', display:'flex', alignItems:'center', gap:4 }}>
                   <span style={{ width:6, height:6, borderRadius:'50%', background:'#6EE7B7', display:'inline-block' }}/>
                   Online · Powered by Claude AI
@@ -161,7 +161,7 @@ export default function ChatBot({ user, headers }) {
           {/* Input */}
           <div style={{ padding:'10px 12px', borderTop:'1px solid var(--border)', flexShrink:0, display:'flex', gap:8, alignItems:'flex-end' }}>
             <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-              placeholder="Ask anything about Synergific Books…"
+              placeholder="Ask anything about HexaLabs Books…"
               rows={1} style={{ flex:1, padding:'9px 12px', background:'var(--surface-2)', border:'1px solid var(--border-2)', borderRadius:10, fontSize:13, color:'var(--text)', outline:'none', fontFamily:'var(--font)', resize:'none', lineHeight:1.5, maxHeight:80, overflowY:'auto' }}
               onFocus={e => e.target.style.borderColor='var(--accent)'}
               onBlur={e => e.target.style.borderColor='var(--border-2)'}
@@ -176,7 +176,7 @@ export default function ChatBot({ user, headers }) {
 
           {/* Footer */}
           <div style={{ padding:'6px 12px 10px', textAlign:'center', fontSize:10, color:'var(--text-4)' }}>
-            Powered by Claude AI · <a href="mailto:itops@synergificsoftware.com" style={{ color:'var(--text-4)', textDecoration:'none' }}>itops@synergificsoftware.com</a>
+            Powered by Claude AI · <a href="mailto:itops@hexalabssoftware.com" style={{ color:'var(--text-4)', textDecoration:'none' }}>itops@hexalabssoftware.com</a>
           </div>
         </div>,
         document.body

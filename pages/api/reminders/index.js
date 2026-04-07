@@ -14,7 +14,7 @@ async function sendReminder(invoice, cfg, daysOverdue) {
 
   if (!smtpHost || !smtpUser || !smtpPass || !to) return false
 
-  const biz = cfg?.businessName || 'Synergific Books'
+  const biz = cfg?.businessName || 'HexaLabs Books'
   const balance = (invoice.total||0) - (invoice.paidAmount||0)
 
   const urgency = daysOverdue >= 14 ? 'URGENT: ' : daysOverdue >= 7 ? 'Reminder: ' : ''

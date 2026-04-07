@@ -49,7 +49,7 @@ export default async function handler(req, res) {
 
   const vars = {
     invoiceNumber: invoice.invoiceNumber,
-    businessName:  cfgObj.businessName || 'Synergific',
+    businessName:  cfgObj.businessName || 'HexaLabs',
     customerName:  invoice.customer?.name || 'Customer',
     amount:        fmt(invoice.total),
     dueDate,

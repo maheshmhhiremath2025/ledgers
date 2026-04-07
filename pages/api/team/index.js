@@ -91,11 +91,11 @@ export default async function handler(req, res) {
         await transport.sendMail({
           from:    smtpFrom,
           to:      email,
-          subject: `You've been invited to ${cfg?.businessName || 'Synergific Books'}`,
+          subject: `You've been invited to ${cfg?.businessName || 'HexaLabs Books'}`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:520px;color:#333">
               <h2 style="color:#6366F1">You're invited!</h2>
-              <p><b>${me.name}</b> has invited you to join <b>${cfg?.businessName || orgId}</b> on Synergific Books as <b>${role}</b>.</p>
+              <p><b>${me.name}</b> has invited you to join <b>${cfg?.businessName || orgId}</b> on HexaLabs Books as <b>${role}</b>.</p>
               <p>Click the button below to accept the invitation and set up your account:</p>
               <a href="${inviteUrl}" style="display:inline-block;padding:12px 24px;background:#6366F1;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Accept Invitation →</a>
               <p style="color:#888;font-size:12px">This link expires in 7 days. If you didn't expect this, you can ignore this email.</p>

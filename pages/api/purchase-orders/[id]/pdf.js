@@ -9,7 +9,7 @@ function buildPOHTML(po, cfg) {
   const displayStatus = po.status==='Sent' ? 'Draft' : (po.status||'Draft')
   const sc = statusColor[displayStatus] || '#888'
 
-  const bizName    = cfg?.businessName    || 'Synergific'
+  const bizName    = cfg?.businessName    || 'HexaLabs'
   const bizEmail   = cfg?.businessEmail   || ''
   const bizPhone   = cfg?.businessPhone   || ''
   const bizAddress = cfg?.businessAddress || ''

@@ -1,4 +1,4 @@
-# Synergific Books — Vercel Deployment Guide
+# HexaLabs Books — Vercel Deployment Guide
 
 ## Prerequisites
 - GitHub account
@@ -14,10 +14,10 @@
 # In your project folder
 git init
 git add .
-git commit -m "Initial commit — Synergific Books"
+git commit -m "Initial commit — HexaLabs Books"
 
 # Create a new repo on github.com, then:
-git remote add origin https://github.com/YOUR_USERNAME/synergific-books.git
+git remote add origin https://github.com/YOUR_USERNAME/hexalabs-books.git
 git push -u origin main
 ```
 
@@ -33,7 +33,7 @@ git push -u origin main
 
 Your URI looks like:
 ```
-mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/synergific-books?retryWrites=true&w=majority
+mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/hexalabs-books?retryWrites=true&w=majority
 ```
 
 ---
@@ -60,7 +60,7 @@ mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/synergific-books?retr
 | `SMTP_PORT` | `587` | |
 | `SMTP_USER` | your Gmail | |
 | `SMTP_PASS` | your App Password | 16-char Gmail App Password |
-| `SMTP_FROM` | `Synergific Books <you@gmail.com>` | |
+| `SMTP_FROM` | `HexaLabs Books <you@gmail.com>` | |
 | `CRON_SECRET` | any random string | e.g. `my-secret-cron-key-2026` |
 
 5. Click **Deploy**
@@ -70,7 +70,7 @@ mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/synergific-books?retr
 ## Step 4 — After First Deploy
 
 ### Update APP_URL
-1. Copy your Vercel URL (e.g. `https://synergific-books.vercel.app`)
+1. Copy your Vercel URL (e.g. `https://hexalabs-books.vercel.app`)
 2. Go to Vercel → Project → **Settings** → **Environment Variables**
 3. Update `NEXT_PUBLIC_APP_URL` to your actual URL
 4. **Redeploy** (Vercel → Deployments → ⋯ → Redeploy)

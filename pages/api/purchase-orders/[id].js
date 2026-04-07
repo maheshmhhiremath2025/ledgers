@@ -35,7 +35,7 @@ function buildPOHTML(po, cfg) {
   const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
   const statusColor = { Draft:'#888', Sent:'#185FA5', Paid:'#3B6D11', Partial:'#BA7517', Cancelled:'#A32D2D' }
-  const biz = cfg?.businessName || 'Synergific'
+  const biz = cfg?.businessName || 'HexaLabs'
 
   const rows = (po.lineItems || []).map((item, i) => `
     <tr style="border-bottom:1px solid #eee">
