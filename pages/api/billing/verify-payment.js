@@ -35,8 +35,21 @@ export default async function handler(req, res) {
   const user = await User.findById(session.userId)
   if (!user) return res.status(404).json({ error: 'User not found' })
 
-  // Renewal: extend 30 days from today (simple, predictable)
-  const expiry = new Date()
+  // Subscription extension rules:
+  //  - Same plan + still active → stack 30 days on top of remaining days
+  //  - Plan change OR expired → start fresh: 30 days from today
+  const now = new Date()
+  const currentExpiry = user.planExpiry ? new Date(user.planExpiry) : null
+  const stillActive   = currentExpiry && currentExpiry > now
+  const samePlan      = user.plan === plan
+
+  let base
+  if (stillActive && samePlan) {
+    base = currentExpiry            // stack on remaining time
+  } else {
+    base = now                       // fresh subscription
+  }
+  const expiry = new Date(base)
   expiry.setDate(expiry.getDate() + 30)
 
   user.plan = plan
