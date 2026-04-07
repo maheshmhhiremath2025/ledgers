@@ -19,7 +19,9 @@ export default async function handler(req, res) {
   const session = getAuth(req)
   if (!session) return res.status(401).json({ error: 'Not authenticated' })
 
-  const orgId = req.headers['x-org-id'] || session.orgId || 'default'
+  // Always derive orgId from session — never trust headers
+  const orgId = session.orgId
+  if (!orgId) return res.status(400).json({ error: 'Session has no orgId' })
 
   // GET — list all team members
   if (req.method === 'GET') {
@@ -31,11 +33,16 @@ export default async function handler(req, res) {
   // POST — invite a new member
   if (req.method === 'POST') {
     const me = await User.findById(session.userId)
-    if (me?.role !== 'admin') return res.status(403).json({ error: 'Only admins can invite members' })
+    if (!me || me.orgId !== orgId) return res.status(403).json({ error: 'Forbidden' })
+    if (me.role !== 'admin') return res.status(403).json({ error: 'Only admins can invite members' })
+
+    // Plan is owned by the org admin (oldest admin in this org), not the inviter
+    const orgAdmin = await User.findOne({ orgId, role: 'admin', status: { $ne: 'disabled' } }).sort({ createdAt: 1 })
+    const orgPlan = orgAdmin?.plan || 'starter'
 
     // Check Business plan limit (5 members)
     const count = await User.countDocuments({ orgId, status: { $ne: 'disabled' } })
-    if (me.plan !== 'business' && count >= 1) {
+    if (orgPlan !== 'business' && count >= 1) {
       return res.status(403).json({ error: 'Team members require the Business plan', upgrade: true })
     }
     if (count >= 5) {

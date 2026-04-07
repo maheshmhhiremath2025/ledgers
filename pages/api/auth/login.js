@@ -18,6 +18,12 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: 'Invalid email or password' })
   if (!user.active) return res.status(403).json({ error: 'Account disabled' })
 
+  // Transparently upgrade legacy/weak password hashes
+  if (user.needsPasswordRehash && user.needsPasswordRehash()) {
+    try { user.setPassword(password); await user.save() }
+    catch (e) { console.error('[login] password rehash failed:', e.message) }
+  }
+
   const payload = {
     userId: String(user._id),
     email:  user.email,

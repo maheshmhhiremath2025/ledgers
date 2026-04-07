@@ -2,12 +2,20 @@ import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import Payment from '../../../models/Payment'
 import { postPaymentReceived, postInvoiceRaised } from '../../../lib/journal'
+import { getSession, verifyToken } from '../../../lib/session'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
   await connectDB()
 
-  const orgId = req.headers['x-org-id'] || 'default'
+  let session = getSession(req)
+  if (!session) {
+    const auth = req.headers['authorization'] || ''
+    if (auth.startsWith('Bearer ')) session = verifyToken(auth.slice(7))
+  }
+  if (!session) return res.status(401).json({ error: 'Not authenticated' })
+  const orgId = session.orgId
+
   const { invoiceId, amount, paymentMode, paymentDate, reference, notes } = req.body
 
   if (!invoiceId || !amount || amount <= 0) {
