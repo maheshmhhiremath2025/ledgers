@@ -153,8 +153,8 @@ export default function BillingPage({ headers, toast, user }) {
           const vd = await vr.json()
           if (vr.ok) {
             toast(`🎉 ${vd.message || 'Plan activated!'}`)
-            load()
             setShowPlans(false)
+            setTimeout(() => window.location.reload(), 800)
           } else {
             toast(vd.error || 'Payment verification failed', 'error')
           }
