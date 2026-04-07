@@ -11,11 +11,12 @@ export default async function handler(req, res) {
   const { email } = req.body || {}
   if (!email) return res.status(400).json({ error: 'Email required' })
 
-  const users = await User.find({ email: email.toLowerCase() })
+  const normalizedEmail = email.trim().toLowerCase()
+  const users = await User.find({ email: normalizedEmail })
+  console.log(`[forgot] lookup for "${normalizedEmail}" → found ${users.length} user(s)`)
 
-  // Always return success to avoid email enumeration
   if (users.length === 0) {
-    return res.status(200).json({ message: 'If an account exists, a reset link has been sent.' })
+    return res.status(404).json({ error: `No account found for ${normalizedEmail}` })
   }
 
   const token = crypto.randomBytes(32).toString('hex')
@@ -89,14 +90,15 @@ export default async function handler(req, res) {
   </div>
 </body></html>`
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: smtpFrom,
-      to: email,
+      to: normalizedEmail,
       subject: 'Reset your HexaLabs Books password',
       html,
     })
+    console.log(`[forgot] email sent to ${normalizedEmail} via ${smtpHost}:${smtpPort} as ${smtpFrom}, messageId=${info.messageId}, accepted=${JSON.stringify(info.accepted)}, rejected=${JSON.stringify(info.rejected)}`)
 
-    return res.status(200).json({ message: 'If an account exists, a reset link has been sent.' })
+    return res.status(200).json({ message: `Reset link sent to ${normalizedEmail}. Check your inbox (and spam folder).` })
   } catch (e) {
     console.error('Password reset email failed:', e)
     return res.status(500).json({ error: `Failed to send reset email: ${e.message || e}` })
