@@ -3,7 +3,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ── Dark theme ── */
-:root, [data-theme="dark"] {
+[data-theme="dark"] {
   --bg:          #0D0F1A;
   --bg-2:        #13152B;
   --bg-3:        #191C35;
@@ -45,8 +45,8 @@
   --color-scheme: dark;
 }
 
-/* ── Light theme — Professional & Clean ── */
-[data-theme="light"] {
+/* ── Light theme — Professional & Clean (default) ── */
+:root, [data-theme="light"] {
   --bg:          #F0F2F8;
   --bg-2:        #E8EBF4;
   --bg-3:        #DDE1EF;
