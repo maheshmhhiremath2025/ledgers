@@ -50,6 +50,60 @@ export default function SuperAdminPage() {
     setDetail(d); setDL(false)
   }
 
+  const reloadOrg = async () => {
+    if (!selected) return
+    const r = await fetch(`/api/superadmin/orgs/${encodeURIComponent(selected)}`, { credentials: 'include', headers })
+    setDetail(await r.json())
+  }
+
+  const reloadList = async () => {
+    const r = await fetch('/api/superadmin/orgs', { credentials: 'include', headers })
+    const d = await r.json()
+    setOrgs(d.orgs || [])
+    setTotals({ totalOrgs: d.totalOrgs, totalUsers: d.totalUsers })
+  }
+
+  const deleteOrg = async (orgId) => {
+    if (!confirm(`PERMANENTLY DELETE org "${orgId}" and ALL its data (users, invoices, POs, payments, everything)?\n\nThis cannot be undone.`)) return
+    if (!confirm(`Are you absolutely sure? Type-check: deleting ${orgId}.`)) return
+    const r = await fetch(`/api/superadmin/orgs/${encodeURIComponent(orgId)}`, { method: 'DELETE', credentials: 'include', headers })
+    const d = await r.json()
+    if (r.ok) {
+      alert(`Deleted ${d.deletedCount} records`)
+      setSelected(null); setDetail(null)
+      reloadList()
+    } else alert(d.error || 'Failed to delete')
+  }
+
+  const deleteRecord = async (model, id) => {
+    if (!confirm(`Delete this ${model} record? This cannot be undone.`)) return
+    const r = await fetch(`/api/superadmin/record?model=${model}&id=${id}`, { method: 'DELETE', credentials: 'include', headers })
+    if (r.ok) reloadOrg()
+    else { const d = await r.json(); alert(d.error || 'Failed') }
+  }
+
+  const [editing, setEditing] = useState(null) // { model, record }
+  const [editJson, setEditJson] = useState('')
+  const [editErr, setEditErr]   = useState('')
+
+  const openEdit = (model, record) => {
+    setEditing({ model, id: record._id })
+    setEditJson(JSON.stringify(record, null, 2))
+    setEditErr('')
+  }
+
+  const saveEdit = async () => {
+    setEditErr('')
+    let body
+    try { body = JSON.parse(editJson) } catch (e) { setEditErr('Invalid JSON: ' + e.message); return }
+    const r = await fetch(`/api/superadmin/record?model=${editing.model}&id=${editing.id}`, {
+      method: 'PUT', credentials: 'include', headers, body: JSON.stringify(body),
+    })
+    const d = await r.json()
+    if (r.ok) { setEditing(null); reloadOrg() }
+    else setEditErr(d.error || 'Failed to save')
+  }
+
   const filtered = orgs.filter(o => {
     if (planFilter !== 'all' && o.plan !== planFilter) return false
     if (query) {
@@ -152,7 +206,10 @@ export default function SuperAdminPage() {
                 <div style={{ fontSize:18, fontWeight:700, color:'#E5E7F0' }}>{detail?.config?.businessName || 'Loading…'}</div>
                 <div style={{ fontSize:11, color:'#6B7080', fontFamily:'monospace' }}>{selected}</div>
               </div>
-              <button onClick={() => { setSelected(null); setDetail(null) }} style={{ ...btnGhost, padding:'6px 12px' }}>✕ Close</button>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={() => deleteOrg(selected)} style={{ background:'#EF4444', color:'#fff', border:'none', padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer' }}>🗑 Delete Org</button>
+                <button onClick={() => { setSelected(null); setDetail(null) }} style={{ ...btnGhost, padding:'6px 12px' }}>✕ Close</button>
+              </div>
             </div>
 
             {detailLoading && <div style={{ padding:40, color:'#9EA3BF', textAlign:'center' }}>Loading org data…</div>}
@@ -170,22 +227,52 @@ export default function SuperAdminPage() {
 
                 <div style={{ padding:24 }}>
                   {tab === 'overview' && <Overview detail={detail} />}
-                  {tab === 'config'   && <PreJson data={detail.config} />}
-                  {tab === 'users'    && <SimpleTable rows={detail.users} cols={['name','email','role','status','plan','createdAt']} />}
-                  {tab === 'invoices' && <SimpleTable rows={detail.invoices} cols={['invoiceNumber','customer.name','issueDate','dueDate','total','status']} />}
-                  {tab === 'pos'      && <SimpleTable rows={detail.pos} cols={['poNumber','vendor.name','issueDate','total','status']} />}
-                  {tab === 'expenses' && <SimpleTable rows={detail.expenses} cols={['date','category','vendor','amount','notes']} />}
-                  {tab === 'payments' && <SimpleTable rows={detail.payments} cols={['date','method','amount','reference','invoiceNumber']} />}
-                  {tab === 'creditNotes' && <SimpleTable rows={detail.creditNotes} cols={['creditNoteNumber','invoiceNumber','date','amount','reason']} />}
-                  {tab === 'customers' && <SimpleTable rows={detail.customers} cols={['name','email','phone','gstin','address']} />}
-                  {tab === 'vendors'  && <SimpleTable rows={detail.vendors} cols={['name','email','phone','gstin']} />}
-                  {tab === 'products' && <SimpleTable rows={detail.products} cols={['name','sku','rate','tax','unit']} />}
-                  {tab === 'accounts' && <SimpleTable rows={detail.accounts} cols={['code','name','type','balance']} />}
-                  {tab === 'journals' && <SimpleTable rows={detail.journals} cols={['date','refType','refNumber','narration','debit','credit']} />}
-                  {tab === 'recurring' && <SimpleTable rows={detail.recurring} cols={['customer.name','frequency','nextDate','amount','active']} />}
+                  {tab === 'config'   && (
+                    <div>
+                      {detail.config && (
+                        <div style={{ marginBottom:10 }}>
+                          <button onClick={() => openEdit('config', detail.config)} style={{ ...btnGhost, marginRight:8 }}>✎ Edit Config</button>
+                        </div>
+                      )}
+                      <PreJson data={detail.config} />
+                    </div>
+                  )}
+                  {tab === 'users'    && <SimpleTable model="users"    rows={detail.users}    cols={['name','email','role','status','plan','createdAt']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'invoices' && <SimpleTable model="invoices" rows={detail.invoices} cols={['invoiceNumber','customer.name','issueDate','dueDate','total','status']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'pos'      && <SimpleTable model="pos"      rows={detail.pos}      cols={['poNumber','vendor.name','issueDate','total','status']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'expenses' && <SimpleTable model="expenses" rows={detail.expenses} cols={['date','category','vendor','amount','notes']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'payments' && <SimpleTable model="payments" rows={detail.payments} cols={['date','method','amount','reference','invoiceNumber']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'creditNotes' && <SimpleTable model="creditNotes" rows={detail.creditNotes} cols={['creditNoteNumber','invoiceNumber','date','amount','reason']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'customers' && <SimpleTable model="customers" rows={detail.customers} cols={['name','email','phone','gstin','address']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'vendors'  && <SimpleTable model="vendors"  rows={detail.vendors}  cols={['name','email','phone','gstin']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'products' && <SimpleTable model="products" rows={detail.products} cols={['name','sku','rate','tax','unit']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'accounts' && <SimpleTable model="accounts" rows={detail.accounts} cols={['code','name','type','balance']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'journals' && <SimpleTable model="journals" rows={detail.journals} cols={['date','refType','refNumber','narration','debit','credit']} onEdit={openEdit} onDelete={deleteRecord} />}
+                  {tab === 'recurring' && <SimpleTable model="recurring" rows={detail.recurring} cols={['customer.name','frequency','nextDate','amount','active']} onEdit={openEdit} onDelete={deleteRecord} />}
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit JSON modal */}
+      {editing && (
+        <div onClick={() => setEditing(null)}
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:20 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:'#0B0D18', border:'1px solid #262A3D', borderRadius:12, width:'100%', maxWidth:800, maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
+            <div style={{ padding:'16px 22px', borderBottom:'1px solid #262A3D', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#E5E7F0' }}>Edit {editing.model} record</div>
+              <button onClick={() => setEditing(null)} style={{ ...btnGhost, padding:'5px 10px' }}>✕</button>
+            </div>
+            <textarea value={editJson} onChange={e => setEditJson(e.target.value)} spellCheck={false}
+              style={{ flex:1, minHeight:400, background:'#0F111C', border:'none', color:'#E5E7F0', fontFamily:'monospace', fontSize:12, padding:16, outline:'none', resize:'none' }} />
+            {editErr && <div style={{ padding:'10px 22px', background:'rgba(239,68,68,0.1)', color:'#EF4444', fontSize:12, borderTop:'1px solid #262A3D' }}>{editErr}</div>}
+            <div style={{ padding:'14px 22px', borderTop:'1px solid #262A3D', display:'flex', justifyContent:'flex-end', gap:8 }}>
+              <button onClick={() => setEditing(null)} style={btnGhost}>Cancel</button>
+              <button onClick={saveEdit} style={btn}>💾 Save</button>
+            </div>
           </div>
         </div>
       )}
@@ -265,13 +352,17 @@ function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj)
 }
 
-function SimpleTable({ rows, cols }) {
+function SimpleTable({ rows, cols, model, onEdit, onDelete }) {
   if (!rows || rows.length === 0) return <div style={{ color:'#6B7080', padding:20, textAlign:'center' }}>No records</div>
+  const showActions = !!(model && (onEdit || onDelete))
   return (
     <div style={{ overflowX:'auto', border:'1px solid #262A3D', borderRadius:8 }}>
       <table style={{ width:'100%', borderCollapse:'collapse', minWidth:700 }}>
         <thead style={{ background:'#0F111C' }}>
-          <tr>{cols.map(c => <th key={c} style={th}>{c}</th>)}</tr>
+          <tr>
+            {cols.map(c => <th key={c} style={th}>{c}</th>)}
+            {showActions && <th style={th}>Actions</th>}
+          </tr>
         </thead>
         <tbody>
           {rows.slice(0, 200).map((r, i) => (
@@ -285,6 +376,14 @@ function SimpleTable({ rows, cols }) {
                 else if (typeof v === 'object') v = JSON.stringify(v).slice(0, 60)
                 return <td key={c} style={td}>{String(v)}</td>
               })}
+              {showActions && (
+                <td style={td}>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {onEdit && <button onClick={() => onEdit(model, r)} style={{ background:'transparent', border:'1px solid #3B82F6', color:'#3B82F6', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer' }}>Edit</button>}
+                    {onDelete && <button onClick={() => onDelete(model, r._id)} style={{ background:'transparent', border:'1px solid #EF4444', color:'#EF4444', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer' }}>Delete</button>}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

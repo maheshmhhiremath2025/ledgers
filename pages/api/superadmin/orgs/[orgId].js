@@ -18,9 +18,30 @@ export default async function handler(req, res) {
   await connectDB()
   const me = await requireSuperAdmin(req, res)
   if (!me) return
-  if (req.method !== 'GET') return res.status(405).end()
 
   const { orgId } = req.query
+
+  if (req.method === 'DELETE') {
+    const results = await Promise.all([
+      User.deleteMany({ orgId }),
+      OrgConfig.deleteMany({ orgId }),
+      Invoice.deleteMany({ orgId }),
+      PurchaseOrder.deleteMany({ orgId }),
+      Expense.deleteMany({ orgId }),
+      Payment.deleteMany({ orgId }),
+      CreditNote.deleteMany({ orgId }),
+      Customer.deleteMany({ orgId }),
+      Vendor.deleteMany({ orgId }),
+      Product.deleteMany({ orgId }),
+      Account.deleteMany({ orgId }),
+      JournalEntry.deleteMany({ orgId }),
+      RecurringInvoice.deleteMany({ orgId }),
+    ])
+    const total = results.reduce((s, r) => s + (r.deletedCount || 0), 0)
+    return res.status(200).json({ ok: true, deletedCount: total })
+  }
+
+  if (req.method !== 'GET') return res.status(405).end()
 
   const [config, users, invoices, pos, expenses, payments, creditNotes, customers, vendors, products, accounts, journals, recurring] = await Promise.all([
     OrgConfig.findOne({ orgId }).lean(),
