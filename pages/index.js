@@ -153,7 +153,7 @@ export default function LandingPage() {
               {!logoErr
                 ? <img src="/logo.png" alt="Synergific Books"
                     onError={() => setLogoErr(true)}
-                    style={{ height: 32, objectFit: 'contain', display: 'block' }} />
+                    style={{ height: 56, objectFit: 'contain', display: 'block' }} />
                 : <>
                     <div style={{ width: 32, height: 32, borderRadius: 9, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(99,102,241,0.5)' }}>
                       <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2v10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
