@@ -60,11 +60,17 @@ export default async function handler(req, res) {
   user.poCount = 0
   await user.save()
 
-  sendSystemMail({
-    to: user.email,
-    subject: `${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated — HexaLabs Books`,
-    html: planUpgradeEmailHtml({ name: user.name, planId: plan }),
-  }).catch(e => console.error('[verify-payment] upgrade email failed:', e.message))
+  console.log(`[verify-payment] sending upgrade email to ${user.email} for plan=${plan}`)
+  try {
+    const info = await sendSystemMail({
+      to: user.email,
+      subject: `${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated — HexaLabs Books`,
+      html: planUpgradeEmailHtml({ name: user.name, planId: plan }),
+    })
+    console.log(`[verify-payment] email sent ok: messageId=${info.messageId} accepted=${JSON.stringify(info.accepted)} rejected=${JSON.stringify(info.rejected)}`)
+  } catch (e) {
+    console.error('[verify-payment] upgrade email FAILED:', e.message, e.stack)
+  }
 
   return res.status(200).json({
     success: true,
