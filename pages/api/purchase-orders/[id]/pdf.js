@@ -20,7 +20,8 @@ function buildPOHTML(po, cfg) {
   const sigName    = cfg?.signatureName   || ''
   const sigTitle   = cfg?.signatureTitle  || ''
   const sigImage   = cfg?.signatureImage   || ''
-  const footerText = cfg?.footerText      || 'This is a computer-generated purchase order.'
+  const footerText = (cfg?.footerText || 'This is a computer-generated purchase order.')
+    .replace(/invoice/gi, 'purchase order')
 
   const rows = (po.lineItems || []).map((item, i) => {
     const lineTotal = (item.qty || 0) * (item.rate || 0)
