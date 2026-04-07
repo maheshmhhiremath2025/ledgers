@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import nodemailer from 'nodemailer'
 import { connectDB } from '../../../lib/mongodb'
 import User from '../../../models/User'
+import OrgConfig from '../../../models/OrgConfig'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -31,22 +32,30 @@ export default async function handler(req, res) {
   const resetUrl = `${baseUrl}/reset/${token}`
 
   try {
-    const smtpHost = process.env.SMTP_HOST
-    const smtpUser = process.env.SMTP_USER
-    const smtpPass = process.env.SMTP_PASS
-    const smtpPort = Number(process.env.SMTP_PORT || 587)
-    const smtpFrom = process.env.SMTP_FROM || smtpUser
+    // Prefer SMTP from the user's org config; fall back to env
+    let cfg = null
+    for (const u of users) {
+      cfg = await OrgConfig.findOne({ orgId: u.orgId })
+      if (cfg?.smtpHost && cfg?.smtpUser && cfg?.smtpPass) break
+    }
+
+    const smtpHost = cfg?.smtpHost || process.env.SMTP_HOST
+    const smtpUser = cfg?.smtpUser || process.env.SMTP_USER
+    const smtpPass = cfg?.smtpPass || process.env.SMTP_PASS
+    const smtpPort = Number(cfg?.smtpPort || process.env.SMTP_PORT || 587)
+    const smtpFrom = cfg?.smtpFrom || process.env.SMTP_FROM || smtpUser
 
     if (!smtpHost || !smtpUser || !smtpPass) {
-      console.error('SMTP not configured for password reset')
-      return res.status(500).json({ error: 'Email service not configured' })
+      console.error('SMTP not configured for password reset (no env vars or org config)')
+      return res.status(500).json({ error: 'Email service not configured. Please contact support.' })
     }
 
     const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
+      host:   smtpHost,
+      port:   smtpPort,
       secure: smtpPort === 465,
-      auth: { user: smtpUser, pass: smtpPass },
+      auth:   { user: smtpUser, pass: smtpPass },
+      tls:    { rejectUnauthorized: false },
     })
 
     const html = `<!DOCTYPE html>
@@ -90,6 +99,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ message: 'If an account exists, a reset link has been sent.' })
   } catch (e) {
     console.error('Password reset email failed:', e)
-    return res.status(500).json({ error: 'Failed to send reset email' })
+    return res.status(500).json({ error: `Failed to send reset email: ${e.message || e}` })
   }
 }
