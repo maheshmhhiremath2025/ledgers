@@ -11,17 +11,38 @@ const COLORS = {
   accent:   '#6366F1',
   accent2:  '#8B5CF6',
   accent3:  '#06B6D4',
-  text:     '#0F1729',
-  text2:    '#374151',
+  text:     '#0B1020',
+  text2:    '#3B4252',
   text3:    '#6B7280',
+  text4:    '#9CA3AF',
   border:   '#E5E7EB',
-  bgLight:  '#F7F8FD',
+  border2:  '#F1F2F6',
+  bgLight:  '#FAFBFF',
+  bgSoft:   '#F4F5FB',
   bgAccent: '#EEF0FE',
   green:    '#10B981',
   red:      '#EF4444',
   amber:    '#F59E0B',
+  pink:     '#EC4899',
   white:    '#FFFFFF',
 }
+
+// Premium section palette — each chapter gets its own color pair
+// [primary, soft-tint bg]
+const PALETTE = [
+  ['#6366F1', '#EEF0FE'],   // indigo
+  ['#8B5CF6', '#F3EEFE'],   // violet
+  ['#EC4899', '#FDEEF5'],   // pink
+  ['#EF4444', '#FEEEEE'],   // red
+  ['#F59E0B', '#FEF6E7'],   // amber
+  ['#10B981', '#E7FAF3'],   // emerald
+  ['#06B6D4', '#E5FAFE'],   // cyan
+  ['#3B82F6', '#EBF2FE'],   // blue
+]
+
+// Current chapter color — mutated by h1()
+let CURRENT = { main: PALETTE[0][0], tint: PALETTE[0][1] }
+let chapterIndex = 0
 
 // A4 margins leave room for header (top) and footer (bottom)
 const HEADER_H = 52
@@ -50,36 +71,75 @@ const CONTENT_TOP = 72 + HEADER_H
 const CONTENT_BOTTOM = PAGE_H - 54 - FOOTER_H
 
 // ───── Layout helpers ─────
-function h1(text) {
-  if (doc.y > CONTENT_BOTTOM - 160) doc.addPage()
-  doc.moveDown(0.2)
+
+// Each chapter starts on a new page with a big colored chapter block.
+// Parses "6. Creating Invoices" → number "06", title "Creating Invoices".
+function h1(raw) {
+  // Always start a new page for a new chapter so the visual block stands out.
+  doc.addPage()
+
+  // Rotate palette color per chapter (premium multi-color look)
+  const [main, tint] = PALETTE[chapterIndex % PALETTE.length]
+  CURRENT = { main, tint }
+  chapterIndex++
+
+  const m = raw.match(/^(\d+)\.\s+(.*)$/)
+  const num   = m ? m[1].padStart(2, '0') : ''
+  const title = m ? m[2] : raw
+
   const y0 = doc.y
-  // Accent bar left of title
+
+  // Soft rounded tinted block
   doc.save()
-  doc.roundedRect(M, y0 + 4, 5, 26, 2).fill(COLORS.accent)
+  doc.roundedRect(M, y0, CONTENT_W, 92, 14).fill(tint)
+  // Accent left bar
+  doc.roundedRect(M, y0, 6, 92, 3).fill(main)
   doc.restore()
-  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(22)
-     .text(text, M + 14, y0, { width: CONTENT_W - 14 })
-  doc.moveDown(0.7)
+
+  // Small "CHAPTER" eyebrow
+  doc.fillColor(main).font('Helvetica-Bold').fontSize(9)
+     .text('CHAPTER', M + 24, y0 + 18, { characterSpacing: 2, lineBreak: false })
+
+  // Big ghosted chapter number on the right
+  doc.save()
+  doc.fillOpacity(0.18)
+  doc.fillColor(main).font('Helvetica-Bold').fontSize(78)
+     .text(num, M, y0 + 4, { width: CONTENT_W - 20, align: 'right', lineBreak: false })
+  doc.fillOpacity(1)
+  doc.restore()
+
+  // Title
+  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(24)
+     .text(title, M + 24, y0 + 38, { width: CONTENT_W - 140, lineBreak: false, ellipsis: true })
+
+  // Thin accent underline beneath title
+  doc.save()
+  doc.strokeColor(main).lineWidth(2)
+     .moveTo(M + 24, y0 + 76).lineTo(M + 64, y0 + 76).stroke()
+  doc.restore()
+
+  doc.y = y0 + 92 + 18
 }
 
 function h2(text) {
   if (doc.y > CONTENT_BOTTOM - 100) doc.addPage()
-  doc.moveDown(0.5)
-  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(14).text(text)
-  // thin underline
-  const y = doc.y + 1
+  doc.moveDown(0.6)
+  const y0 = doc.y
+  // Small colored square marker
   doc.save()
-  doc.strokeColor(COLORS.accent).lineWidth(1.2)
-     .moveTo(M, y).lineTo(M + 36, y).stroke()
+  doc.roundedRect(M, y0 + 6, 4, 14, 1).fill(CURRENT.main)
   doc.restore()
-  doc.moveDown(0.5)
+  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(13.5)
+     .text(text, M + 12, y0, { width: CONTENT_W - 12 })
+  doc.moveDown(0.35)
 }
 
 function h3(text) {
   if (doc.y > CONTENT_BOTTOM - 80) doc.addPage()
-  doc.moveDown(0.3)
-  doc.fillColor(COLORS.accent2).font('Helvetica-Bold').fontSize(11.5).text(text)
+  doc.moveDown(0.35)
+  // Eyebrow style — uppercase tracked
+  doc.fillColor(CURRENT.main).font('Helvetica-Bold').fontSize(9.5)
+     .text(text.toUpperCase(), { characterSpacing: 1.2 })
   doc.moveDown(0.15)
 }
 
@@ -94,173 +154,210 @@ function bullet(items) {
   items.forEach(item => {
     if (doc.y > CONTENT_BOTTOM - 40) doc.addPage()
     const y0 = doc.y
-    // dot
+    // square marker in current chapter color
     doc.save()
-    doc.circle(M + 5, y0 + 6, 2).fill(COLORS.accent)
+    doc.roundedRect(M + 2, y0 + 5, 5, 5, 1).fill(CURRENT.main)
     doc.restore()
     doc.fillColor(COLORS.text2)
-       .text(item, M + 14, y0, { width: CONTENT_W - 14, lineGap: 2 })
+       .text(item, M + 16, y0, { width: CONTENT_W - 16, lineGap: 2.5 })
+    doc.moveDown(0.1)
   })
-  doc.moveDown(0.4)
+  doc.moveDown(0.3)
 }
 
 function numbered(items) {
   doc.font('Helvetica').fontSize(10.5)
   items.forEach((item, i) => {
-    if (doc.y > CONTENT_BOTTOM - 40) doc.addPage()
+    if (doc.y > CONTENT_BOTTOM - 50) doc.addPage()
     const y0 = doc.y
-    // circle number
+    // Rounded square number chip
     doc.save()
-    doc.circle(M + 8, y0 + 7, 8).fill(COLORS.accent)
-    doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9)
-       .text(String(i + 1), M, y0 + 3, { width: 16, align: 'center', lineBreak: false })
+    doc.roundedRect(M, y0, 18, 18, 4).fill(CURRENT.tint)
+    doc.fillColor(CURRENT.main).font('Helvetica-Bold').fontSize(10)
+       .text(String(i + 1), M, y0 + 4, { width: 18, align: 'center', lineBreak: false })
     doc.restore()
     doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10.5)
-       .text(item, M + 22, y0 + 1, { width: CONTENT_W - 22, lineGap: 2 })
-    doc.moveDown(0.15)
+       .text(item, M + 26, y0 + 2, { width: CONTENT_W - 26, lineGap: 2.5 })
+    doc.moveDown(0.2)
   })
-  doc.moveDown(0.4)
+  doc.moveDown(0.3)
 }
 
 function callout(label, body, variant = 'info') {
   const COLOR_MAP = {
-    info:    COLORS.accent,
-    warning: COLORS.amber,
-    danger:  COLORS.red,
-    success: COLORS.green,
+    info:    { main: '#6366F1', tint: '#EEF0FE', icon: 'i' },
+    warning: { main: '#F59E0B', tint: '#FEF6E7', icon: '!' },
+    danger:  { main: '#EF4444', tint: '#FEEEEE', icon: '!' },
+    success: { main: '#10B981', tint: '#E7FAF3', icon: '✓' },
   }
-  const color = COLOR_MAP[variant] || COLORS.accent
+  const v = COLOR_MAP[variant] || COLOR_MAP.info
 
   if (doc.y > CONTENT_BOTTOM - 120) doc.addPage()
   const y0 = doc.y
-  const padY = 12, padX = 14, barW = 4
+  const padY = 14, padX = 16, iconW = 30
   doc.save()
   doc.font('Helvetica').fontSize(10)
-  const bodyH = doc.heightOfString(body, { width: CONTENT_W - padX * 2 - barW - 4 })
+  const bodyH = doc.heightOfString(body, { width: CONTENT_W - padX * 2 - iconW - 6 })
   const labelH = 14
   const h = labelH + bodyH + padY * 2 + 4
 
-  // Background
-  doc.fillOpacity(0.06).roundedRect(M, y0, CONTENT_W, h, 6).fill(color)
-  doc.fillOpacity(1)
-  // Left accent bar
-  doc.roundedRect(M, y0, barW, h, 2).fill(color)
+  // Tinted background card
+  doc.roundedRect(M, y0, CONTENT_W, h, 10).fill(v.tint)
+  // Left icon chip
+  doc.roundedRect(M + padX, y0 + padY, 22, 22, 6).fill(v.main)
+  doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(12)
+     .text(v.icon, M + padX, y0 + padY + 5, { width: 22, align: 'center', lineBreak: false })
 
-  doc.fillColor(color).font('Helvetica-Bold').fontSize(9.5)
-     .text(label.toUpperCase(), M + barW + padX, y0 + padY, { width: CONTENT_W - barW - padX * 2, characterSpacing: 0.5 })
+  doc.fillColor(v.main).font('Helvetica-Bold').fontSize(9.5)
+     .text(label.toUpperCase(), M + padX + iconW, y0 + padY + 1, { width: CONTENT_W - padX * 2 - iconW, characterSpacing: 1.5 })
   doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10)
-     .text(body, M + barW + padX, y0 + padY + labelH + 2, { width: CONTENT_W - barW - padX * 2, lineGap: 1.5 })
+     .text(body, M + padX + iconW, y0 + padY + labelH + 2, { width: CONTENT_W - padX * 2 - iconW, lineGap: 2 })
   doc.restore()
-  doc.y = y0 + h + 10
+  doc.y = y0 + h + 12
 }
 
 function kvTable(rows) {
-  const rowH = 24
-  const col1W = 170
+  const rowH = 26
+  const col1W = 160
+  // Outer rounded card
+  if (doc.y > CONTENT_BOTTOM - rows.length * (rowH + 2) - 20) doc.addPage()
+  const y0Block = doc.y
+  const totalH = rows.length * (rowH + 2) + 8
+  doc.save()
+  doc.roundedRect(M, y0Block, CONTENT_W, totalH, 8).lineWidth(1).strokeColor(COLORS.border2).stroke()
+  doc.restore()
+  doc.y = y0Block + 4
   rows.forEach((r, i) => {
-    if (doc.y > CONTENT_BOTTOM - 40) doc.addPage()
     const y0 = doc.y
     doc.save()
     if (i % 2 === 0) {
-      doc.fillOpacity(1).roundedRect(M, y0, CONTENT_W, rowH, 3).fill(COLORS.bgLight)
+      doc.roundedRect(M + 4, y0, CONTENT_W - 8, rowH, 5).fill(CURRENT.tint)
     }
-    // left accent strip for the key cell
-    doc.fillOpacity(1).rect(M, y0, 3, rowH).fill(COLORS.accent)
-    doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(10)
-       .text(r[0], M + 14, y0 + 7, { width: col1W - 14, lineBreak: false })
+    doc.fillColor(CURRENT.main).font('Helvetica-Bold').fontSize(10)
+       .text(r[0], M + 16, y0 + 8, { width: col1W - 16, lineBreak: false })
     doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10)
-       .text(r[1], M + col1W, y0 + 7, { width: CONTENT_W - col1W - 12, lineBreak: false, ellipsis: true })
+       .text(r[1], M + col1W, y0 + 8, { width: CONTENT_W - col1W - 16, lineBreak: false, ellipsis: true })
     doc.restore()
     doc.y = y0 + rowH + 2
   })
-  doc.moveDown(0.4)
+  doc.y = y0Block + totalH + 8
 }
 
 // ═══════════════════════════════════════════════════════════
-// COVER PAGE
+// COVER PAGE — premium editorial layout
 // ═══════════════════════════════════════════════════════════
 
-// Full background
+// Clean off-white background
 doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLORS.bgLight)
 
-// Top accent band
-doc.rect(0, 0, PAGE_W, 240).fill(COLORS.accent)
-// Subtle diagonal accent2 overlay
+// Bold color block top-left (indigo)
+doc.rect(0, 0, PAGE_W * 0.62, 300).fill('#6366F1')
+// Accent trapezoid bottom-right (pink)
 doc.save()
-doc.fillOpacity(0.4)
-doc.polygon([PAGE_W, 0], [PAGE_W, 180], [0, 240], [0, 180]).fill(COLORS.accent2)
-doc.fillOpacity(1)
+doc.polygon([PAGE_W, 300], [PAGE_W, 0], [PAGE_W * 0.62, 0], [PAGE_W * 0.62, 300]).fill('#8B5CF6')
 doc.restore()
+// Small cyan stripe
+doc.rect(0, 300, PAGE_W, 6).fill('#06B6D4')
 
-// Logo (white background chip)
-const logoSize = 70
-const logoX = (PAGE_W - logoSize) / 2
-const logoY = 130
-doc.save()
-doc.roundedRect(logoX - 10, logoY - 10, logoSize + 20, logoSize + 20, 16).fill(COLORS.white)
-doc.restore()
+// Logo — white chip, top-left
+const logoSize = 54
 try {
-  doc.image(LOGO, logoX, logoY, { fit: [logoSize, logoSize], align: 'center', valign: 'center' })
-} catch (e) {
-  // Fallback letter
-  doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(40)
-     .text('H', logoX, logoY + 16, { width: logoSize, align: 'center' })
-}
+  doc.image(LOGO, M, 50, { fit: [logoSize, logoSize] })
+} catch {}
 
-// Title
-doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(44)
-   .text('HexaLabs Books', 0, 300, { align: 'center', width: PAGE_W, characterSpacing: -0.5 })
-
-// Subtitle chip
-const subText = 'COMPLETE USER GUIDE'
-doc.font('Helvetica-Bold').fontSize(11)
-const subW = doc.widthOfString(subText) + 28
-const subX = (PAGE_W - subW) / 2
-doc.save()
-doc.roundedRect(subX, 362, subW, 28, 14).fill(COLORS.accent)
+// "USER GUIDE" eyebrow on cover
+doc.fillColor('rgba(255,255,255,0.75)').font('Helvetica-Bold').fontSize(10)
+   .text('THE COMPLETE', M, 180, { characterSpacing: 3, lineBreak: false })
 doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(11)
-   .text(subText, subX, 370, { width: subW, align: 'center', characterSpacing: 1.2 })
-doc.restore()
+   .text('USER GUIDE', M, 196, { characterSpacing: 3, lineBreak: false })
 
-// Tagline
-doc.fillColor(COLORS.text3).font('Helvetica').fontSize(12)
-   .text('GST Invoicing   ·   Double-Entry Accounting   ·   Financial Reports',
-         0, 410, { align: 'center', width: PAGE_W, characterSpacing: 0.3 })
+// Huge serif-ish display title
+doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(54)
+   .text('HexaLabs', M, 224, { characterSpacing: -1.5, lineBreak: false })
+doc.fillColor('rgba(255,255,255,0.92)').font('Helvetica-Bold').fontSize(54)
+   .text('Books.', M, 258, { characterSpacing: -1.5, lineBreak: false })
 
-// Info card
-const boxY = 500
-const boxW = CONTENT_W - 80
-const boxX = (PAGE_W - boxW) / 2
-doc.save()
-doc.roundedRect(boxX, boxY, boxW, 160, 12).fill(COLORS.white)
-doc.roundedRect(boxX, boxY, boxW, 160, 12).lineWidth(1).strokeColor(COLORS.border).stroke()
-// Accent corner
-doc.roundedRect(boxX, boxY, 5, 160, 2).fill(COLORS.accent)
-doc.restore()
+// ── Middle / content section ──
+const midY = 370
 
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(10)
-   .text('ABOUT THIS GUIDE', boxX + 22, boxY + 22, { width: boxW - 44, characterSpacing: 0.8 })
-doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(13)
-   .text('Everything you need to know', boxX + 22, boxY + 42, { width: boxW - 44 })
-doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10)
+// Three horizontal color bars as dividers
+const barY = midY
+const bars = [
+  { x: M,         w: 40, c: '#6366F1' },
+  { x: M + 48,    w: 20, c: '#8B5CF6' },
+  { x: M + 72,    w: 10, c: '#EC4899' },
+]
+bars.forEach(b => doc.rect(b.x, barY, b.w, 3).fill(b.c))
+
+// Eyebrow
+doc.fillColor(COLORS.text3).font('Helvetica-Bold').fontSize(9)
+   .text('ABOUT THIS GUIDE', M, barY + 16, { characterSpacing: 2 })
+
+// Description
+doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(16)
+   .text('Everything you need to run your business.',
+         M, barY + 36, { width: CONTENT_W, lineGap: 2 })
+
+doc.fillColor(COLORS.text2).font('Helvetica').fontSize(11)
    .text(
-     'This guide walks you through every feature of HexaLabs Books — from signing up to creating your first invoice, managing expenses, generating financial reports, and using advanced features like webhooks, API keys and time tracking. Read it front-to-back or jump straight to the section you need.',
-     boxX + 22, boxY + 64, { width: boxW - 44, align: 'justify', lineGap: 2.5 }
+     'This guide walks you through every feature of HexaLabs Books — from signing up to creating your first invoice, managing expenses, generating reports, and using advanced features like webhooks, API keys and time tracking.',
+     M, barY + 86, { width: CONTENT_W - 20, align: 'justify', lineGap: 3.5 }
    )
 
-// Version / date at bottom
-doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
-   .text('Version 1.0   ·   ' + new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
-         0, PAGE_H - 72, { align: 'center', width: PAGE_W, characterSpacing: 0.5 })
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(11)
-   .text('ledgers.hexalabs.online', 0, PAGE_H - 56, { align: 'center', width: PAGE_W })
+// ── Highlights row (3 colored cards) ──
+const cardsY = 540
+const cardW  = (CONTENT_W - 20) / 3
+const highlights = [
+  { label: 'CHAPTERS',  value: '25',  color: '#6366F1' },
+  { label: 'FEATURES',  value: '50+', color: '#EC4899' },
+  { label: 'READING',   value: '45m', color: '#10B981' },
+]
+highlights.forEach((h, i) => {
+  const x = M + i * (cardW + 10)
+  doc.save()
+  doc.roundedRect(x, cardsY, cardW, 74, 10).fill(COLORS.white)
+  doc.roundedRect(x, cardsY, cardW, 74, 10).lineWidth(1).strokeColor(COLORS.border).stroke()
+  // Top colored tab
+  doc.roundedRect(x, cardsY, cardW, 4, 2).fill(h.color)
+  doc.fillColor(h.color).font('Helvetica-Bold').fontSize(28)
+     .text(h.value, x, cardsY + 14, { width: cardW, align: 'center', lineBreak: false })
+  doc.fillColor(COLORS.text3).font('Helvetica-Bold').fontSize(9)
+     .text(h.label, x, cardsY + 50, { width: cardW, align: 'center', characterSpacing: 1.5, lineBreak: false })
+  doc.restore()
+})
+
+// ── Bottom bar ──
+doc.rect(0, PAGE_H - 64, PAGE_W, 64).fill(COLORS.text)
+// colored underline stripe
+doc.rect(0, PAGE_H - 64, PAGE_W, 3).fill('#6366F1')
+doc.rect(PAGE_W / 3, PAGE_H - 64, PAGE_W / 3, 3).fill('#EC4899')
+doc.rect((PAGE_W * 2) / 3, PAGE_H - 64, PAGE_W / 3, 3).fill('#10B981')
+
+doc.fillColor('rgba(255,255,255,0.55)').font('Helvetica').fontSize(9)
+   .text('VERSION 1.0   ·   ' + new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }).toUpperCase(),
+         M, PAGE_H - 42, { characterSpacing: 1.5, lineBreak: false })
+doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(10)
+   .text('ledgers.hexalabs.online',
+         M, PAGE_H - 42, { width: CONTENT_W, align: 'right', lineBreak: false, link: 'https://ledgers.hexalabs.online' })
 
 // ═══════════════════════════════════════════════════════════
 // TABLE OF CONTENTS
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 
-h1('Table of Contents')
+// Custom TOC header — don't use h1() so we don't advance chapter palette
+{
+  const y0 = doc.y
+  doc.save()
+  doc.roundedRect(M, y0, CONTENT_W, 78, 12).fill(COLORS.bgSoft)
+  doc.roundedRect(M, y0, 6, 78, 3).fill('#6366F1')
+  doc.restore()
+  doc.fillColor('#6366F1').font('Helvetica-Bold').fontSize(9)
+     .text('INDEX', M + 24, y0 + 20, { characterSpacing: 2, lineBreak: false })
+  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(28)
+     .text('Table of Contents', M + 24, y0 + 34, { lineBreak: false })
+  doc.y = y0 + 78 + 22
+}
 
 const TOC = [
   ['1.  Getting Started',                     3],
@@ -290,29 +387,47 @@ const TOC = [
   ['25. Troubleshooting & Support',          31],
 ]
 
-TOC.forEach(([label, page]) => {
-  if (doc.y > CONTENT_BOTTOM - 30) doc.addPage()
+TOC.forEach(([label, page], i) => {
+  if (doc.y > CONTENT_BOTTOM - 34) doc.addPage()
   const y0 = doc.y
-  doc.fillColor(COLORS.text).font('Helvetica').fontSize(11)
-     .text(label, M, y0, { lineBreak: false })
-  const labelW = doc.widthOfString(label)
-  const dotsStart = M + labelW + 8
-  const dotsEnd = PAGE_W - M - 26
-  // dotted leader
+  const [main, tint] = PALETTE[i % PALETTE.length]
+
+  // Extract chapter number
+  const numMatch = label.match(/^(\d+)\.\s+(.*)$/)
+  const num   = numMatch ? numMatch[1].padStart(2, '0') : ''
+  const title = numMatch ? numMatch[2] : label
+
+  // Colored chapter number chip
+  doc.save()
+  doc.roundedRect(M, y0, 32, 24, 5).fill(tint)
+  doc.fillColor(main).font('Helvetica-Bold').fontSize(11)
+     .text(num, M, y0 + 6, { width: 32, align: 'center', lineBreak: false })
+  doc.restore()
+
+  // Title
+  doc.fillColor(COLORS.text).font('Helvetica').fontSize(11.5)
+     .text(title, M + 42, y0 + 6, { lineBreak: false })
+  const titleW = doc.widthOfString(title)
+
+  // Dotted leader
+  const dotsStart = M + 42 + titleW + 10
+  const dotsEnd = PAGE_W - M - 34
   doc.save()
   doc.strokeColor(COLORS.border).lineWidth(1).dash(1, { space: 3 })
-     .moveTo(dotsStart, y0 + 7).lineTo(dotsEnd, y0 + 7).stroke()
+     .moveTo(dotsStart, y0 + 14).lineTo(dotsEnd, y0 + 14).stroke()
   doc.undash()
   doc.restore()
-  doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(11)
-     .text(String(page), PAGE_W - M - 22, y0, { width: 22, align: 'right', lineBreak: false })
-  doc.y = y0 + 22
+
+  // Page number in chapter color
+  doc.fillColor(main).font('Helvetica-Bold').fontSize(11)
+     .text(String(page), PAGE_W - M - 28, y0 + 6, { width: 28, align: 'right', lineBreak: false })
+
+  doc.y = y0 + 30
 })
 
 // ═══════════════════════════════════════════════════════════
 // 1. GETTING STARTED
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('1. Getting Started')
 
 p('HexaLabs Books is a complete GST-compliant invoicing and accounting platform built for Indian freelancers and small businesses. You can create invoices, accept online payments, track expenses, generate financial reports and manage your entire books from one place — in your web browser, on any device.')
@@ -347,7 +462,6 @@ p('HexaLabs Books runs in any modern web browser — Chrome, Firefox, Safari, Ed
 // ═══════════════════════════════════════════════════════════
 // 2. DASHBOARD OVERVIEW
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('2. Dashboard Overview')
 
 p('The dashboard is the first screen you see after logging in. It gives you a real-time snapshot of your business health at a glance.')
@@ -377,7 +491,6 @@ p('The latest invoices created and payments received so you always know what is 
 // ═══════════════════════════════════════════════════════════
 // 3. ORGANISATION SETUP
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('3. Setting Up Your Organisation')
 
 p('Before sending your first invoice, fill in your organisation details so everything auto-fills correctly on every document.')
@@ -413,7 +526,6 @@ callout('Important', 'Your GSTIN determines whether CGST + SGST (intra-state) or
 // ═══════════════════════════════════════════════════════════
 // 4. CUSTOMERS & VENDORS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('4. Customers & Vendors')
 
 p('Customers are people or businesses you sell to. Vendors are people or businesses you buy from. Both work identically — you will use Customers when creating invoices and Vendors when creating purchase orders and bills.')
@@ -440,7 +552,6 @@ p('To import many customers at once, use the Bulk Import feature. See Chapter 18
 // ═══════════════════════════════════════════════════════════
 // 5. PRODUCTS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('5. Products & Services')
 
 p('The products catalog lets you save items you sell repeatedly so you do not have to retype them on every invoice. It works for both physical goods and services.')
@@ -461,7 +572,6 @@ p('On the invoice form, click "+ Add item" and start typing — matching product
 // ═══════════════════════════════════════════════════════════
 // 6. INVOICES
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('6. Creating Invoices')
 
 p('Invoices are the heart of HexaLabs Books. Every invoice you create automatically posts balanced journal entries to your ledger and flows into your financial reports.')
@@ -512,7 +622,6 @@ p('For subscription billing or monthly retainers, see Chapter 12.')
 // ═══════════════════════════════════════════════════════════
 // 7. ESTIMATES
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('7. Estimates')
 
 p('Estimates (also called quotes) let you propose work to a potential customer before sending a real invoice. They have no accounting impact — nothing posts to the ledger until you convert the estimate to an invoice.')
@@ -535,7 +644,6 @@ p('Open an accepted estimate and click "Convert to Invoice". All line items, tax
 // ═══════════════════════════════════════════════════════════
 // 8. PAYMENTS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('8. Recording Payments')
 
 p('When a customer pays you (by cash, bank transfer, cheque or online), record the payment so the invoice is marked as paid and the money flows into your books.')
@@ -565,7 +673,6 @@ p('All supported modes are tracked separately in reports, so you can see how muc
 // ═══════════════════════════════════════════════════════════
 // 9. PURCHASE ORDERS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('9. Purchase Orders')
 
 p('Purchase Orders (POs) are documents you send to vendors to request goods or services. They are tracked separately from invoices and do not post to the ledger until received or converted to a bill.')
@@ -594,7 +701,6 @@ p('When the vendor sends their invoice, open the PO and click "Convert to Bill".
 // ═══════════════════════════════════════════════════════════
 // 10. BILLS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('10. Vendor Bills')
 
 p('A vendor bill represents an amount you owe to a supplier. Bills post to Accounts Payable and track what you need to pay out.')
@@ -622,7 +728,6 @@ kvTable([
 // ═══════════════════════════════════════════════════════════
 // 11. EXPENSES
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('11. Expenses')
 
 p('Expenses are day-to-day costs of running your business that do not require a formal vendor bill — things like rent, petrol, software subscriptions, stationery and meals.')
@@ -645,7 +750,6 @@ p('The dashboard shows expenses by category for the current month, and the Profi
 // ═══════════════════════════════════════════════════════════
 // 12. RECURRING
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('12. Recurring Invoices & Expenses')
 
 p('For anything that repeats on a schedule — monthly retainers, rent, software subscriptions — set up a recurring template and HexaLabs Books generates the document automatically.')
@@ -671,7 +775,6 @@ callout('Note', 'Recurring documents run via a daily cron job. Generated invoice
 // ═══════════════════════════════════════════════════════════
 // 13. BANK
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('13. Bank Accounts')
 
 p('Add your bank accounts so their details print on every invoice for easy payment, and so you can track cash balances accurately.')
@@ -693,7 +796,6 @@ p('You can add as many accounts as you like. When recording a payment, choose wh
 // ═══════════════════════════════════════════════════════════
 // 14. REPORTS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('14. Financial Reports')
 
 p('HexaLabs Books auto-generates all key financial reports from your journal entries. Nothing to configure — just open any report and set a date range.')
@@ -736,7 +838,6 @@ p('Every report has an "Export" button. Choose CSV (for Excel or your accountant
 // ═══════════════════════════════════════════════════════════
 // 15. GST
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('15. GST & Tax')
 
 p('HexaLabs Books is built from the ground up for Indian GST compliance. Here is how the tax features work.')
@@ -762,7 +863,6 @@ p('Determined automatically from the customer\'s billing state. For exports (out
 // ═══════════════════════════════════════════════════════════
 // 16. PROJECTS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('16. Projects & Time Tracking')
 
 p('For consultants, agencies and freelancers who bill by the hour, Projects and Time Tracking let you log hours against a project and turn them into an invoice with one click.')
@@ -783,7 +883,6 @@ p('On the project page, the total billable-but-unbilled hours show at the top. C
 // ═══════════════════════════════════════════════════════════
 // 17. ASSETS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('17. Fixed Assets')
 
 p('Fixed assets are long-term things you own: laptops, furniture, vehicles, machinery. HexaLabs Books tracks their purchase cost, calculates monthly straight-line depreciation automatically, and posts depreciation entries to your ledger.')
@@ -805,7 +904,6 @@ p('Open the asset and click "Dispose". Enter sale date, sale value (0 if scrappe
 // ═══════════════════════════════════════════════════════════
 // 18. IMPORT
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('18. Bulk CSV Import')
 
 p('Migrating from another tool? Use Bulk Import to upload customers, vendors or products from a CSV file in seconds.')
@@ -831,7 +929,6 @@ p('If any rows fail (missing required field, invalid GSTIN format, etc.), the re
 // ═══════════════════════════════════════════════════════════
 // 19. ATTACHMENTS
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('19. File Attachments')
 
 p('You can attach files to invoices, bills, expenses and projects — useful for saving receipt photos, signed contracts or supporting documents.')
@@ -875,7 +972,6 @@ p('Click the × next to their name in the Team page. They lose access immediatel
 // ═══════════════════════════════════════════════════════════
 // 21. 2FA
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('21. Two-Factor Authentication')
 
 p('Two-factor authentication (2FA) adds a second layer of security to your account. After entering your password, you also enter a 6-digit code from an authenticator app on your phone. 2FA is optional but strongly recommended.')
@@ -904,7 +1000,6 @@ callout('Important', 'Store your backup codes somewhere safe — a password mana
 // ═══════════════════════════════════════════════════════════
 // 22. API
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('22. API Keys & Webhooks')
 
 p('HexaLabs Books has a public REST API and webhook system so you can integrate with Zapier, custom scripts, CRMs, e-commerce platforms and anything else that speaks HTTP.')
@@ -966,7 +1061,6 @@ p('If your endpoint returns a non-2xx response, HexaLabs Books retries with expo
 // ═══════════════════════════════════════════════════════════
 // 23. AUDIT
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('23. Audit Log')
 
 p('Every significant action in HexaLabs Books — invoice created, payment recorded, user logged in, settings changed — is recorded in an append-only audit log with timestamp, user, IP address, and before/after snapshots.')
@@ -1016,7 +1110,6 @@ p('See our Refund Policy at https://ledgers.hexalabs.online/refund.')
 // ═══════════════════════════════════════════════════════════
 // 25. TROUBLESHOOTING
 // ═══════════════════════════════════════════════════════════
-doc.addPage()
 h1('25. Troubleshooting & Support')
 
 h2('Common issues')
@@ -1055,26 +1148,58 @@ p('To permanently delete your account and all its data, email support from your 
 doc.addPage()
 
 // Centered thank-you block
-const cY = 220
-doc.save()
-doc.roundedRect(M + 40, cY, CONTENT_W - 80, 4, 2).fill(COLORS.accent)
-doc.restore()
+// Soft background
+doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLORS.bgLight)
 
-doc.fillColor(COLORS.text3).font('Helvetica-Bold').fontSize(11)
-   .text('THANK YOU FOR CHOOSING', 0, cY + 24, { align: 'center', width: PAGE_W, characterSpacing: 1.5 })
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(38)
-   .text('HexaLabs Books', 0, cY + 48, { align: 'center', width: PAGE_W, characterSpacing: -0.5 })
+// Three tall colored bars at top-right (decorative)
+doc.rect(PAGE_W - 18, 0, 6, 140).fill('#6366F1')
+doc.rect(PAGE_W - 10, 0, 6, 100).fill('#EC4899')
+doc.rect(PAGE_W - 2,  0, 6, 60).fill('#10B981')
+
+const cY = 240
+doc.fillColor(COLORS.text3).font('Helvetica-Bold').fontSize(10)
+   .text('THANK YOU', 0, cY, { align: 'center', width: PAGE_W, characterSpacing: 3 })
+
+doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(42)
+   .text('for choosing', 0, cY + 28, { align: 'center', width: PAGE_W, characterSpacing: -0.5 })
+
+// HexaLabs Books with colored "Books."
+doc.fillColor('#6366F1').font('Helvetica-Bold').fontSize(42)
+const brand1 = 'HexaLabs '
+const brand2 = 'Books.'
+const w1 = doc.widthOfString(brand1)
+const w2 = doc.widthOfString(brand2)
+const brandX = (PAGE_W - (w1 + w2)) / 2
+doc.text(brand1, brandX, cY + 78, { lineBreak: false, characterSpacing: -0.5 })
+doc.fillColor('#EC4899').text(brand2, brandX + w1, cY + 78, { lineBreak: false, characterSpacing: -0.5 })
+
+// Tri-color stripe divider
+const divY = cY + 150
+doc.rect((PAGE_W - 120) / 2, divY,          40, 3).fill('#6366F1')
+doc.rect((PAGE_W - 120) / 2 + 44, divY,     32, 3).fill('#EC4899')
+doc.rect((PAGE_W - 120) / 2 + 80, divY,     40, 3).fill('#10B981')
 
 doc.fillColor(COLORS.text2).font('Helvetica').fontSize(12)
-   .text('We hope this guide helps you get the most out of the platform.', 0, cY + 120, { align: 'center', width: PAGE_W })
-doc.text('For the latest features and updates, visit:', 0, cY + 144, { align: 'center', width: PAGE_W })
+   .text('We hope this guide helps you get the most out of the platform.',
+         M, divY + 30, { align: 'center', width: CONTENT_W, lineGap: 3 })
 
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(14)
-   .text('ledgers.hexalabs.online', 0, cY + 172, { align: 'center', width: PAGE_W, link: 'https://ledgers.hexalabs.online', underline: true })
+// Website link pill
+doc.font('Helvetica-Bold').fontSize(12)
+const linkLabel = 'ledgers.hexalabs.online'
+const linkW = doc.widthOfString(linkLabel) + 40
+const linkX = (PAGE_W - linkW) / 2
+doc.save()
+doc.roundedRect(linkX, divY + 90, linkW, 36, 18).fill('#0B1020')
+doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(12)
+   .text(linkLabel, linkX, divY + 101, { width: linkW, align: 'center', lineBreak: false, link: 'https://ledgers.hexalabs.online' })
+doc.restore()
 
-doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
-   .text('© ' + new Date().getFullYear() + ' HexaLabs. All rights reserved.',
-         0, cY + 240, { align: 'center', width: PAGE_W, characterSpacing: 0.3 })
+// Bottom line
+doc.rect(0, PAGE_H - 48, PAGE_W, 48).fill(COLORS.text)
+doc.rect(0, PAGE_H - 48, PAGE_W, 3).fill('#6366F1')
+doc.fillColor('rgba(255,255,255,0.6)').font('Helvetica').fontSize(9)
+   .text('© ' + new Date().getFullYear() + ' HEXALABS.  ALL RIGHTS RESERVED.',
+         0, PAGE_H - 30, { align: 'center', width: PAGE_W, characterSpacing: 1.5 })
 
 // ═══════════════════════════════════════════════════════════
 // HEADER & FOOTER on every page (buffered)
@@ -1082,54 +1207,46 @@ doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
 const range = doc.bufferedPageRange()
 const TOTAL = range.count
 
+const LAST = range.start + range.count - 1
 for (let i = range.start; i < range.start + range.count; i++) {
   doc.switchToPage(i)
 
-  // Skip header/footer on cover (page 0)
-  if (i === 0) continue
+  // Skip header/footer on cover and closing page
+  if (i === 0 || i === LAST) continue
 
-  // ── HEADER ──
-  const headerY = 34
+  // ── HEADER (logo image only) ──
+  const headerY = 36
   doc.save()
-  // Logo (small)
   try {
-    doc.image(LOGO, M, headerY - 4, { fit: [28, 28] })
+    doc.image(LOGO, M, headerY, { fit: [34, 34] })
   } catch {}
-  // Brand text
-  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(12)
-     .text('HexaLabs Books', M + 36, headerY + 2, { lineBreak: false })
-  doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
-     .text('User Guide', M + 36, headerY + 16, { lineBreak: false })
-  // Right side — site link
-  doc.fillColor(COLORS.accent).font('Helvetica').fontSize(9)
-     .text('ledgers.hexalabs.online', PAGE_W - M - 150, headerY + 8, { width: 150, align: 'right', lineBreak: false })
-  // Separator line
-  doc.strokeColor(COLORS.border).lineWidth(0.7)
-     .moveTo(M, headerY + 30).lineTo(PAGE_W - M, headerY + 30).stroke()
+  // Tri-color thin stripe separator
+  const stripeY = headerY + 42
+  const stripeW = CONTENT_W
+  doc.rect(M,                  stripeY, stripeW * 0.4,  2).fill('#6366F1')
+  doc.rect(M + stripeW * 0.4,  stripeY, stripeW * 0.35, 2).fill('#EC4899')
+  doc.rect(M + stripeW * 0.75, stripeY, stripeW * 0.25, 2).fill('#10B981')
   doc.restore()
 
   // ── FOOTER ──
-  const footerY = PAGE_H - 44
+  const footerY = PAGE_H - 52
   doc.save()
-  // Separator line
-  doc.strokeColor(COLORS.border).lineWidth(0.7)
+  // Thin top line
+  doc.strokeColor(COLORS.border).lineWidth(0.6)
      .moveTo(M, footerY).lineTo(PAGE_W - M, footerY).stroke()
-  // Left: copyright
-  doc.fillColor(COLORS.text3).font('Helvetica').fontSize(8.5)
-     .text('© ' + new Date().getFullYear() + ' HexaLabs. All rights reserved.',
-           M, footerY + 10, { width: CONTENT_W / 2, align: 'left', lineBreak: false })
-  // Center: confidentiality
-  doc.fillColor(COLORS.text3).font('Helvetica-Oblique').fontSize(8.5)
-     .text('HexaLabs Books — User Guide',
-           M, footerY + 10, { width: CONTENT_W, align: 'center', lineBreak: false })
-  // Right: page number pill
-  const pageLabel = `${i + 1} / ${TOTAL}`
-  doc.font('Helvetica-Bold').fontSize(8.5)
-  const pW = doc.widthOfString(pageLabel) + 16
+  // Left: small brand mark
+  doc.fillColor(COLORS.text2).font('Helvetica-Bold').fontSize(8.5)
+     .text('HEXALABS BOOKS', M, footerY + 14, { characterSpacing: 1.6, lineBreak: false })
+  doc.fillColor(COLORS.text4).font('Helvetica').fontSize(8)
+     .text('ledgers.hexalabs.online', M, footerY + 26, { lineBreak: false })
+  // Right: dark page number pill
+  const pageLabel = `${String(i + 1).padStart(2, '0')}  ·  ${String(TOTAL).padStart(2, '0')}`
+  doc.font('Helvetica-Bold').fontSize(9)
+  const pW = doc.widthOfString(pageLabel) + 24
   const pX = PAGE_W - M - pW
-  doc.roundedRect(pX, footerY + 6, pW, 16, 8).fill(COLORS.accent)
-  doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(8.5)
-     .text(pageLabel, pX, footerY + 10, { width: pW, align: 'center', lineBreak: false })
+  doc.roundedRect(pX, footerY + 14, pW, 22, 11).fill('#0B1020')
+  doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9)
+     .text(pageLabel, pX, footerY + 21, { width: pW, align: 'center', lineBreak: false, characterSpacing: 1 })
   doc.restore()
 }
 
