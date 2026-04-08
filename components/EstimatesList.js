@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -170,8 +171,9 @@ function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
 
   const inp = { width:'100%', padding:'8px 11px', background:'var(--surface-2)', border:'1px solid var(--border-2)', color:'var(--text)', borderRadius:'var(--r)', fontSize:13, outline:'none', fontFamily:'var(--font)' }
 
-  return (
-    <div onClick={onClose} style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.65)', zIndex:9999, overflow:'hidden' }}>
+  if (typeof document === 'undefined') return null
+  return createPortal(
+    <div onClick={onClose} style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.65)', zIndex:99999, overflow:'hidden' }}>
       <div onClick={e => e.stopPropagation()} style={{ position:'absolute', top:'3vh', bottom:'3vh', left:'50%', transform:'translateX(-50%)', width:'min(900px, calc(100% - 40px))', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
         <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center', flex:'0 0 auto', background:'var(--surface)', borderRadius:'var(--r-lg) var(--r-lg) 0 0' }}>
           <div style={{ fontSize:16, fontWeight:700, color:'var(--text)' }}>{editing ? 'Edit Estimate' : 'New Estimate'}</div>
@@ -240,6 +242,7 @@ function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
           <button onClick={save} disabled={saving} style={{ background:'var(--accent)', color:'#fff', border:'none', padding:'8px 18px', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'var(--font)' }}>{saving ? 'Saving…' : '💾 Save'}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

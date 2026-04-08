@@ -576,7 +576,7 @@ export default function Home() {
 
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{curNav?.label}</span>
-              {view === 'form' && <>
+              {view === 'form' && ['invoices','purchase-orders','payments'].includes(page) && <>
                 <span style={{ color: 'var(--text-4)', fontSize: 13 }}>/</span>
                 <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>{editItem ? 'Edit' : 'New'}</span>
               </>}
@@ -615,7 +615,8 @@ export default function Home() {
               {(() => { const now = new Date(); const y = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1; return `FY ${y}–${String(y + 1).slice(2)}` })()}
             </div>
 
-            {view === 'list' && page !== 'dashboard' && page !== 'ledgers' && page !== 'config' && page !== 'billing' && page !== 'recurring' && page !== 'reports' && page !== 'team' && page !== 'customers' && page !== 'expenses' && page !== 'vendors' && page !== 'products' && page !== 'credit-notes' && page !== 'support' && page !== 'products' && page !== 'credit-notes' && page !== 'support' && page !== 'products' && page !== 'credit-notes' && page !== 'support' && page !== 'products' && page !== 'credit-notes' && page !== 'support' && user?.role !== 'viewer' && (
+            {/* Top-navbar "New X" button — only for pages that use the full-page view='form' pattern */}
+            {view === 'list' && ['invoices','purchase-orders','payments'].includes(page) && user?.role !== 'viewer' && (
               <button onClick={() => openForm()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r)', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 12px rgba(99,102,241,0.35)', transition: 'all 0.15s', flexShrink: 0, fontFamily: 'var(--font)' }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.5)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 12px rgba(99,102,241,0.35)'}>
