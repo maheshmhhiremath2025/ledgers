@@ -109,11 +109,44 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>HexaLabs Books — GST Invoicing & Accounting Software</title>
-        <meta name="description" content="Professional GST invoicing, double-entry accounting, financial reports and online payments for freelancers and businesses. Free to start." />
+        <title>HexaLabs Books — GST Invoicing & Accounting Software for India</title>
+        <meta name="description" content="GST-compliant invoicing, double-entry accounting, financial reports, purchase orders and online payments — built for Indian freelancers and small businesses. Free to start, no credit card." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content="HexaLabs Books — GST Invoicing for India" />
-        <meta property="og:description" content="Create GST invoices, manage your ledger, generate financial reports and accept online payments — all in one app." />
+        <meta name="keywords" content="GST invoicing, accounting software India, GSTR-1, free invoice generator, double entry bookkeeping, purchase order software, small business accounting, razorpay invoicing" />
+        <meta name="author" content="HexaLabs" />
+        <link rel="canonical" href="https://ledgers.hexalabs.online/" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://ledgers.hexalabs.online/" />
+        <meta property="og:site_name" content="HexaLabs Books" />
+        <meta property="og:title" content="HexaLabs Books — GST Invoicing & Accounting for India" />
+        <meta property="og:description" content="Create GST invoices, manage your ledger, generate financial reports and accept online payments — all in one app. Free to start." />
+        <meta property="og:image" content="https://ledgers.hexalabs.online/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="en_IN" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="HexaLabs Books — GST Invoicing & Accounting for India" />
+        <meta name="twitter:description" content="GST invoices, ledger, reports and online payments in one app. Free to start." />
+        <meta name="twitter:image" content="https://ledgers.hexalabs.online/og-image.png" />
+
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: 'HexaLabs Books',
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web',
+          description: 'GST-compliant invoicing and accounting software for Indian freelancers and small businesses.',
+          url: 'https://ledgers.hexalabs.online/',
+          publisher: { '@type': 'Organization', name: 'HexaLabs', url: 'https://hexalabs.online' },
+          offers: [
+            { '@type': 'Offer', name: 'Starter', price: '0',    priceCurrency: 'INR' },
+            { '@type': 'Offer', name: 'Professional', price: '999',  priceCurrency: 'INR' },
+            { '@type': 'Offer', name: 'Business', price: '2499', priceCurrency: 'INR' },
+          ],
+          aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.8', reviewCount: '27' },
+        }) }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
         <style>{`

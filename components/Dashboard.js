@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, Badge, fmt, fmtDate } from './ui'
+import OnboardingChecklist from './OnboardingChecklist'
 
 const pct = (a, b) => b > 0 ? Math.round((a / b) * 100) : 0
 
@@ -195,6 +196,9 @@ export default function Dashboard({ org, headers, toast, onNavigate }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+
+      {/* ── Onboarding checklist (auto-hides when complete or dismissed) ── */}
+      <OnboardingChecklist headers={headers} onNavigate={onNavigate} invoiceCount={invoices?.count || 0}/>
 
       {/* ── Quick actions ── */}
       <div>

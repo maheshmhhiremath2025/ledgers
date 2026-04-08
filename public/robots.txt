@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /terms
+Allow: /privacy
+Allow: /refund
+Disallow: /app
+Disallow: /api/
+Disallow: /superadmin
+
+Sitemap: https://ledgers.hexalabs.online/sitemap.xml
