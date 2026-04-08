@@ -200,6 +200,13 @@ select option { background: var(--surface); color: var(--text); }
 }
 
 /* ── Mobile Responsive ── */
+@media (max-width: 1024px) {
+  /* Tablets and below: tighter padding everywhere */
+  body { font-size: 14px; }
+  h1 { font-size: 22px !important; }
+  h2 { font-size: 18px !important; }
+}
+
 @media (max-width: 768px) {
   /* Sidebar hidden on mobile, shown as overlay */
   .sb-sidebar {
@@ -231,9 +238,32 @@ select option { background: var(--surface); color: var(--text); }
     padding: 16px !important;
   }
   /* Stack grid columns */
-  .mobile-stack {
+  .mobile-stack,
+  div[style*="grid-template-columns: repeat(2,1fr)"],
+  div[style*="grid-template-columns: repeat(3,1fr)"],
+  div[style*="grid-template-columns: repeat(4,1fr)"],
+  div[style*="grid-template-columns:'1fr 1fr'"],
+  div[style*="grid-template-columns: '1fr 1fr'"] {
     grid-template-columns: 1fr !important;
   }
+  /* Tighten button rows */
+  button {
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+  }
+  /* Cards: full width with smaller padding */
+  .card, [class*="Card"] { padding: 14px !important; }
+  /* Top header on mobile: hide search box, scale down */
+  .sb-content > div { padding: 0 !important; }
+}
+
+@media (max-width: 480px) {
+  /* Phones: even tighter */
+  .sb-content { padding: 10px !important; }
+  h1 { font-size: 18px !important; }
+  h2 { font-size: 16px !important; }
+  table { font-size: 12px; }
+  th, td { padding: 8px !important; }
 }
 
 /* Overlay behind mobile sidebar */

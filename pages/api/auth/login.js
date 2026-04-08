@@ -1,12 +1,14 @@
+import crypto from 'crypto'
 import { connectDB } from '../../../lib/mongodb'
 import User from '../../../models/User'
 import { setSessionCookie, createToken } from '../../../lib/session'
+import { verifyTotp } from '../../../lib/totp'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
   await connectDB()
 
-  const { email, password } = req.body
+  const { email, password, totpCode, backupCode } = req.body
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
 
   // Find the primary org record (admin role, earliest created) for this email
@@ -17,6 +19,25 @@ export default async function handler(req, res) {
   const user = allUsers.find(u => u.verifyPassword(password)) || null
   if (!user) return res.status(401).json({ error: 'Invalid email or password' })
   if (!user.active) return res.status(403).json({ error: 'Account disabled' })
+
+  // 2FA gate
+  if (user.twoFactorEnabled) {
+    if (!totpCode && !backupCode) {
+      return res.status(401).json({ error: '2FA code required', requires2FA: true })
+    }
+    let ok = false
+    if (totpCode && verifyTotp(user.twoFactorSecret, totpCode)) ok = true
+    if (!ok && backupCode) {
+      const h = crypto.createHash('sha256').update(String(backupCode).trim()).digest('hex')
+      const idx = user.twoFactorBackupCodes.indexOf(h)
+      if (idx >= 0) {
+        user.twoFactorBackupCodes.splice(idx, 1) // single-use
+        await user.save()
+        ok = true
+      }
+    }
+    if (!ok) return res.status(401).json({ error: 'Invalid 2FA code', requires2FA: true })
+  }
 
   // Transparently upgrade legacy/weak password hashes
   if (user.needsPasswordRehash && user.needsPasswordRehash()) {

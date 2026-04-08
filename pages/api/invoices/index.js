@@ -7,6 +7,7 @@ import { requireAuth } from '../../../lib/auth'
 import { nextNumber } from '../../../lib/sequence'
 import { computeWithGst } from '../../../lib/gst'
 import { audit } from '../../../lib/audit'
+import { fireWebhook } from '../../../lib/webhooks'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -75,6 +76,7 @@ export default async function handler(req, res) {
         entityId: invoice._id, entityRef: invoice.invoiceNumber,
         amount: invoice.total, after: invoice.toObject(),
       })
+      fireWebhook(orgId, 'invoice.created', { invoice }).catch(() => {})
 
       // Auto-create or update customer from invoice
       const cname = (data.customer?.name || '').trim()

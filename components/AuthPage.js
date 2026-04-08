@@ -225,6 +225,9 @@ export default function AuthPage({ onAuth }) {
   const [name, setName]       = useState('')
   const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
+  const [needs2FA, setNeeds2FA] = useState(false)
+  const [totpCode, setTotpCode] = useState('')
+  const [useBackup, setUseBackup] = useState(false)
   const [orgId, setOrgId]     = useState('')
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -243,7 +246,7 @@ export default function AuthPage({ onAuth }) {
     setLoading(true)
     try {
       const body = mode === 'login'
-        ? { email, password }
+        ? { email, password, ...(useBackup ? { backupCode: totpCode } : { totpCode }) }
         : { name, email, password, orgId }
       const res = await fetch(`/api/auth/${mode}`, {
         credentials: 'include',
@@ -252,7 +255,15 @@ export default function AuthPage({ onAuth }) {
         body: JSON.stringify(body),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Something went wrong'); setLoading(false); return }
+      if (!res.ok) {
+        if (data.requires2FA) {
+          setNeeds2FA(true)
+          setError(data.error === '2FA code required' ? '' : (data.error || 'Invalid 2FA code'))
+        } else {
+          setError(data.error || 'Something went wrong')
+        }
+        setLoading(false); return
+      }
       if (data.token) localStorage.setItem('sb_token', data.token)
 
       if (mode === 'signup') {
@@ -419,6 +430,18 @@ export default function AuthPage({ onAuth }) {
                   </div>
                 )}
               </div>
+
+              {mode === 'login' && needs2FA && (
+                <div style={{ marginBottom: 20, padding: 14, background: 'var(--accent-dim)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 'var(--r-md)' }}>
+                  <label style={labelStyle}>{useBackup ? 'Backup code' : 'Authenticator code'}</label>
+                  <input type="text" value={totpCode} onChange={e => setTotpCode(e.target.value)} placeholder={useBackup ? '8-character backup code' : '6-digit code'}
+                    autoFocus required style={inputStyle}/>
+                  <button type="button" onClick={() => { setUseBackup(b => !b); setTotpCode('') }}
+                    style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--accent-2)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                    {useBackup ? '← Use authenticator code' : 'Use a backup code instead'}
+                  </button>
+                </div>
+              )}
 
               {mode === 'signup' && (
                 <div style={{ marginBottom: 20 }}>

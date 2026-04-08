@@ -11,6 +11,7 @@ const ProductSchema = new mongoose.Schema({
   taxRate:     { type: Number, default: 18 },
   category:    { type: String, default: '' },
   active:      { type: Boolean, default: true },
+  customFields:{ type: Map, of: String, default: undefined },
 }, { timestamps: true })
 
 ProductSchema.index({ orgId: 1, name: 1 })

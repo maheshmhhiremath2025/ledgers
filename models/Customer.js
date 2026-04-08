@@ -7,6 +7,7 @@ const CustomerSchema = new mongoose.Schema({
   address: { type: String, default: '' },
   gstin:   { type: String, default: '' },
   phone:   { type: String, default: '' },
+  customFields: { type: Map, of: String, default: undefined },
 }, { timestamps: true })
 
 CustomerSchema.index({ orgId: 1, name: 1 })

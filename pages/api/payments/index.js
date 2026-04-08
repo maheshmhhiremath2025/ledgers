@@ -5,6 +5,7 @@ import { postPaymentReceived, postPaymentMade } from '../../../lib/journal'
 import { requireAuth } from '../../../lib/auth'
 import { nextNumber } from '../../../lib/sequence'
 import { audit } from '../../../lib/audit'
+import { fireWebhook } from '../../../lib/webhooks'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -43,6 +44,7 @@ export default async function handler(req, res) {
         entityType: 'Payment', entityId: payment._id, entityRef: payment.paymentNumber,
         amount: payment.amount, after: payment.toObject(),
       })
+      fireWebhook(orgId, data.type === 'Receipt' ? 'payment.received' : 'payment.made', { payment }).catch(() => {})
 
       let invoice = null
 

@@ -16,6 +16,11 @@ const UserSchema = new mongoose.Schema({
   // Password reset
   resetToken:   { type: String, default: null, index: true },
   resetExpiry:  { type: Date,   default: null },
+
+  // 2FA (TOTP)
+  twoFactorEnabled: { type: Boolean, default: false },
+  twoFactorSecret:  { type: String, default: null }, // base32
+  twoFactorBackupCodes: { type: [String], default: [] }, // hashed backup codes
   invitedBy:    { type: String, default: null },
   status:       { type: String, enum: ['active', 'invited', 'disabled'], default: 'active' },
   razorpaySubId:     { type: String, default: null },

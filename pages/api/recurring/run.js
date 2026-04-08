@@ -1,8 +1,11 @@
 import { connectDB } from '../../../lib/mongodb'
 import RecurringInvoice from '../../../models/RecurringInvoice'
+import RecurringExpense from '../../../models/RecurringExpense'
 import Invoice from '../../../models/Invoice'
+import Expense from '../../../models/Expense'
 import OrgConfig from '../../../models/OrgConfig'
 import { postInvoiceRaised } from '../../../lib/journal'
+import { nextNumber } from '../../../lib/sequence'
 
 // Compute next run date
 function nextDate(from, frequency) {
@@ -135,9 +138,50 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── Recurring expenses ──
+    const expQuery = { active: true, nextDate: { $lte: now } }
+    if (orgId) expQuery.orgId = orgId
+    const recExps = await RecurringExpense.find(expQuery)
+    let expCreated = 0
+    for (const rx of recExps) {
+      try {
+        const expNumber = await nextNumber(rx.orgId, 'expense', 'EXP', 4)
+        const taxAmount = (Number(rx.amount) || 0) * (Number(rx.tax) || 0) / 100
+        const total = (Number(rx.amount) || 0) + taxAmount
+        await Expense.create({
+          orgId: rx.orgId,
+          expenseNumber: expNumber,
+          date: now,
+          category: rx.category || 'Miscellaneous',
+          vendor: rx.vendor || '',
+          description: rx.description || rx.name,
+          amount: rx.amount,
+          tax: rx.tax || 0,
+          taxAmount,
+          total,
+          paymentMode: rx.paymentMode || 'Bank Transfer',
+          notes: `Auto-generated from recurring: ${rx.name}`,
+          status: 'Recorded',
+        })
+        expCreated++
+        // Compute next date
+        const nd = new Date(rx.nextDate)
+        if (rx.frequency === 'weekly')    nd.setDate(nd.getDate() + 7)
+        if (rx.frequency === 'monthly')   nd.setMonth(nd.getMonth() + 1)
+        if (rx.frequency === 'quarterly') nd.setMonth(nd.getMonth() + 3)
+        if (rx.frequency === 'yearly')    nd.setFullYear(nd.getFullYear() + 1)
+        rx.lastRunAt = now
+        rx.nextDate  = nd
+        rx.generatedCount = (rx.generatedCount || 0) + 1
+        if (rx.endDate && nd > rx.endDate) rx.active = false
+        await rx.save()
+      } catch (e) { results.errors.push(`Expense ${rx.name}: ${e.message}`) }
+    }
+
     return res.status(200).json({
       success: true,
-      message: `Created ${results.created} invoices, sent ${results.sent} emails. ${results.errors.length} errors.`,
+      message: `Created ${results.created} invoices, ${expCreated} expenses, sent ${results.sent} emails. ${results.errors.length} errors.`,
+      expensesCreated: expCreated,
       ...results,
     })
   } catch (e) {

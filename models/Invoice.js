@@ -42,6 +42,9 @@ const InvoiceSchema = new mongoose.Schema({
   template:     { type: String, default: 'classic' },
   paymentToken: { type: String, index: true, default: null },
 
+  // Schema-less custom fields (e.g. PO Reference, Project Code, Cost Center)
+  customFields: { type: Map, of: String, default: undefined },
+
   // TDS / TCS (optional)
   tdsRate:    { type: Number, default: 0 },   // %
   tdsAmount:  { type: Number, default: 0 },
