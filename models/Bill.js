@@ -43,7 +43,14 @@ const BillSchema = new mongoose.Schema({
 
   currency: { type: String, default: 'INR' },
   notes:    { type: String, default: '' },
-  attachmentUrl: { type: String, default: '' }, // optional link to scanned bill
+  attachmentUrl: { type: String, default: '' }, // legacy single-attachment link
+  attachments: { type: [{
+    url:      String,
+    name:     String,
+    size:     Number,
+    contentType: String,
+    uploadedAt:  { type: Date, default: Date.now },
+  }], default: [] },
 }, { timestamps: true })
 
 BillSchema.index({ orgId: 1, billNumber: 1 }, { unique: true })

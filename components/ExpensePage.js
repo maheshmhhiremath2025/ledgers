@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Btn, Card, SectionTitle, EmptyState, SearchBar, fmt, fmtDate } from './ui'
+import AttachmentUploader from './AttachmentUploader'
 
 const CATEGORIES = [
   'Rent & Office','Salaries & Wages','Travel & Transport',
@@ -100,6 +101,7 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
   const [reference,   setReference]   = useState(editItem?.reference || '')
   const [notes,       setNotes]       = useState(editItem?.notes || '')
   const [receiptImage, setReceiptImage] = useState(editItem?.receiptImage || '')
+  const [attachments, setAttachments] = useState(editItem?.attachments || [])
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
   const receiptRef = React.useRef()
   const [saving,      setSaving]      = useState(false)
@@ -125,7 +127,7 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
       const r = await fetch(isEdit ? `/api/expenses/${editItem._id}` : '/api/expenses', {
         method: isEdit ? 'PUT' : 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, category, vendor, description, amount: parseFloat(amount), tax: parseFloat(tax)||0, paymentMode, reference, notes, receiptImage }),
+        body: JSON.stringify({ date, category, vendor, description, amount: parseFloat(amount), tax: parseFloat(tax)||0, paymentMode, reference, notes, receiptImage, attachments }),
       })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error)
@@ -178,6 +180,10 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
             style={{...inputStyle,resize:'vertical'}}
             onFocus={e=>e.target.style.borderColor='var(--accent)'}
             onBlur={e=>e.target.style.borderColor='var(--border-2)'}/>
+        </div>
+        <div style={{ marginTop:14 }}>
+          <label style={labelStyle}>Attachments (scanned receipts, PDFs)</label>
+          <AttachmentUploader value={attachments} onChange={setAttachments} headers={headers} toast={toast}/>
         </div>
         <div style={{marginTop:14}}>
           <label style={labelStyle}>Receipt / Attachment</label>

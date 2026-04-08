@@ -14,6 +14,13 @@ const ExpenseSchema = new mongoose.Schema({
   paymentMode: { type: String, enum: ['Cash', 'Bank Transfer', 'UPI', 'Cheque', 'Card', 'Other'], default: 'Bank Transfer' },
   reference:   { type: String, default: '' },
   notes:       { type: String, default: '' },
+  attachments: { type: [{
+    url:         String,
+    name:        String,
+    size:        Number,
+    contentType: String,
+    uploadedAt:  { type: Date, default: Date.now },
+  }], default: [] },
   status:      { type: String, enum: ['Recorded', 'Pending'], default: 'Recorded' },
 }, { timestamps: true })
 

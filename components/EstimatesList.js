@@ -34,6 +34,27 @@ export default function EstimatesList({ headers, toast, readOnly }) {
     (i.customer?.name || '').toLowerCase().includes(search.toLowerCase())
   )
 
+  const downloadPdf = (est) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('sb_token') : null
+    fetch(`/api/estimates/${est._id}/pdf`, { credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.ok ? r.blob() : Promise.reject(new Error('Failed')))
+      .then(blob => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a'); a.href = url; a.download = `${est.estimateNumber}.pdf`; a.click()
+        URL.revokeObjectURL(url)
+      })
+      .catch(() => toast('PDF download failed', 'error'))
+  }
+
+  const sendEmail = async (est) => {
+    const to = est.customer?.email
+    if (!to) { toast('Customer has no email address', 'error'); return }
+    if (!confirm(`Email estimate ${est.estimateNumber} to ${to}?`)) return
+    const r = await fetch(`/api/estimates/${est._id}/send-email`, { method: 'POST', headers, credentials: 'include', body: JSON.stringify({ to }) })
+    const d = await r.json()
+    if (r.ok) { toast(`✓ Sent to ${to}`); load() } else toast(d.error || 'Failed', 'error')
+  }
+
   const convert = async (est) => {
     if (!confirm(`Convert ${est.estimateNumber} to invoice?`)) return
     const r = await fetch(`/api/estimates/${est._id}/convert`, { method: 'POST', headers, credentials: 'include' })
@@ -89,6 +110,10 @@ export default function EstimatesList({ headers, toast, readOnly }) {
                       <span style={{ background: sc.bg, color: sc.color, padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:600 }}>{i.status}</span>
                     </td>
                     <td style={{ padding:'12px 16px', textAlign:'right' }}>
+                      <button onClick={() => downloadPdf(i)} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>PDF</button>
+                      {!readOnly && (
+                        <button onClick={() => sendEmail(i)} style={{ background:'transparent', border:'1px solid var(--blue)', color:'var(--blue-text)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>Send</button>
+                      )}
                       {!readOnly && i.status !== 'Invoiced' && (
                         <button onClick={() => convert(i)} style={{ background:'transparent', border:'1px solid var(--accent)', color:'var(--accent)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>→ Invoice</button>
                       )}

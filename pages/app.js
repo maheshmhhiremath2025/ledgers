@@ -16,6 +16,8 @@ import ReportsPage from '../components/ReportsPage'
 import EstimatesList from '../components/EstimatesList'
 import BillsList from '../components/BillsList'
 import BankAccountsList from '../components/BankAccountsList'
+import AuditLogPage from '../components/AuditLogPage'
+import ImportPage from '../components/ImportPage'
 import TeamPage from '../components/TeamPage'
 import CustomerPage from '../components/CustomerPage'
 import VendorPage from '../components/VendorPage'
@@ -33,6 +35,7 @@ const NAV = [
   { id:'expenses' },{ id:'products' },{ id:'credit-notes' },{ id:'recurring' },
   { id:'bank-accounts' },{ id:'ledgers' },{ id:'reports' },
   { id:'config' },{ id:'team' },{ id:'billing' },
+  { id:'audit-log' },{ id:'import' },
 ]
 
 // Grouped nav for sidebar rendering
@@ -61,9 +64,11 @@ const NAV_GROUPS = [
     { id:'reports',   label:'Reports',   path:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ]},
   { id:'settings', label:'Settings', items:[
-    { id:'config',  label:'Configuration', path:'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
-    { id:'team',    label:'Team',          path:'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' },
-    { id:'billing', label:'Billing',       path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id:'config',    label:'Configuration', path:'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
+    { id:'team',      label:'Team',          path:'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' },
+    { id:'billing',   label:'Billing',       path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id:'import',    label:'Import CSV',    path:'M7 16a4 4 0 01-.88-7.9A5 5 0 0115.9 8M12 12v9m0 0l-3-3m3 3l3-3' },
+    { id:'audit-log', label:'Audit Log',     path:'M9 12h6m-6 4h6m-3-8h3a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2h3m0 0V4a1 1 0 011-1h2a1 1 0 011 1v2m-4 0a1 1 0 001 1h2a1 1 0 001-1' },
   ]},
 ]
 
@@ -633,6 +638,8 @@ export default function Home() {
               {page === 'estimates'       &&                    <EstimatesList   org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'bills'           &&                    <BillsList       org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'bank-accounts'   &&                    <BankAccountsList org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'audit-log'       &&                    <AuditLogPage    headers={headers} />}
+              {page === 'import'          &&                    <ImportPage      headers={headers} toast={toast} />}
               {page === 'purchase-orders' && view === 'list' && <POList       org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'form' && <POForm       org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'payments'        && view === 'list' && <PaymentList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}

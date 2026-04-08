@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import AttachmentUploader from './AttachmentUploader'
 
 const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -35,6 +36,18 @@ export default function BillsList({ headers, toast, readOnly }) {
     (i.vendorBillNumber || '').toLowerCase().includes(search.toLowerCase()) ||
     (i.vendor?.name || '').toLowerCase().includes(search.toLowerCase())
   )
+
+  const downloadPdf = (b) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('sb_token') : null
+    fetch(`/api/bills/${b._id}/pdf`, { credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.ok ? r.blob() : Promise.reject(new Error('Failed')))
+      .then(blob => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a'); a.href = url; a.download = `${b.billNumber}.pdf`; a.click()
+        URL.revokeObjectURL(url)
+      })
+      .catch(() => toast('PDF download failed', 'error'))
+  }
 
   const remove = async (b) => {
     if (!confirm(`Delete bill ${b.billNumber}?`)) return
@@ -90,6 +103,7 @@ export default function BillsList({ headers, toast, readOnly }) {
                       <span style={{ background: sc.bg, color: sc.color, padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:600 }}>{i.status}</span>
                     </td>
                     <td style={{ padding:'12px 16px', textAlign:'right' }}>
+                      <button onClick={() => downloadPdf(i)} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>PDF</button>
                       {!readOnly && balance > 0 && (
                         <button onClick={() => setPaying(i)} style={{ background:'var(--green)', color:'#fff', border:'none', padding:'4px 12px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>Pay</button>
                       )}
@@ -166,6 +180,7 @@ function BillForm({ editing, headers, toast, onClose, onSaved }) {
   const [tdsRate, setTdsRate]   = useState(editing?.tdsRate || 0)
   const [tdsSection, setTdsSec] = useState(editing?.tdsSection || '')
   const [notes, setNotes]       = useState(editing?.notes || '')
+  const [attachments, setAttachments] = useState(editing?.attachments || [])
   const [saving, setSaving]     = useState(false)
 
   const updateLine = (idx, patch) => setLines(L => L.map((l, i) => i === idx ? { ...l, ...patch } : l))
@@ -181,7 +196,7 @@ function BillForm({ editing, headers, toast, onClose, onSaved }) {
     if (!vendor.name) { toast('Vendor name required', 'error'); return }
     if (lineItems.some(l => !l.description)) { toast('All lines need a description', 'error'); return }
     setSaving(true)
-    const body = { vendor, vendorBillNumber, billDate, dueDate: dueDate || null, status, lineItems, notes, tdsRate: Number(tdsRate)||0, tdsAmount, tdsSection }
+    const body = { vendor, vendorBillNumber, billDate, dueDate: dueDate || null, status, lineItems, notes, tdsRate: Number(tdsRate)||0, tdsAmount, tdsSection, attachments }
     const url  = editing ? `/api/bills/${editing._id}` : '/api/bills'
     const r = await fetch(url, { method: editing ? 'PUT' : 'POST', headers, credentials:'include', body: JSON.stringify(body) })
     const d = await r.json()
@@ -261,6 +276,10 @@ function BillForm({ editing, headers, toast, onClose, onSaved }) {
           </div>
 
           <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ ...inp, resize:'vertical' }}/></div>
+          <div style={{ marginTop:14 }}>
+            <label style={{ fontSize:11, color:'var(--text-3)', display:'block', marginBottom:6 }}>Attachments (scanned bills, proofs)</label>
+            <AttachmentUploader value={attachments} onChange={setAttachments} headers={headers} toast={toast}/>
+          </div>
         </div>
         <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8 }}>
           <button onClick={onClose} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'8px 16px', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontFamily:'var(--font)' }}>Cancel</button>
