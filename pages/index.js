@@ -487,8 +487,13 @@ export default function LandingPage() {
               {/* Legal */}
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: text, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>Company</div>
-                {['Privacy Policy','Terms of Service','Refund Policy','Contact Us'].map(l => (
-                  <a key={l} href="#" className="nav-link" style={{ display: 'block', fontSize: 14, color: text2, textDecoration: 'none', marginBottom: 10 }}>{l}</a>
+                {[
+                  ['Privacy Policy',  '/privacy'],
+                  ['Terms of Service','/terms'],
+                  ['Refund Policy',   '/refund'],
+                  ['Contact Us',      'mailto:support@hexalabs.online'],
+                ].map(([l, href]) => (
+                  <a key={l} href={href} className="nav-link" style={{ display: 'block', fontSize: 14, color: text2, textDecoration: 'none', marginBottom: 10 }}>{l}</a>
                 ))}
                 <div style={{ marginTop: 20 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: text, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Powered by</div>

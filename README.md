@@ -1,6 +1,57 @@
 # HexaLabs Books
 
-Full-stack accounting app — Invoices, Purchase Orders, Payments, Ledgers with PDF generation. Built with Next.js + MongoDB Atlas, deployable to Vercel.
+A full-stack, multi-tenant accounting & invoicing platform for Indian SMBs. Built with Next.js + MongoDB, hosted on Vercel.
+
+Live: https://ledgers.hexalabs.online
+
+---
+
+## Features
+
+### Sales
+- **Invoices** — multiple PDF templates, GST split (CGST/SGST or IGST), payment portal, recurring schedules, customer auto-create
+- **Estimates / Quotations** — convert to invoice in one click
+- **Credit Notes** — atomic, with auto-rollback on failure
+- **Payment Portal** — public link with Razorpay checkout, partial payments, expiring tokens
+- **Customer statements**, aged receivables, recurring invoices
+
+### Purchases
+- **Purchase Orders** — vendor auto-create
+- **Vendor Bills** — record, attach scanned PDF/image, pay, post journal
+- **Vendors**, products, categories
+- **Aged payables**, TDS tracking by section
+
+### Accounting
+- **Bank & Cash accounts** with opening / current balance tracking
+- **Chart of Accounts** with double-entry journal posting
+- **Journal Entries** — auto-posted on invoice raised, payment received, payment made, bill recorded, credit note issued
+- **Reports**: P&L, Balance Sheet, Trial Balance, Cash Flow, GST returns, Aged AR/AP, Customer Statement, TDS Summary
+
+### Operations
+- **Multi-organisation** support per user (Business plan)
+- **Team & roles** — admin / accountant / viewer
+- **Audit log** — every financial action recorded with actor, IP, before/after JSON
+- **Bulk CSV import** for customers, vendors, products
+- **Document attachments** via Vercel Blob (per-org isolated paths)
+- **Configurable email** (SMTP per-org or global env)
+
+### Security
+- Tenant isolation: every API derives `orgId` from session, never trusts headers
+- PBKDF2-SHA512 password hashing with 120,000 iterations + constant-time compare
+- Auto-upgrade legacy hashes on next successful login
+- Atomic per-org sequence counters (invoice/PO/payment numbers race-free)
+- HttpOnly session cookies + Bearer token fallback
+- Append-only audit log
+- Vercel Blob attachments scoped per-org
+
+### Billing
+- Razorpay subscriptions — Starter (free), Professional (₹999/mo), Business (₹2,499/mo)
+- 30-day cycles, no auto-renewal, manual renewal stacks remaining days
+- Auto-downgrade to Starter on expiry; data preserved
+- Welcome + plan-upgrade emails
+
+### Internal
+- **Superadmin dashboard** — org list, drill-down by entity, edit/delete any record, cascade-delete entire org
 
 ---
 
@@ -8,176 +59,127 @@ Full-stack accounting app — Invoices, Purchase Orders, Payments, Ledgers with 
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 14 (Pages Router) |
-| Backend | Next.js API Routes |
+| Frontend / Backend | Next.js 14 (Pages Router) |
 | Database | MongoDB Atlas (via Mongoose) |
-| PDF | Puppeteer Core + @sparticuz/chromium |
+| PDF | PDFKit + HTML templates |
+| Auth | Custom session + PBKDF2 |
+| Payments | Razorpay (Subscriptions + Orders) |
+| File storage | Vercel Blob |
+| Email | Nodemailer (SMTP) |
+| Support chat | Anthropic Claude |
 | Hosting | Vercel |
 
 ---
 
-## MongoDB Atlas Setup (free tier)
-
-1. Go to https://cloud.mongodb.com and sign up / log in
-2. Click **"Build a Database"** → choose **M0 Free** tier
-3. Select a cloud region (e.g. AWS Mumbai for India)
-4. Set a **username** and **password** — save these
-5. Under **Network Access** → click **Add IP Address** → **Allow Access from Anywhere** (0.0.0.0/0)
-6. Go to your cluster → click **Connect** → **Drivers**
-7. Copy the connection string — it looks like:
-   ```
-   mongodb+srv://youruser:yourpassword@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   ```
-8. Add your database name to it:
-   ```
-   mongodb+srv://youruser:yourpassword@cluster0.xxxxx.mongodb.net/hexalabs-books?retryWrites=true&w=majority
-   ```
-
----
-
-## Local Development
+## Local development
 
 ```bash
-# 1. Clone / download project
-cd hexalabs-books
-
-# 2. Install dependencies
+git clone https://github.com/maheshmhhiremath2025/ledgers.git
+cd ledgers
 npm install
-
-# 3. Set up environment
-cp .env.local .env.local
-# Edit .env.local and paste your MongoDB URI
-
-# 4. Run dev server
+cp .env.example .env.local   # then fill in the values
 npm run dev
-
-# 5. Open http://localhost:3000
 ```
 
 ---
 
-## Deploy to Vercel
+## Required environment variables
 
-### Option A — Vercel CLI (fastest)
+Set these in Vercel → Project Settings → Environment Variables (Production + Preview + Development).
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
+### Core
+| Var | Description |
+|---|---|
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `SESSION_SECRET` | Long random string used to sign session cookies. **App will not boot without this.** |
+| `NEXT_PUBLIC_APP_URL` | Public URL of the app, e.g. `https://ledgers.hexalabs.online` |
+| `CRON_SECRET` | Random string used to authenticate the recurring-invoice cron endpoint |
 
-# Deploy (follow prompts)
-vercel
+### Email (used for welcome / upgrade / password-reset / support / invoice emails when no per-org SMTP is set)
+| Var | Example |
+|---|---|
+| `SMTP_HOST` | smtp.gmail.com |
+| `SMTP_PORT` | 587 |
+| `SMTP_USER` | apikey-or-username |
+| `SMTP_PASS` | secret |
+| `SMTP_FROM` | "HexaLabs Books <no-reply@hexalabs.online>" |
 
-# Set environment variables
-vercel env add MONGODB_URI
-# Paste your Atlas URI when prompted
+### Razorpay
+| Var | Description |
+|---|---|
+| `RAZORPAY_KEY_ID` | Live key id |
+| `RAZORPAY_KEY_SECRET` | Live key secret |
+| `RAZORPAY_WEBHOOK_SECRET` | Webhook signing secret from Razorpay dashboard |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Same as `RAZORPAY_KEY_ID`, exposed to client checkout |
 
-# Redeploy with env vars
-vercel --prod
-```
+### File storage
+| Var | Notes |
+|---|---|
+| `BLOB_READ_WRITE_TOKEN` | Auto-set when you connect a Vercel Blob store to the project |
 
-### Option B — Vercel Dashboard (no CLI)
+### AI support chat
+| Var | Notes |
+|---|---|
+| `ANTHROPIC_API_KEY` | Powers the in-app support chatbot |
 
-1. Push code to GitHub:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial HexaLabs Books"
-   git remote add origin https://github.com/YOUR_USERNAME/hexalabs-books.git
-   git push -u origin main
-   ```
+### Internal admin
+| Var | Notes |
+|---|---|
+| `SUPERADMIN_EMAILS` | Comma-separated list of emails allowed to access `/superadmin` |
 
-2. Go to https://vercel.com → **New Project** → Import from GitHub
-
-3. In **Environment Variables** add:
-   - `MONGODB_URI` = your Atlas connection string
-   - `NEXT_PUBLIC_ORG_NAME` = HexaLabs (or your org name)
-   - `NEXT_PUBLIC_APP_URL` = https://your-app.vercel.app
-
-4. Click **Deploy** — done!
-
----
-
-## PDF Generation Notes
-
-PDF generation uses Puppeteer + Chromium. On Vercel, install the Vercel-compatible Chromium:
-
-```bash
-npm install @sparticuz/chromium
-```
-
-Then add to `package.json` dependencies. If PDF download doesn't work on Vercel free tier (function timeout), the app automatically falls back to opening an HTML page in a new tab that you can **Print → Save as PDF** via the browser.
-
----
-
-## Project Structure
-
-```
-hexalabs-books/
-├── pages/
-│   ├── index.js              # Main app shell
-│   ├── _app.js               # App wrapper
-│   └── api/
-│       ├── invoices/
-│       │   ├── index.js      # GET list, POST create
-│       │   ├── [id].js       # GET, PUT, DELETE by ID
-│       │   └── [id]/pdf.js   # PDF download
-│       ├── purchase-orders/
-│       │   ├── index.js
-│       │   ├── [id].js
-│       │   └── [id]/pdf.js
-│       ├── payments/
-│       │   └── index.js
-│       ├── accounts/
-│       │   └── index.js
-│       └── dashboard/
-│           └── summary.js
-├── components/
-│   ├── ui/index.js           # Shared UI components
-│   ├── Dashboard.js
-│   ├── InvoiceList.js
-│   ├── InvoiceForm.js
-│   ├── POList.js
-│   ├── POForm.js
-│   ├── PaymentList.js
-│   ├── PaymentForm.js
-│   └── AccountsList.js
-├── models/
-│   ├── Invoice.js
-│   ├── PurchaseOrder.js
-│   ├── Payment.js
-│   ├── Account.js
-│   └── JournalEntry.js
-├── lib/
-│   └── mongodb.js            # DB connection
-├── styles/
-│   └── globals.css
-├── .env.local                # Add your MONGODB_URI here
-├── vercel.json
-└── package.json
-```
+### Optional — GST e-Invoice (currently dormant)
+| Var | Notes |
+|---|---|
+| `EINVOICE_PROVIDER_URL` | Your GSP provider's IRP API base URL |
+| `EINVOICE_CLIENT_ID` | GSP client id |
+| `EINVOICE_CLIENT_SECRET` | GSP client secret |
 
 ---
 
-## Multi-Org Usage
+## Razorpay setup
 
-The app supports multiple organizations. Each API call includes an `x-org-id` header (set in the frontend based on the selected org). All data is scoped to the org. Switch orgs using the org selector in the sidebar.
+1. Create a Razorpay account, complete KYC.
+2. Switch to Live mode → API keys → generate live keys.
+3. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID` in Vercel.
+4. Webhooks → Create webhook → URL: `https://your-domain/api/billing/webhook` → events: `payment.captured`, `subscription.activated`, `subscription.charged`, `subscription.cancelled` → save the secret as `RAZORPAY_WEBHOOK_SECRET`.
+5. Verify by signing up a new account and upgrading to a paid plan; you should receive a "Plan activated" email.
 
 ---
 
-## Features
+## Vercel Blob setup
 
-| Feature | Status |
-|---------|--------|
-| Multi-org switcher | ✅ |
-| Invoice CRUD | ✅ |
-| Invoice PDF download | ✅ |
-| Purchase Order CRUD | ✅ |
-| PO PDF download | ✅ |
-| Payment recording | ✅ |
-| Invoice auto-mark paid | ✅ |
-| Chart of Accounts | ✅ |
-| COA auto-seed per org | ✅ |
-| Dashboard summary | ✅ |
-| Search & filter | ✅ |
-| MongoDB Atlas storage | ✅ |
-| Vercel deployment | ✅ |
+1. Vercel dashboard → Storage → Create → Blob → name it (e.g. `ledgers-storage`).
+2. Click **Connect Project** → select your project → all environments → Connect.
+3. Vercel auto-injects `BLOB_READ_WRITE_TOKEN`. Trigger a redeploy.
+4. Verify by uploading a file to a Vendor Bill or Expense in the app.
+
+---
+
+## Recurring invoice cron
+
+The recurring-invoice runner is exposed at `GET /api/recurring/run?secret=$CRON_SECRET`. Configure a daily cron job (e.g. cron-job.org or Vercel Cron) to call it. It is idempotent — only invoices whose `nextDate` has passed are generated.
+
+---
+
+## Pages
+
+| Path | Purpose |
+|---|---|
+| `/` | Marketing landing page |
+| `/app` | Authenticated app shell |
+| `/forgot` | Forgot password |
+| `/reset/[token]` | Password reset confirmation |
+| `/pay/[token]` | Public customer payment portal |
+| `/invite/[token]` | Team invite acceptance |
+| `/superadmin` | Internal HexaLabs admin (requires `SUPERADMIN_EMAILS`) |
+| `/terms`, `/privacy`, `/refund` | Legal pages |
+
+---
+
+## Project status
+
+Production-ready for Indian SMB use. See the audit / "still pending" notes inside the codebase for the longer-tail improvements (inventory, multi-currency, full mobile polish, public REST API, e-Invoice IRN UI, etc.).
+
+## License
+
+Proprietary © HexaLabs.
