@@ -1,26 +1,35 @@
-// Generates public/user-guide.pdf — a comprehensive end-user guide for HexaLabs Books.
+// Generates public/user-guide.pdf — a branded end-user guide for HexaLabs Books.
 // Run:  node scripts/build-user-guide.js
 const PDFDocument = require('pdfkit')
 const fs = require('fs')
 const path = require('path')
 
-const OUT = path.join(__dirname, '..', 'public', 'user-guide.pdf')
+const OUT      = path.join(__dirname, '..', 'public', 'user-guide.pdf')
+const LOGO     = path.join(__dirname, '..', 'public', 'logo.png')
 
 const COLORS = {
-  accent:  '#6366F1',
-  accent2: '#8B5CF6',
-  text:    '#0F1729',
-  text2:   '#374151',
-  text3:   '#6B7280',
-  border:  '#E5E7EB',
-  bg:      '#F7F8FD',
-  green:   '#10B981',
-  red:     '#EF4444',
+  accent:   '#6366F1',
+  accent2:  '#8B5CF6',
+  accent3:  '#06B6D4',
+  text:     '#0F1729',
+  text2:    '#374151',
+  text3:    '#6B7280',
+  border:   '#E5E7EB',
+  bgLight:  '#F7F8FD',
+  bgAccent: '#EEF0FE',
+  green:    '#10B981',
+  red:      '#EF4444',
+  amber:    '#F59E0B',
+  white:    '#FFFFFF',
 }
+
+// A4 margins leave room for header (top) and footer (bottom)
+const HEADER_H = 52
+const FOOTER_H = 46
 
 const doc = new PDFDocument({
   size: 'A4',
-  margins: { top: 56, bottom: 60, left: 56, right: 56 },
+  margins: { top: 72 + HEADER_H, bottom: 54 + FOOTER_H, left: 56, right: 56 },
   bufferPages: true,
   info: {
     Title:    'HexaLabs Books — User Guide',
@@ -33,34 +42,45 @@ const doc = new PDFDocument({
 const out = fs.createWriteStream(OUT)
 doc.pipe(out)
 
-// ───── Helpers ─────
 const PAGE_W = doc.page.width
 const PAGE_H = doc.page.height
 const M = 56
 const CONTENT_W = PAGE_W - M * 2
+const CONTENT_TOP = 72 + HEADER_H
+const CONTENT_BOTTOM = PAGE_H - 54 - FOOTER_H
 
-// Footers are drawn at the end by looping over buffered pages.
-
+// ───── Layout helpers ─────
 function h1(text) {
-  if (doc.y > PAGE_H - 200) doc.addPage()
-  doc.moveDown(0.5)
-  doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(22).text(text, { align: 'left' })
-  doc.moveTo(M, doc.y + 2).lineTo(M + 50, doc.y + 2).lineWidth(3).strokeColor(COLORS.accent).stroke()
-  doc.moveDown(0.8)
+  if (doc.y > CONTENT_BOTTOM - 160) doc.addPage()
+  doc.moveDown(0.2)
+  const y0 = doc.y
+  // Accent bar left of title
+  doc.save()
+  doc.roundedRect(M, y0 + 4, 5, 26, 2).fill(COLORS.accent)
+  doc.restore()
+  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(22)
+     .text(text, M + 14, y0, { width: CONTENT_W - 14 })
+  doc.moveDown(0.7)
 }
 
 function h2(text) {
-  if (doc.y > PAGE_H - 140) doc.addPage()
-  doc.moveDown(0.6)
+  if (doc.y > CONTENT_BOTTOM - 100) doc.addPage()
+  doc.moveDown(0.5)
   doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(14).text(text)
-  doc.moveDown(0.4)
+  // thin underline
+  const y = doc.y + 1
+  doc.save()
+  doc.strokeColor(COLORS.accent).lineWidth(1.2)
+     .moveTo(M, y).lineTo(M + 36, y).stroke()
+  doc.restore()
+  doc.moveDown(0.5)
 }
 
 function h3(text) {
-  if (doc.y > PAGE_H - 100) doc.addPage()
+  if (doc.y > CONTENT_BOTTOM - 80) doc.addPage()
   doc.moveDown(0.3)
   doc.fillColor(COLORS.accent2).font('Helvetica-Bold').fontSize(11.5).text(text)
-  doc.moveDown(0.2)
+  doc.moveDown(0.15)
 }
 
 function p(text, opts = {}) {
@@ -70,106 +90,170 @@ function p(text, opts = {}) {
 }
 
 function bullet(items) {
-  doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10.5)
+  doc.font('Helvetica').fontSize(10.5)
   items.forEach(item => {
-    if (doc.y > PAGE_H - 90) doc.addPage()
-    doc.fillColor(COLORS.accent).text('• ', { continued: true, lineGap: 2 })
-    doc.fillColor(COLORS.text2).text(item, { lineGap: 2 })
+    if (doc.y > CONTENT_BOTTOM - 40) doc.addPage()
+    const y0 = doc.y
+    // dot
+    doc.save()
+    doc.circle(M + 5, y0 + 6, 2).fill(COLORS.accent)
+    doc.restore()
+    doc.fillColor(COLORS.text2)
+       .text(item, M + 14, y0, { width: CONTENT_W - 14, lineGap: 2 })
   })
   doc.moveDown(0.4)
 }
 
 function numbered(items) {
-  doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10.5)
+  doc.font('Helvetica').fontSize(10.5)
   items.forEach((item, i) => {
-    if (doc.y > PAGE_H - 90) doc.addPage()
-    doc.fillColor(COLORS.accent).font('Helvetica-Bold').text(`${i + 1}. `, { continued: true, lineGap: 2 })
-    doc.fillColor(COLORS.text2).font('Helvetica').text(item, { lineGap: 2 })
+    if (doc.y > CONTENT_BOTTOM - 40) doc.addPage()
+    const y0 = doc.y
+    // circle number
+    doc.save()
+    doc.circle(M + 8, y0 + 7, 8).fill(COLORS.accent)
+    doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9)
+       .text(String(i + 1), M, y0 + 3, { width: 16, align: 'center', lineBreak: false })
+    doc.restore()
+    doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10.5)
+       .text(item, M + 22, y0 + 1, { width: CONTENT_W - 22, lineGap: 2 })
+    doc.moveDown(0.15)
   })
   doc.moveDown(0.4)
 }
 
-function callout(label, body, color = COLORS.accent) {
-  if (doc.y > PAGE_H - 150) doc.addPage()
+function callout(label, body, variant = 'info') {
+  const COLOR_MAP = {
+    info:    COLORS.accent,
+    warning: COLORS.amber,
+    danger:  COLORS.red,
+    success: COLORS.green,
+  }
+  const color = COLOR_MAP[variant] || COLORS.accent
+
+  if (doc.y > CONTENT_BOTTOM - 120) doc.addPage()
   const y0 = doc.y
-  const padY = 10, padX = 12
+  const padY = 12, padX = 14, barW = 4
   doc.save()
-  // measure
   doc.font('Helvetica').fontSize(10)
-  const bodyH = doc.heightOfString(body, { width: CONTENT_W - padX * 2 - 4 })
+  const bodyH = doc.heightOfString(body, { width: CONTENT_W - padX * 2 - barW - 4 })
   const labelH = 14
   const h = labelH + bodyH + padY * 2 + 4
-  doc.roundedRect(M, y0, CONTENT_W, h, 6).fillOpacity(0.07).fill(color)
-  doc.fillOpacity(1).strokeColor(color).lineWidth(0.8).roundedRect(M, y0, CONTENT_W, h, 6).stroke()
-  doc.fillColor(color).font('Helvetica-Bold').fontSize(10)
-     .text(label.toUpperCase(), M + padX, y0 + padY, { width: CONTENT_W - padX * 2 })
+
+  // Background
+  doc.fillOpacity(0.06).roundedRect(M, y0, CONTENT_W, h, 6).fill(color)
+  doc.fillOpacity(1)
+  // Left accent bar
+  doc.roundedRect(M, y0, barW, h, 2).fill(color)
+
+  doc.fillColor(color).font('Helvetica-Bold').fontSize(9.5)
+     .text(label.toUpperCase(), M + barW + padX, y0 + padY, { width: CONTENT_W - barW - padX * 2, characterSpacing: 0.5 })
   doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10)
-     .text(body, M + padX, y0 + padY + labelH + 2, { width: CONTENT_W - padX * 2 })
+     .text(body, M + barW + padX, y0 + padY + labelH + 2, { width: CONTENT_W - barW - padX * 2, lineGap: 1.5 })
   doc.restore()
-  doc.y = y0 + h + 8
+  doc.y = y0 + h + 10
 }
 
 function kvTable(rows) {
-  const rowH = 22
+  const rowH = 24
   const col1W = 170
   rows.forEach((r, i) => {
-    if (doc.y > PAGE_H - 90) doc.addPage()
+    if (doc.y > CONTENT_BOTTOM - 40) doc.addPage()
     const y0 = doc.y
     doc.save()
-    if (i % 2 === 0) doc.rect(M, y0, CONTENT_W, rowH).fillOpacity(0.5).fill(COLORS.bg)
-    doc.fillOpacity(1)
+    if (i % 2 === 0) {
+      doc.fillOpacity(1).roundedRect(M, y0, CONTENT_W, rowH, 3).fill(COLORS.bgLight)
+    }
+    // left accent strip for the key cell
+    doc.fillOpacity(1).rect(M, y0, 3, rowH).fill(COLORS.accent)
     doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(10)
-       .text(r[0], M + 10, y0 + 6, { width: col1W - 10, lineBreak: false })
+       .text(r[0], M + 14, y0 + 7, { width: col1W - 14, lineBreak: false })
     doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10)
-       .text(r[1], M + col1W, y0 + 6, { width: CONTENT_W - col1W - 10, lineBreak: false, ellipsis: true })
+       .text(r[1], M + col1W, y0 + 7, { width: CONTENT_W - col1W - 12, lineBreak: false, ellipsis: true })
     doc.restore()
-    doc.y = y0 + rowH
+    doc.y = y0 + rowH + 2
   })
-  doc.moveDown(0.5)
+  doc.moveDown(0.4)
 }
 
 // ═══════════════════════════════════════════════════════════
 // COVER PAGE
 // ═══════════════════════════════════════════════════════════
 
-// Gradient-ish background
-doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLORS.bg)
-doc.fillColor(COLORS.accent).fillOpacity(0.08).rect(0, 0, PAGE_W, 380).fill()
+// Full background
+doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLORS.bgLight)
+
+// Top accent band
+doc.rect(0, 0, PAGE_W, 240).fill(COLORS.accent)
+// Subtle diagonal accent2 overlay
+doc.save()
+doc.fillOpacity(0.4)
+doc.polygon([PAGE_W, 0], [PAGE_W, 180], [0, 240], [0, 180]).fill(COLORS.accent2)
 doc.fillOpacity(1)
+doc.restore()
 
-// Logo placeholder circle
-doc.fillColor(COLORS.accent).circle(PAGE_W / 2, 180, 42).fill()
-doc.fillColor('#fff').font('Helvetica-Bold').fontSize(34).text('H', PAGE_W / 2 - 12, 160)
+// Logo (white background chip)
+const logoSize = 70
+const logoX = (PAGE_W - logoSize) / 2
+const logoY = 130
+doc.save()
+doc.roundedRect(logoX - 10, logoY - 10, logoSize + 20, logoSize + 20, 16).fill(COLORS.white)
+doc.restore()
+try {
+  doc.image(LOGO, logoX, logoY, { fit: [logoSize, logoSize], align: 'center', valign: 'center' })
+} catch (e) {
+  // Fallback letter
+  doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(40)
+     .text('H', logoX, logoY + 16, { width: logoSize, align: 'center' })
+}
 
-doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(40)
-   .text('HexaLabs Books', 0, 260, { align: 'center', width: PAGE_W })
-doc.fillColor(COLORS.accent).font('Helvetica').fontSize(16)
-   .text('Complete User Guide', 0, 310, { align: 'center', width: PAGE_W })
+// Title
+doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(44)
+   .text('HexaLabs Books', 0, 300, { align: 'center', width: PAGE_W, characterSpacing: -0.5 })
 
-doc.fillColor(COLORS.text3).font('Helvetica').fontSize(11)
-   .text('GST Invoicing · Double-Entry Accounting · Financial Reports',
-         0, 340, { align: 'center', width: PAGE_W })
+// Subtitle chip
+const subText = 'COMPLETE USER GUIDE'
+doc.font('Helvetica-Bold').fontSize(11)
+const subW = doc.widthOfString(subText) + 28
+const subX = (PAGE_W - subW) / 2
+doc.save()
+doc.roundedRect(subX, 362, subW, 28, 14).fill(COLORS.accent)
+doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(11)
+   .text(subText, subX, 370, { width: subW, align: 'center', characterSpacing: 1.2 })
+doc.restore()
 
-// Info box
-const boxY = 520
-doc.roundedRect(M + 60, boxY, CONTENT_W - 120, 150, 10)
-   .strokeColor(COLORS.border).lineWidth(1).stroke()
-doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(11)
-   .text('About this guide', M + 80, boxY + 18, { width: CONTENT_W - 160 })
+// Tagline
+doc.fillColor(COLORS.text3).font('Helvetica').fontSize(12)
+   .text('GST Invoicing   ·   Double-Entry Accounting   ·   Financial Reports',
+         0, 410, { align: 'center', width: PAGE_W, characterSpacing: 0.3 })
+
+// Info card
+const boxY = 500
+const boxW = CONTENT_W - 80
+const boxX = (PAGE_W - boxW) / 2
+doc.save()
+doc.roundedRect(boxX, boxY, boxW, 160, 12).fill(COLORS.white)
+doc.roundedRect(boxX, boxY, boxW, 160, 12).lineWidth(1).strokeColor(COLORS.border).stroke()
+// Accent corner
+doc.roundedRect(boxX, boxY, 5, 160, 2).fill(COLORS.accent)
+doc.restore()
+
+doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(10)
+   .text('ABOUT THIS GUIDE', boxX + 22, boxY + 22, { width: boxW - 44, characterSpacing: 0.8 })
+doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(13)
+   .text('Everything you need to know', boxX + 22, boxY + 42, { width: boxW - 44 })
 doc.fillColor(COLORS.text2).font('Helvetica').fontSize(10)
    .text(
-     'This guide walks you through every feature of HexaLabs Books — from signing up to ' +
-     'creating your first invoice, managing expenses, generating financial reports, and ' +
-     'using advanced features like webhooks, API keys and time tracking. Read it front-to-back ' +
-     'or jump to the section you need from the table of contents.',
-     M + 80, boxY + 38, { width: CONTENT_W - 160, align: 'justify', lineGap: 2 }
+     'This guide walks you through every feature of HexaLabs Books — from signing up to creating your first invoice, managing expenses, generating financial reports, and using advanced features like webhooks, API keys and time tracking. Read it front-to-back or jump straight to the section you need.',
+     boxX + 22, boxY + 64, { width: boxW - 44, align: 'justify', lineGap: 2.5 }
    )
 
+// Version / date at bottom
 doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
-   .text('Version 1.0  ·  ' + new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
-         0, PAGE_H - 80, { align: 'center', width: PAGE_W })
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(10)
-   .text('ledgers.hexalabs.online', 0, PAGE_H - 62, { align: 'center', width: PAGE_W })
+   .text('Version 1.0   ·   ' + new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+         0, PAGE_H - 72, { align: 'center', width: PAGE_W, characterSpacing: 0.5 })
+doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(11)
+   .text('ledgers.hexalabs.online', 0, PAGE_H - 56, { align: 'center', width: PAGE_W })
 
 // ═══════════════════════════════════════════════════════════
 // TABLE OF CONTENTS
@@ -206,20 +290,23 @@ const TOC = [
   ['25. Troubleshooting & Support',          31],
 ]
 
-doc.fillColor(COLORS.text2).font('Helvetica').fontSize(11)
 TOC.forEach(([label, page]) => {
+  if (doc.y > CONTENT_BOTTOM - 30) doc.addPage()
   const y0 = doc.y
-  doc.fillColor(COLORS.text).text(label, M, y0, { continued: false, lineBreak: false })
+  doc.fillColor(COLORS.text).font('Helvetica').fontSize(11)
+     .text(label, M, y0, { lineBreak: false })
   const labelW = doc.widthOfString(label)
-  // dotted line
-  const dotsStart = M + labelW + 6
-  const dotsEnd = PAGE_W - M - 20
-  doc.fillColor(COLORS.border).fontSize(11)
-  let x = dotsStart
-  while (x < dotsEnd) { doc.text('.', x, y0, { lineBreak: false }); x += 4 }
-  doc.fillColor(COLORS.text3).fontSize(11)
-     .text(String(page), PAGE_W - M - 20, y0, { lineBreak: false, width: 20, align: 'right' })
-  doc.y = y0 + 20
+  const dotsStart = M + labelW + 8
+  const dotsEnd = PAGE_W - M - 26
+  // dotted leader
+  doc.save()
+  doc.strokeColor(COLORS.border).lineWidth(1).dash(1, { space: 3 })
+     .moveTo(dotsStart, y0 + 7).lineTo(dotsEnd, y0 + 7).stroke()
+  doc.undash()
+  doc.restore()
+  doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(11)
+     .text(String(page), PAGE_W - M - 22, y0, { width: 22, align: 'right', lineBreak: false })
+  doc.y = y0 + 22
 })
 
 // ═══════════════════════════════════════════════════════════
@@ -241,7 +328,7 @@ numbered([
 h2('Logging in')
 p('Return visits: open https://ledgers.hexalabs.online/app and enter your email and password. If you forget your password, click "Forgot password" on the login screen — you will receive a reset link by email that is valid for 1 hour.')
 
-callout('Tip', 'Bookmark https://ledgers.hexalabs.online/app for quick access to your books. On mobile you can "Add to Home Screen" from your browser menu to use HexaLabs Books like a native app.')
+callout('Tip', 'Bookmark https://ledgers.hexalabs.online/app for quick access to your books. On mobile you can "Add to Home Screen" from your browser menu to use HexaLabs Books like a native app.', 'info')
 
 h2('The onboarding checklist')
 p('When you first sign in, a checklist appears at the top of your dashboard showing 5 essential setup steps:')
@@ -296,7 +383,7 @@ h1('3. Setting Up Your Organisation')
 p('Before sending your first invoice, fill in your organisation details so everything auto-fills correctly on every document.')
 
 h2('Where to find it')
-p('Click Settings in the sidebar → Organisation tab.')
+p('Click Settings in the sidebar, then open the Organisation tab.')
 
 h2('Fields to complete')
 kvTable([
@@ -309,7 +396,7 @@ kvTable([
   ['Phone / Email',     'Contact details printed on invoice headers'],
   ['Website',           'Optional — printed in invoice footer'],
   ['Currency',          'Default INR — affects invoice currency symbols'],
-  ['Financial year start', 'Usually April 1 in India'],
+  ['Financial year',    'Usually April 1 in India'],
 ])
 
 h2('Uploading your logo')
@@ -321,7 +408,7 @@ p('In Settings → Branding, upload a signature image (transparent PNG recommend
 h2('Terms & conditions')
 p('In Settings → Terms, enter default payment terms, late-payment policy and notes. These auto-fill on new invoices and can be edited per-invoice as needed.')
 
-callout('Important', 'Your GSTIN determines whether CGST+SGST (intra-state) or IGST (inter-state) is applied on every invoice. Double-check it before sending anything.', COLORS.red)
+callout('Important', 'Your GSTIN determines whether CGST + SGST (intra-state) or IGST (inter-state) is applied on every invoice. Double-check it before sending anything.', 'danger')
 
 // ═══════════════════════════════════════════════════════════
 // 4. CUSTOMERS & VENDORS
@@ -351,7 +438,7 @@ h2('Bulk import')
 p('To import many customers at once, use the Bulk Import feature. See Chapter 18.')
 
 // ═══════════════════════════════════════════════════════════
-// 5. PRODUCTS & SERVICES
+// 5. PRODUCTS
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('5. Products & Services')
@@ -372,7 +459,7 @@ h2('Using products on invoices')
 p('On the invoice form, click "+ Add item" and start typing — matching products appear in a dropdown. Select one and the description, rate, tax and HSN auto-fill. You can still edit any field before saving.')
 
 // ═══════════════════════════════════════════════════════════
-// 6. CREATING INVOICES
+// 6. INVOICES
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('6. Creating Invoices')
@@ -395,7 +482,7 @@ numbered([
 h2('GST tax calculation')
 p('HexaLabs Books looks at your GSTIN (supplier) and your customer\'s GSTIN (recipient). If both are in the same state, it applies CGST + SGST (each half the tax rate). If in different states, it applies IGST (full tax rate). If the customer has no GSTIN, it still applies tax based on your own state.')
 
-callout('Example', 'You are in Karnataka (29) and send an invoice to a customer in Maharashtra (27). A ₹10,000 line with 18% tax → IGST ₹1,800. Same line to a Karnataka customer → CGST ₹900 + SGST ₹900.')
+callout('Example', 'You are in Karnataka (29) and send an invoice to a customer in Maharashtra (27). A ₹10,000 line with 18% tax → IGST ₹1,800. Same line to a Karnataka customer → CGST ₹900 + SGST ₹900.', 'info')
 
 h2('Invoice statuses')
 kvTable([
@@ -431,7 +518,7 @@ h1('7. Estimates')
 p('Estimates (also called quotes) let you propose work to a potential customer before sending a real invoice. They have no accounting impact — nothing posts to the ledger until you convert the estimate to an invoice.')
 
 h2('Creating an estimate')
-p('Click Estimates in the sidebar → "+ New Estimate". The form is almost identical to the invoice form — same line items, same tax logic, same PDF templates.')
+p('Click Estimates in the sidebar, then "+ New Estimate". The form is almost identical to the invoice form — same line items, same tax logic, same PDF templates.')
 
 h2('Estimate statuses')
 kvTable([
@@ -446,7 +533,7 @@ h2('Converting an estimate to an invoice')
 p('Open an accepted estimate and click "Convert to Invoice". All line items, taxes and customer details are copied across. The estimate is marked as "Invoiced" and links to the new invoice for traceability.')
 
 // ═══════════════════════════════════════════════════════════
-// 8. RECORDING PAYMENTS
+// 8. PAYMENTS
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('8. Recording Payments')
@@ -505,7 +592,7 @@ h2('Converting a PO to a bill')
 p('When the vendor sends their invoice, open the PO and click "Convert to Bill". All line items carry over — you only need to enter the vendor invoice number and date. See Chapter 10 for more on bills.')
 
 // ═══════════════════════════════════════════════════════════
-// 10. VENDOR BILLS
+// 10. BILLS
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('10. Vendor Bills')
@@ -514,7 +601,7 @@ p('A vendor bill represents an amount you owe to a supplier. Bills post to Accou
 
 h2('Creating a bill')
 numbered([
-  'Click Bills in the sidebar → "+ New Bill".',
+  'Click Bills in the sidebar, then "+ New Bill".',
   'Select vendor, enter their invoice number and date.',
   'Add line items and tax.',
   'Set due date for payment.',
@@ -542,7 +629,7 @@ p('Expenses are day-to-day costs of running your business that do not require a 
 
 h2('Adding an expense')
 numbered([
-  'Click Expenses in the sidebar → "+ New Expense".',
+  'Click Expenses in the sidebar, then "+ New Expense".',
   'Enter date, category (Rent, Salaries, Travel, Software, etc.), amount and description.',
   'Optionally attach a receipt photo or PDF.',
   'Choose payment mode.',
@@ -565,7 +652,7 @@ p('For anything that repeats on a schedule — monthly retainers, rent, software
 
 h2('Creating a recurring invoice')
 numbered([
-  'Click Recurring in the sidebar → "+ New Recurring Invoice".',
+  'Click Recurring in the sidebar, then "+ New Recurring Invoice".',
   'Select customer, add line items and tax just like a normal invoice.',
   'Set frequency: Daily, Weekly, Monthly or Yearly.',
   'Set start date and (optionally) end date.',
@@ -574,15 +661,15 @@ numbered([
 ])
 
 h2('Recurring expenses')
-p('Works the same way but for expenses. Click Recurring Expenses → "+ New". Set category, amount and frequency. Useful for rent, software subscriptions, electricity and so on.')
+p('Works the same way but for expenses. Click Recurring Expenses, then "+ New". Set category, amount and frequency. Useful for rent, software subscriptions, electricity and so on.')
 
 h2('Pausing and editing')
 p('Open any recurring template and click "Pause" to temporarily stop generation. Click "Edit" to change amount, frequency or line items — future invoices will use the new values.')
 
-callout('Note', 'Recurring documents run via a daily cron job. Generated invoices appear in your Invoices list at approximately the same time each day.')
+callout('Note', 'Recurring documents run via a daily cron job. Generated invoices appear in your Invoices list at approximately the same time each day.', 'info')
 
 // ═══════════════════════════════════════════════════════════
-// 13. BANK ACCOUNTS
+// 13. BANK
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('13. Bank Accounts')
@@ -591,7 +678,7 @@ p('Add your bank accounts so their details print on every invoice for easy payme
 
 h2('Adding a bank account')
 numbered([
-  'Click Bank Accounts in the sidebar → "+ New Account".',
+  'Click Bank Accounts in the sidebar, then "+ New Account".',
   'Enter account name (e.g. "HDFC Current"), account number, IFSC code, bank name, branch.',
   'Set as default if this is your primary account.',
   'Save.',
@@ -620,7 +707,7 @@ h3('Balance Sheet')
 p('Assets, liabilities and equity as of any date. Must balance (assets = liabilities + equity). Useful for loan applications and year-end accounts.')
 
 h3('Trial Balance')
-p('List of every account with its debit and total credit balance. Totals should match — a fundamental check for double-entry bookkeeping.')
+p('List of every account with its debit and credit balance. Totals should match — a fundamental check for double-entry bookkeeping.')
 
 h3('General Ledger')
 p('Every journal entry for every account, drilled down to the source document. Click any line to see the underlying invoice or payment.')
@@ -673,7 +760,7 @@ h2('Place of supply')
 p('Determined automatically from the customer\'s billing state. For exports (outside India), set the customer state to "Export" and IGST applies at zero-rate.')
 
 // ═══════════════════════════════════════════════════════════
-// 16. PROJECTS & TIME TRACKING
+// 16. PROJECTS
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('16. Projects & Time Tracking')
@@ -682,7 +769,7 @@ p('For consultants, agencies and freelancers who bill by the hour, Projects and 
 
 h2('Creating a project')
 numbered([
-  'Click Projects in the sidebar → "+ New Project".',
+  'Click Projects in the sidebar, then "+ New Project".',
   'Enter project name, customer, description, hourly rate (or leave 0 if fixed price), budget and dates.',
   'Save.',
 ])
@@ -694,7 +781,7 @@ h2('Generating an invoice from time')
 p('On the project page, the total billable-but-unbilled hours show at the top. Click "Generate Invoice" — HexaLabs Books creates a new draft invoice with one line per time entry (description + hours × rate). Review and send as normal. All included entries are marked as invoiced so they are not billed twice.')
 
 // ═══════════════════════════════════════════════════════════
-// 17. FIXED ASSETS
+// 17. ASSETS
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('17. Fixed Assets')
@@ -703,20 +790,20 @@ p('Fixed assets are long-term things you own: laptops, furniture, vehicles, mach
 
 h2('Adding a fixed asset')
 numbered([
-  'Click Fixed Assets in the sidebar → "+ New Asset".',
+  'Click Fixed Assets in the sidebar, then "+ New Asset".',
   'Enter name, category (Equipment, Vehicle, Furniture, etc.), purchase date, cost, useful life in years, and salvage value.',
   'HexaLabs Books shows you the live monthly depreciation it will calculate.',
   'Save.',
 ])
 
 h2('How depreciation works')
-p('Straight-line method: (Cost − Salvage) ÷ (Useful Life in months). Example: ₹60,000 laptop with 3-year life and ₹0 salvage → ₹1,666/month depreciation for 36 months. Runs on the 1st of every month via a daily cron job and posts journal entries automatically.')
+p('Straight-line method: (Cost minus Salvage) divided by (Useful Life in months). Example: ₹60,000 laptop with 3-year life and ₹0 salvage → ₹1,666/month depreciation for 36 months. Runs on the 1st of every month via a daily cron job and posts journal entries automatically.')
 
 h2('Selling or retiring an asset')
 p('Open the asset and click "Dispose". Enter sale date, sale value (0 if scrapped) and reason. The remaining book value is written off and any gain/loss posts to the P&L.')
 
 // ═══════════════════════════════════════════════════════════
-// 18. BULK IMPORT
+// 18. IMPORT
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('18. Bulk CSV Import')
@@ -758,10 +845,10 @@ p('Click any attachment to open it in a new tab. Use the download button to save
 h2('Deleting')
 p('Click the × next to any attachment to remove it. Deleted files cannot be recovered.')
 
-callout('Security', 'All attachments are stored in org-isolated folders on Vercel Blob with unique random paths. Only users in your organisation can access them.')
+callout('Security', 'All attachments are stored in org-isolated folders on Vercel Blob with unique random paths. Only users in your organisation can access them.', 'success')
 
 // ═══════════════════════════════════════════════════════════
-// 20. TEAM & ROLES
+// 20. TEAM
 // ═══════════════════════════════════════════════════════════
 h1('20. Team Members & Roles')
 
@@ -778,8 +865,8 @@ numbered([
 h2('Roles')
 kvTable([
   ['Admin',       'Full access to everything including billing, team and settings'],
-  ['Accountant',  'Can create/edit invoices, payments, expenses, reports. Cannot manage team or billing'],
-  ['Viewer',      'Read-only access to reports and documents. Cannot create or edit anything'],
+  ['Accountant',  'Can create/edit invoices, payments, expenses, reports'],
+  ['Viewer',      'Read-only access to reports and documents'],
 ])
 
 h2('Removing a member')
@@ -812,10 +899,10 @@ p('If you lose your phone, click "Use backup code" on the 2FA prompt and enter o
 h2('Disabling 2FA')
 p('Settings → Two-Factor Auth → "Disable 2FA". You will need to enter your password and a current 2FA code to confirm.')
 
-callout('Important', 'Store your backup codes somewhere safe — a password manager is ideal. If you lose your phone AND lose your backup codes, you will need to contact support to regain access.', COLORS.red)
+callout('Important', 'Store your backup codes somewhere safe — a password manager is ideal. If you lose your phone AND lose your backup codes, you will need to contact support to regain access.', 'danger')
 
 // ═══════════════════════════════════════════════════════════
-// 22. API & WEBHOOKS
+// 22. API
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('22. API Keys & Webhooks')
@@ -877,7 +964,7 @@ h3('Reliability')
 p('If your endpoint returns a non-2xx response, HexaLabs Books retries with exponential backoff. After 10 consecutive failures, the webhook is automatically paused — you can resume it from the Webhooks page after fixing the issue.')
 
 // ═══════════════════════════════════════════════════════════
-// 23. AUDIT LOG
+// 23. AUDIT
 // ═══════════════════════════════════════════════════════════
 doc.addPage()
 h1('23. Audit Log')
@@ -954,7 +1041,6 @@ p('Check the date range. All reports are date-bound. Use "Full Financial Year" i
 
 h2('Getting help')
 p('Email support: support@hexalabs.online')
-p('Documentation: https://ledgers.hexalabs.online/docs (this guide)')
 p('Status page and updates: follow @hexalabs on social media')
 
 h2('Data backup')
@@ -963,38 +1049,87 @@ p('Your data is backed up automatically every day by our hosting provider. You c
 h2('Account deletion')
 p('To permanently delete your account and all its data, email support from your registered email address with the subject "Delete my account". Deletion is irreversible — we recommend exporting all reports to CSV first.')
 
-// Closing page
+// ═══════════════════════════════════════════════════════════
+// CLOSING PAGE
+// ═══════════════════════════════════════════════════════════
 doc.addPage()
-doc.moveDown(8)
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(28)
-   .text('Thank you for choosing', { align: 'center' })
-doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(34)
-   .text('HexaLabs Books', { align: 'center' })
-doc.moveDown(1.5)
+
+// Centered thank-you block
+const cY = 220
+doc.save()
+doc.roundedRect(M + 40, cY, CONTENT_W - 80, 4, 2).fill(COLORS.accent)
+doc.restore()
+
+doc.fillColor(COLORS.text3).font('Helvetica-Bold').fontSize(11)
+   .text('THANK YOU FOR CHOOSING', 0, cY + 24, { align: 'center', width: PAGE_W, characterSpacing: 1.5 })
+doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(38)
+   .text('HexaLabs Books', 0, cY + 48, { align: 'center', width: PAGE_W, characterSpacing: -0.5 })
+
 doc.fillColor(COLORS.text2).font('Helvetica').fontSize(12)
-   .text('We hope this guide helps you get the most out of the platform.', { align: 'center' })
-doc.moveDown(0.5)
-doc.text('For the latest features and updates, visit:', { align: 'center' })
-doc.moveDown(0.3)
-doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(13)
-   .text('ledgers.hexalabs.online', { align: 'center', link: 'https://ledgers.hexalabs.online', underline: true })
+   .text('We hope this guide helps you get the most out of the platform.', 0, cY + 120, { align: 'center', width: PAGE_W })
+doc.text('For the latest features and updates, visit:', 0, cY + 144, { align: 'center', width: PAGE_W })
 
-doc.moveDown(4)
-doc.fillColor(COLORS.text3).font('Helvetica').fontSize(10)
-   .text('© ' + new Date().getFullYear() + ' HexaLabs. All rights reserved.', { align: 'center' })
+doc.fillColor(COLORS.accent).font('Helvetica-Bold').fontSize(14)
+   .text('ledgers.hexalabs.online', 0, cY + 172, { align: 'center', width: PAGE_W, link: 'https://ledgers.hexalabs.online', underline: true })
 
-// Draw footers on every page except the cover (page 0)
+doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
+   .text('© ' + new Date().getFullYear() + ' HexaLabs. All rights reserved.',
+         0, cY + 240, { align: 'center', width: PAGE_W, characterSpacing: 0.3 })
+
+// ═══════════════════════════════════════════════════════════
+// HEADER & FOOTER on every page (buffered)
+// ═══════════════════════════════════════════════════════════
 const range = doc.bufferedPageRange()
+const TOTAL = range.count
+
 for (let i = range.start; i < range.start + range.count; i++) {
   doc.switchToPage(i)
-  if (i === 0) continue // skip cover
-  const y = PAGE_H - 36
+
+  // Skip header/footer on cover (page 0)
+  if (i === 0) continue
+
+  // ── HEADER ──
+  const headerY = 34
   doc.save()
-  doc.strokeColor(COLORS.border).lineWidth(0.5)
-     .moveTo(M, y).lineTo(PAGE_W - M, y).stroke()
+  // Logo (small)
+  try {
+    doc.image(LOGO, M, headerY - 4, { fit: [28, 28] })
+  } catch {}
+  // Brand text
+  doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(12)
+     .text('HexaLabs Books', M + 36, headerY + 2, { lineBreak: false })
   doc.fillColor(COLORS.text3).font('Helvetica').fontSize(9)
-     .text('HexaLabs Books — User Guide', M, y + 8, { width: CONTENT_W / 2, align: 'left', lineBreak: false })
-     .text(`Page ${i + 1}`, M + CONTENT_W / 2, y + 8, { width: CONTENT_W / 2, align: 'right', lineBreak: false })
+     .text('User Guide', M + 36, headerY + 16, { lineBreak: false })
+  // Right side — site link
+  doc.fillColor(COLORS.accent).font('Helvetica').fontSize(9)
+     .text('ledgers.hexalabs.online', PAGE_W - M - 150, headerY + 8, { width: 150, align: 'right', lineBreak: false })
+  // Separator line
+  doc.strokeColor(COLORS.border).lineWidth(0.7)
+     .moveTo(M, headerY + 30).lineTo(PAGE_W - M, headerY + 30).stroke()
+  doc.restore()
+
+  // ── FOOTER ──
+  const footerY = PAGE_H - 44
+  doc.save()
+  // Separator line
+  doc.strokeColor(COLORS.border).lineWidth(0.7)
+     .moveTo(M, footerY).lineTo(PAGE_W - M, footerY).stroke()
+  // Left: copyright
+  doc.fillColor(COLORS.text3).font('Helvetica').fontSize(8.5)
+     .text('© ' + new Date().getFullYear() + ' HexaLabs. All rights reserved.',
+           M, footerY + 10, { width: CONTENT_W / 2, align: 'left', lineBreak: false })
+  // Center: confidentiality
+  doc.fillColor(COLORS.text3).font('Helvetica-Oblique').fontSize(8.5)
+     .text('HexaLabs Books — User Guide',
+           M, footerY + 10, { width: CONTENT_W, align: 'center', lineBreak: false })
+  // Right: page number pill
+  const pageLabel = `${i + 1} / ${TOTAL}`
+  doc.font('Helvetica-Bold').fontSize(8.5)
+  const pW = doc.widthOfString(pageLabel) + 16
+  const pX = PAGE_W - M - pW
+  doc.roundedRect(pX, footerY + 6, pW, 16, 8).fill(COLORS.accent)
+  doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(8.5)
+     .text(pageLabel, pX, footerY + 10, { width: pW, align: 'center', lineBreak: false })
   doc.restore()
 }
 
