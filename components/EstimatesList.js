@@ -171,13 +171,13 @@ function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
   const inp = { width:'100%', padding:'8px 11px', background:'var(--surface-2)', border:'1px solid var(--border-2)', color:'var(--text)', borderRadius:'var(--r)', fontSize:13, outline:'none', fontFamily:'var(--font)' }
 
   return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'30px 20px', overflow:'auto', zIndex:9999 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', width:'100%', maxWidth:900, maxHeight:'90vh', overflow:'auto' }}>
-        <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between' }}>
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', zIndex:9999 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', width:'100%', maxWidth:900, maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
+        <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', flex:'0 0 auto' }}>
           <div style={{ fontSize:16, fontWeight:700, color:'var(--text)' }}>{editing ? 'Edit Estimate' : 'New Estimate'}</div>
           <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--text-3)', fontSize:20, cursor:'pointer', fontFamily:'var(--font)' }}>×</button>
         </div>
-        <div style={{ padding:22 }}>
+        <div style={{ padding:22, flex:'1 1 auto', overflow:'auto', minHeight:0 }}>
           <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', marginBottom:8 }}>Customer</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
             <input placeholder="Name *"  value={customer.name}  onChange={e => setCustomer({ ...customer, name:  e.target.value })} style={inp}/>
@@ -235,7 +235,7 @@ function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
             <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Terms</label><textarea value={terms} onChange={e => setTerms(e.target.value)} rows={2} style={{ ...inp, resize:'vertical' }}/></div>
           </div>
         </div>
-        <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8 }}>
+        <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8, flex:'0 0 auto' }}>
           <button onClick={onClose} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'8px 16px', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontFamily:'var(--font)' }}>Cancel</button>
           <button onClick={save} disabled={saving} style={{ background:'var(--accent)', color:'#fff', border:'none', padding:'8px 18px', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'var(--font)' }}>{saving ? 'Saving…' : '💾 Save'}</button>
         </div>
