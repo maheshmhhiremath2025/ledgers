@@ -18,6 +18,12 @@ import BillsList from '../components/BillsList'
 import BankAccountsList from '../components/BankAccountsList'
 import AuditLogPage from '../components/AuditLogPage'
 import ImportPage from '../components/ImportPage'
+import ApiKeysPage from '../components/ApiKeysPage'
+import WebhooksPage from '../components/WebhooksPage'
+import TwoFactorPage from '../components/TwoFactorPage'
+import RecurringExpensesPage from '../components/RecurringExpensesPage'
+import FixedAssetsPage from '../components/FixedAssetsPage'
+import ProjectsPage from '../components/ProjectsPage'
 import TeamPage from '../components/TeamPage'
 import CustomerPage from '../components/CustomerPage'
 import VendorPage from '../components/VendorPage'
@@ -33,9 +39,10 @@ const NAV = [
   { id:'dashboard' },{ id:'invoices' },{ id:'estimates' },{ id:'customers' },
   { id:'purchase-orders' },{ id:'bills' },{ id:'vendors' },{ id:'payments' },
   { id:'expenses' },{ id:'products' },{ id:'credit-notes' },{ id:'recurring' },
-  { id:'bank-accounts' },{ id:'ledgers' },{ id:'reports' },
+  { id:'bank-accounts' },{ id:'ledgers' },{ id:'reports' },{ id:'fixed-assets' },
+  { id:'projects' },{ id:'recurring-expenses' },
   { id:'config' },{ id:'team' },{ id:'billing' },
-  { id:'audit-log' },{ id:'import' },
+  { id:'audit-log' },{ id:'import' },{ id:'api-keys' },{ id:'webhooks' },{ id:'two-factor' },
 ]
 
 // Grouped nav for sidebar rendering
@@ -45,6 +52,7 @@ const NAV_GROUPS = [
   ]},
   { id:'sales', label:'Sales', items:[
     { id:'estimates',       label:'Estimates',       path:'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+    { id:'projects',        label:'Projects & Time', path:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id:'invoices',        label:'Invoices',        path:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 18H8M16 14H8M10 10H8' },
     { id:'customers',       label:'Customers',       path:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
     { id:'credit-notes',    label:'Credit Notes',    path:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
@@ -60,6 +68,8 @@ const NAV_GROUPS = [
     { id:'bank-accounts', label:'Bank & Cash', path:'M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3' },
     { id:'payments',  label:'Payments',  path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { id:'expenses',  label:'Expenses',  path:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+    { id:'recurring-expenses', label:'Recurring Expenses', path:'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
+    { id:'fixed-assets', label:'Fixed Assets', path:'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
     { id:'ledgers',   label:'Ledgers',   path:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
     { id:'reports',   label:'Reports',   path:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ]},
@@ -69,6 +79,11 @@ const NAV_GROUPS = [
     { id:'billing',   label:'Billing',       path:'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { id:'import',    label:'Import CSV',    path:'M7 16a4 4 0 01-.88-7.9A5 5 0 0115.9 8M12 12v9m0 0l-3-3m3 3l3-3' },
     { id:'audit-log', label:'Audit Log',     path:'M9 12h6m-6 4h6m-3-8h3a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2h3m0 0V4a1 1 0 011-1h2a1 1 0 011 1v2m-4 0a1 1 0 001 1h2a1 1 0 001-1' },
+    { id:'two-factor',label:'Two-Factor Auth', path:'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
+  ]},
+  { id:'developer', label:'Developer', items:[
+    { id:'api-keys',  label:'API Keys',      path:'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z' },
+    { id:'webhooks',  label:'Webhooks',      path:'M13 10V3L4 14h7v7l9-11h-7z' },
   ]},
 ]
 
@@ -641,6 +656,12 @@ export default function Home() {
               {page === 'bank-accounts'   &&                    <BankAccountsList org={orgProp} headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'audit-log'       &&                    <AuditLogPage    headers={headers} />}
               {page === 'import'          &&                    <ImportPage      headers={headers} toast={toast} />}
+              {page === 'api-keys'        &&                    <ApiKeysPage     headers={headers} toast={toast} />}
+              {page === 'webhooks'        &&                    <WebhooksPage    headers={headers} toast={toast} />}
+              {page === 'two-factor'      &&                    <TwoFactorPage   headers={headers} toast={toast} />}
+              {page === 'recurring-expenses' &&                 <RecurringExpensesPage headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'fixed-assets'    &&                    <FixedAssetsPage headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
+              {page === 'projects'        &&                    <ProjectsPage    headers={headers} toast={toast} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'list' && <POList       org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
               {page === 'purchase-orders' && view === 'form' && <POForm       org={orgProp} headers={headers} toast={toast} editItem={editItem} onClose={closeForm} />}
               {page === 'payments'        && view === 'list' && <PaymentList  org={orgProp} headers={headers} toast={toast} onEdit={openForm} readOnly={user?.role === 'viewer'} />}
