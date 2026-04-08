@@ -155,6 +155,12 @@ function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
   const subtotal = lineItems.reduce((s, l) => s + (Number(l.qty)||0) * (Number(l.rate)||0), 0)
   const taxTotal = lineItems.reduce((s, l) => s + (Number(l.qty)||0) * (Number(l.rate)||0) * (Number(l.tax)||0) / 100, 0)
   const total    = subtotal + taxTotal
+  const orgState  = '' // not loaded in estimate modal — defaults to intra split
+  const custState = (customer.gstin || '').slice(0, 2)
+  const isInter   = orgState && custState && orgState !== custState
+  const cgstAmt   = isInter ? 0 : taxTotal / 2
+  const sgstAmt   = isInter ? 0 : taxTotal / 2
+  const igstAmt   = isInter ? taxTotal : 0
 
   const save = async () => {
     if (!customer.name) { toast('Customer name required', 'error'); return }
@@ -225,9 +231,14 @@ function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
           <button onClick={addLine} style={{ background:'transparent', border:'1px dashed var(--border-2)', color:'var(--text-3)', padding:'6px 14px', borderRadius:'var(--r)', fontSize:12, cursor:'pointer', marginBottom:14, fontFamily:'var(--font)' }}>+ Add line</button>
 
           <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:14 }}>
-            <div style={{ minWidth:240, padding:14, background:'var(--surface-2)', borderRadius:'var(--r)' }}>
+            <div style={{ minWidth:260, padding:14, background:'var(--surface-2)', borderRadius:'var(--r)' }}>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:4 }}><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>GST</span><span>{fmt(taxTotal)}</span></div>
+              {!isInter ? (<>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:4 }}><span>CGST</span><span>{fmt(cgstAmt)}</span></div>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>SGST</span><span>{fmt(sgstAmt)}</span></div>
+              </>) : (
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>IGST</span><span>{fmt(igstAmt)}</span></div>
+              )}
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'var(--text)', fontWeight:700, paddingTop:6, borderTop:'1px solid var(--border)' }}><span>Total</span><span>{fmt(total)}</span></div>
             </div>
           </div>

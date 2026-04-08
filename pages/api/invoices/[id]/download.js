@@ -153,9 +153,22 @@ async function generatePDF(inv, cfg) {
       const grand = subtotal + taxTotal
       const paid = parseFloat(inv.paidAmount || 0)
       const balance = grand - paid
+      // CGST/SGST/IGST split (use server-stored values when available, else split locally)
+      const isInter = inv.taxType === 'inter' || (inv.igstTotal || 0) > 0
+      const cgstAmt = inv.cgstTotal != null ? inv.cgstTotal : (isInter ? 0 : taxTotal / 2)
+      const sgstAmt = inv.sgstTotal != null ? inv.sgstTotal : (isInter ? 0 : taxTotal / 2)
+      const igstAmt = inv.igstTotal != null ? inv.igstTotal : (isInter ? taxTotal : 0)
       const totW = 200, totX = R - totW, lblW = 90, valW = 110
       y += 4
-      const totRows = [['Subtotal', fmtMoney(subtotal,sym), false], ['Tax (GST)', fmtMoney(taxTotal,sym), false], ...(paid>0?[['Paid', fmtMoney(paid,sym), false]]:[]), ['Balance Due', fmtMoney(balance,sym), true]]
+      const taxRows = isInter
+        ? [['IGST', fmtMoney(igstAmt, sym), false]]
+        : [['CGST', fmtMoney(cgstAmt, sym), false], ['SGST', fmtMoney(sgstAmt, sym), false]]
+      const totRows = [
+        ['Subtotal', fmtMoney(subtotal,sym), false],
+        ...taxRows,
+        ...(paid>0 ? [['Paid', fmtMoney(paid,sym), false]] : []),
+        ['Balance Due', fmtMoney(balance,sym), true],
+      ]
       for (const [lbl, val, bold] of totRows) {
         if (bold) { doc.moveTo(totX, y).lineTo(R, y).lineWidth(1).strokeColor(ACCENT).stroke(); y += 5 }
         doc.font('Regular').fontSize(bold?10:9).fillColor(bold?ACCENT:(lbl==='Paid'?'#3B6D11':MUTED)).text(lbl, totX, y, { width: lblW })

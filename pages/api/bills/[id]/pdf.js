@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     vendorBillNumber: bill.vendorBillNumber,
     party: bill.vendor, partyLabel: 'Vendor',
     lineItems: bill.lineItems, subtotal: bill.subtotal, taxTotal: bill.taxTotal, total: bill.total,
+    cgstTotal: bill.cgstTotal, sgstTotal: bill.sgstTotal, igstTotal: bill.igstTotal, taxType: bill.taxType,
     notes: bill.notes, currency: bill.currency,
   }, cfg ? cfg.toObject() : {})
 

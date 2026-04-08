@@ -1,8 +1,10 @@
 import { connectDB } from '../../../../lib/mongodb'
 import Invoice from '../../../../models/Invoice'
 import Payment from '../../../../models/Payment'
+import OrgConfig from '../../../../models/OrgConfig'
 import { postInvoiceRaised, postPaymentReceived } from '../../../../lib/journal'
 import { requireAuth } from '../../../../lib/auth'
+import { computeWithGst } from '../../../../lib/gst'
 
 async function autoCreateReceipt(orgId, invoice) {
   try {
@@ -47,17 +49,17 @@ export default async function handler(req, res) {
     try {
       const prev = await Invoice.findById(id)
       const data = req.body
-      let subtotal = 0, taxTotal = 0
       if (data.lineItems) {
-        data.lineItems = data.lineItems.map(item => {
-          const amount = (item.qty || 0) * (item.rate || 0)
-          const taxAmt = (amount * (item.tax || 0)) / 100
-          subtotal += amount; taxTotal += taxAmt
-          return { ...item, amount }
-        })
-        data.subtotal = subtotal
-        data.taxTotal = taxTotal
-        data.total    = subtotal + taxTotal
+        const cfg = await OrgConfig.findOne({ orgId }).lean()
+        const totals = computeWithGst(data.lineItems, { supplierGstin: cfg?.gstin, customerGstin: data.customer?.gstin })
+        data.lineItems = totals.items
+        data.subtotal  = totals.subtotal
+        data.taxTotal  = totals.taxTotal
+        data.cgstTotal = totals.cgstTotal
+        data.sgstTotal = totals.sgstTotal
+        data.igstTotal = totals.igstTotal
+        data.taxType   = totals.taxType
+        data.total     = totals.total
       }
 
       // Mark fully paid

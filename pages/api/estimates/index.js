@@ -1,8 +1,10 @@
 import { connectDB } from '../../../lib/mongodb'
 import Estimate from '../../../models/Estimate'
 import Customer from '../../../models/Customer'
+import OrgConfig from '../../../models/OrgConfig'
 import { requireAuth } from '../../../lib/auth'
-import { nextNumber, computeLineTotals } from '../../../lib/sequence'
+import { nextNumber } from '../../../lib/sequence'
+import { computeWithGst } from '../../../lib/gst'
 import { audit } from '../../../lib/audit'
 
 export default async function handler(req, res) {
@@ -35,10 +37,18 @@ export default async function handler(req, res) {
         data.estimateNumber = await nextNumber(orgId, 'estimate', 'EST', 4)
       }
       data.orgId = orgId
-      const totals = computeLineTotals(data.lineItems)
+      const cfg = await OrgConfig.findOne({ orgId }).lean()
+      const totals = computeWithGst(data.lineItems, {
+        supplierGstin: cfg?.gstin,
+        customerGstin: data.customer?.gstin,
+      })
       data.lineItems = totals.items
       data.subtotal  = totals.subtotal
       data.taxTotal  = totals.taxTotal
+      data.cgstTotal = totals.cgstTotal
+      data.sgstTotal = totals.sgstTotal
+      data.igstTotal = totals.igstTotal
+      data.taxType   = totals.taxType
       data.total     = totals.total
 
       const est = await Estimate.create(data)

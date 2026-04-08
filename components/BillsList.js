@@ -194,6 +194,11 @@ function BillForm({ editing, headers, toast, onClose, onSaved }) {
   const taxTotal = lineItems.reduce((s, l) => s + (Number(l.qty)||0) * (Number(l.rate)||0) * (Number(l.tax)||0) / 100, 0)
   const total    = subtotal + taxTotal
   const tdsAmount = (subtotal * (Number(tdsRate)||0)) / 100
+  // We don't have orgGstin in this modal — default to intra split
+  const isInter = false
+  const cgstAmt = taxTotal / 2
+  const sgstAmt = taxTotal / 2
+  const igstAmt = 0
 
   const save = async () => {
     if (!vendor.name) { toast('Vendor name required', 'error'); return }
@@ -274,7 +279,8 @@ function BillForm({ editing, headers, toast, onClose, onSaved }) {
             </div>
             <div style={{ padding:14, background:'var(--surface-2)', borderRadius:'var(--r)' }}>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:4 }}><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>GST</span><span>{fmt(taxTotal)}</span></div>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:4 }}><span>CGST</span><span>{fmt(cgstAmt)}</span></div>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>SGST</span><span>{fmt(sgstAmt)}</span></div>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'var(--text)', fontWeight:700, paddingTop:6, borderTop:'1px solid var(--border)' }}><span>Total</span><span>{fmt(total)}</span></div>
             </div>
           </div>

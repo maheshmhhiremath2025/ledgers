@@ -1,7 +1,8 @@
 import { connectDB } from '../../../lib/mongodb'
 import Bill from '../../../models/Bill'
+import OrgConfig from '../../../models/OrgConfig'
 import { requireAuth } from '../../../lib/auth'
-import { computeLineTotals } from '../../../lib/sequence'
+import { computeWithGst } from '../../../lib/gst'
 import { audit } from '../../../lib/audit'
 
 export default async function handler(req, res) {
@@ -19,10 +20,15 @@ export default async function handler(req, res) {
   if (req.method === 'PUT') {
     try {
       const data = req.body
-      const totals = computeLineTotals(data.lineItems)
+      const cfg = await OrgConfig.findOne({ orgId }).lean()
+      const totals = computeWithGst(data.lineItems, { supplierGstin: cfg?.gstin, customerGstin: data.vendor?.gstin })
       data.lineItems = totals.items
       data.subtotal  = totals.subtotal
       data.taxTotal  = totals.taxTotal
+      data.cgstTotal = totals.cgstTotal
+      data.sgstTotal = totals.sgstTotal
+      data.igstTotal = totals.igstTotal
+      data.taxType   = totals.taxType
       data.total     = totals.total
       const bill = await Bill.findOneAndUpdate({ _id: id, orgId }, data, { new: true })
       if (!bill) return res.status(404).json({ error: 'Bill not found' })

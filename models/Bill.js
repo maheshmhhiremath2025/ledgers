@@ -33,6 +33,10 @@ const BillSchema = new mongoose.Schema({
   lineItems: { type: [BillLineSchema], default: [] },
   subtotal:  { type: Number, default: 0 },
   taxTotal:  { type: Number, default: 0 },
+  cgstTotal: { type: Number, default: 0 },
+  sgstTotal: { type: Number, default: 0 },
+  igstTotal: { type: Number, default: 0 },
+  taxType:   { type: String, enum: ['intra','inter'], default: 'intra' },
   total:     { type: Number, default: 0 },
   paidAmount:{ type: Number, default: 0 },
 

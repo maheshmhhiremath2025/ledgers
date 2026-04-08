@@ -218,7 +218,10 @@ function buildHTML(inv, cfg, t) {
     <div class="tot-wrap">
       <div class="tot-box">
         <div class="trow"><span>Subtotal</span><span class="tv">${fmt(inv.subtotal)}</span></div>
-        <div class="trow"><span>Tax (GST)</span><span class="tv">${fmt(inv.taxTotal)}</span></div>
+        ${(inv.taxType === 'inter' || (inv.igstTotal||0) > 0)
+          ? `<div class="trow"><span>IGST</span><span class="tv">${fmt(inv.igstTotal || inv.taxTotal || 0)}</span></div>`
+          : `<div class="trow"><span>CGST</span><span class="tv">${fmt(inv.cgstTotal != null ? inv.cgstTotal : (inv.taxTotal||0)/2)}</span></div>
+             <div class="trow"><span>SGST</span><span class="tv">${fmt(inv.sgstTotal != null ? inv.sgstTotal : (inv.taxTotal||0)/2)}</span></div>`}
         ${inv.paidAmount>0 ? `<div class="trow paid"><span>Amount Paid</span><span class="tv">- ${fmt(inv.paidAmount)}</span></div>` : ''}
         <div class="tfinal"><span>Balance Due</span><span class="tv">${fmt(dueBalance)}</span></div>
       </div>

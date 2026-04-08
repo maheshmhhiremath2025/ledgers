@@ -1,9 +1,11 @@
 import { connectDB } from '../../../lib/mongodb'
 import PurchaseOrder from '../../../models/PurchaseOrder'
 import Vendor from '../../../models/Vendor'
+import OrgConfig from '../../../models/OrgConfig'
 import { withPlan, checkLimit } from '../../../lib/plans'
 import { getSession, verifyToken } from '../../../lib/session'
-import { nextNumber, computeLineTotals } from '../../../lib/sequence'
+import { nextNumber } from '../../../lib/sequence'
+import { computeWithGst } from '../../../lib/gst'
 
 export default async function handler(req, res) {
   await connectDB()
@@ -53,10 +55,19 @@ export default async function handler(req, res) {
         data.poNumber = await nextNumber(orgId, 'po', 'PO', 4)
       }
       data.orgId = orgId
-      const totals = computeLineTotals(data.lineItems)
+
+      const cfg = await OrgConfig.findOne({ orgId }).lean()
+      const totals = computeWithGst(data.lineItems, {
+        supplierGstin: cfg?.gstin,
+        customerGstin: data.vendor?.gstin,
+      })
       data.lineItems = totals.items
       data.subtotal  = totals.subtotal
       data.taxTotal  = totals.taxTotal
+      data.cgstTotal = totals.cgstTotal
+      data.sgstTotal = totals.sgstTotal
+      data.igstTotal = totals.igstTotal
+      data.taxType   = totals.taxType
       data.total     = totals.total
       const order = await PurchaseOrder.create(data)
 

@@ -2,7 +2,9 @@ import { connectDB } from '../../../lib/mongodb'
 import Bill from '../../../models/Bill'
 import Vendor from '../../../models/Vendor'
 import { requireAuth } from '../../../lib/auth'
-import { nextNumber, computeLineTotals } from '../../../lib/sequence'
+import { nextNumber } from '../../../lib/sequence'
+import { computeWithGst } from '../../../lib/gst'
+import OrgConfig from '../../../models/OrgConfig'
 import { audit } from '../../../lib/audit'
 import { postBillRecorded } from '../../../lib/journal'
 
@@ -36,10 +38,18 @@ export default async function handler(req, res) {
       if (!data.billNumber) data.billNumber = await nextNumber(orgId, 'bill', 'BILL', 4)
       data.orgId = orgId
 
-      const totals = computeLineTotals(data.lineItems)
+      const cfg = await OrgConfig.findOne({ orgId }).lean()
+      const totals = computeWithGst(data.lineItems, {
+        supplierGstin: cfg?.gstin,
+        customerGstin: data.vendor?.gstin,
+      })
       data.lineItems = totals.items
       data.subtotal  = totals.subtotal
       data.taxTotal  = totals.taxTotal
+      data.cgstTotal = totals.cgstTotal
+      data.sgstTotal = totals.sgstTotal
+      data.igstTotal = totals.igstTotal
+      data.taxType   = totals.taxType
       data.total     = totals.total
 
       const bill = await Bill.create(data)

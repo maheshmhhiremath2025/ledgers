@@ -156,7 +156,10 @@ function buildPOHTML(po, cfg) {
     <div class="tot-wrap">
       <div class="tot-box">
         <div class="trow"><span>Subtotal</span><span class="tv">${fmt(po.subtotal)}</span></div>
-        <div class="trow"><span>Tax (GST)</span><span class="tv">${fmt(po.taxTotal)}</span></div>
+        ${(po.taxType === 'inter' || (po.igstTotal||0) > 0)
+          ? `<div class="trow"><span>IGST</span><span class="tv">${fmt(po.igstTotal || po.taxTotal || 0)}</span></div>`
+          : `<div class="trow"><span>CGST</span><span class="tv">${fmt(po.cgstTotal != null ? po.cgstTotal : (po.taxTotal||0)/2)}</span></div>
+             <div class="trow"><span>SGST</span><span class="tv">${fmt(po.sgstTotal != null ? po.sgstTotal : (po.taxTotal||0)/2)}</span></div>`}
         <div class="tfinal"><span>Total</span><span class="tv">${fmt(po.total)}</span></div>
       </div>
     </div>

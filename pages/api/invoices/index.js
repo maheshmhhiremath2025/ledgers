@@ -1,9 +1,11 @@
 import { connectDB } from '../../../lib/mongodb'
 import Invoice from '../../../models/Invoice'
 import Customer from '../../../models/Customer'
+import OrgConfig from '../../../models/OrgConfig'
 import { withPlan, checkLimit } from '../../../lib/plans'
 import { requireAuth } from '../../../lib/auth'
-import { nextNumber, computeLineTotals } from '../../../lib/sequence'
+import { nextNumber } from '../../../lib/sequence'
+import { computeWithGst } from '../../../lib/gst'
 import { audit } from '../../../lib/audit'
 
 export default async function handler(req, res) {
@@ -49,10 +51,20 @@ export default async function handler(req, res) {
         data.invoiceNumber = await nextNumber(orgId, 'invoice', 'INV', 4)
       }
       data.orgId = orgId
-      const totals = computeLineTotals(data.lineItems)
+
+      // Decide CGST+SGST vs IGST based on org GSTIN vs customer GSTIN
+      const cfg = await OrgConfig.findOne({ orgId }).lean()
+      const totals = computeWithGst(data.lineItems, {
+        supplierGstin: cfg?.gstin,
+        customerGstin: data.customer?.gstin,
+      })
       data.lineItems = totals.items
       data.subtotal  = totals.subtotal
       data.taxTotal  = totals.taxTotal
+      data.cgstTotal = totals.cgstTotal
+      data.sgstTotal = totals.sgstTotal
+      data.igstTotal = totals.igstTotal
+      data.taxType   = totals.taxType
       data.total     = totals.total
       if (!data.template) data.template = 'classic'
 

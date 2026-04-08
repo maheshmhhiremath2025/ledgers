@@ -25,6 +25,7 @@ export default async function handler(req, res) {
     dueLabel: 'Valid Until', dueDate: est.expiryDate,
     party: est.customer, partyLabel: 'Quote To',
     lineItems: est.lineItems, subtotal: est.subtotal, taxTotal: est.taxTotal, total: est.total,
+    cgstTotal: est.cgstTotal, sgstTotal: est.sgstTotal, igstTotal: est.igstTotal, taxType: est.taxType,
     notes: est.notes, terms: est.terms, currency: est.currency,
   }, cfg ? cfg.toObject() : {})
 

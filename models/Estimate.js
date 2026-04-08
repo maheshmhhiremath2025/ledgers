@@ -27,6 +27,10 @@ const EstimateSchema = new mongoose.Schema({
   lineItems: { type: [EstimateLineSchema], default: [] },
   subtotal:  { type: Number, default: 0 },
   taxTotal:  { type: Number, default: 0 },
+  cgstTotal: { type: Number, default: 0 },
+  sgstTotal: { type: Number, default: 0 },
+  igstTotal: { type: Number, default: 0 },
+  taxType:   { type: String, enum: ['intra','inter'], default: 'intra' },
   total:     { type: Number, default: 0 },
 
   currency: { type: String, default: 'INR' },

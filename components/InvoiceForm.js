@@ -189,6 +189,7 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
   const [custEmail,   setCustEmail]   = useState('')
   const [custAddress, setCustAddress] = useState('')
   const [custGstin,   setCustGstin]   = useState('')
+  const [orgGstin,    setOrgGstin]    = useState('')
   const [invNumber,   setInvNumber]   = useState('')
   const [issueDate,   setIssueDate]   = useState(today())
   const [dueDate,     setDueDate]     = useState('')
@@ -225,6 +226,7 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
       if (cfg.defaultNotes)    setNotes(cfg.defaultNotes)
       if (cfg.defaultTerms)    setTerms(cfg.defaultTerms)
       if (cfg.defaultCurrency) setCurrency(cfg.defaultCurrency)
+      if (cfg.gstin)           setOrgGstin(cfg.gstin)
       const prefix = cfg.invoicePrefix || 'INV'
       const count  = (invData.total || 0) + 1
       setInvNumber(`${prefix}-${String(count).padStart(4, '0')}`)
@@ -248,6 +250,14 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
   const subtotal = lineItems.reduce((s,l) => s+(parseFloat(l.qty)||0)*(parseFloat(l.rate)||0), 0)
   const taxTotal  = lineItems.reduce((s,l) => s+(parseFloat(l.qty)||0)*(parseFloat(l.rate)||0)*(parseFloat(l.tax)||0)/100, 0)
   const grand = subtotal + taxTotal
+
+  // GST split: same state code → CGST+SGST, else IGST
+  const orgState  = (orgGstin  || '').slice(0, 2)
+  const custState = (custGstin || '').slice(0, 2)
+  const isInter   = orgState && custState && orgState !== custState
+  const cgstAmt   = isInter ? 0 : taxTotal / 2
+  const sgstAmt   = isInter ? 0 : taxTotal / 2
+  const igstAmt   = isInter ? taxTotal : 0
 
   const save = async (statusOverride) => {
     if (!custName.trim()) { toast('Customer name is required', 'error'); return }
@@ -388,14 +398,29 @@ export default function InvoiceForm({ org, headers, toast, editItem, onClose }) 
           </button>
         </div>
         <div style={{ padding:'14px 18px',borderTop:'1px solid var(--border)',background:'var(--bg-3)',display:'flex',justifyContent:'flex-end' }}>
-          <div style={{ width:280 }}>
-            {[['Subtotal',fmt2(subtotal)],['Tax (GST)',fmt2(taxTotal)]].map(([l,v])=>(
-              <div key={l} style={{ display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13,color:'var(--text-3)',borderBottom:'1px solid var(--border)' }}>
-                <span>{l}</span><span style={{ fontFamily:'var(--mono)' }}>{v}</span>
+          <div style={{ width:300 }}>
+            <div style={{ display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13,color:'var(--text-3)',borderBottom:'1px solid var(--border)' }}>
+              <span>Subtotal</span><span style={{ fontFamily:'var(--mono)' }}>{fmt2(subtotal)}</span>
+            </div>
+            {isInter ? (
+              <div style={{ display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13,color:'var(--text-3)',borderBottom:'1px solid var(--border)' }}>
+                <span>IGST</span><span style={{ fontFamily:'var(--mono)' }}>{fmt2(igstAmt)}</span>
               </div>
-            ))}
+            ) : (
+              <>
+                <div style={{ display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13,color:'var(--text-3)',borderBottom:'1px solid var(--border)' }}>
+                  <span>CGST</span><span style={{ fontFamily:'var(--mono)' }}>{fmt2(cgstAmt)}</span>
+                </div>
+                <div style={{ display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13,color:'var(--text-3)',borderBottom:'1px solid var(--border)' }}>
+                  <span>SGST</span><span style={{ fontFamily:'var(--mono)' }}>{fmt2(sgstAmt)}</span>
+                </div>
+              </>
+            )}
             <div style={{ display:'flex',justifyContent:'space-between',padding:'10px 0 0',fontSize:17,fontWeight:700,color:'var(--accent-2)' }}>
               <span>Total</span><span style={{ fontFamily:'var(--mono)' }}>{fmt2(grand)}</span>
+            </div>
+            <div style={{ marginTop:6,fontSize:10,color:'var(--text-4)',textAlign:'right' }}>
+              {isInter ? `Inter-state · IGST (${orgState} → ${custState})` : orgState && custState ? `Intra-state · CGST + SGST` : 'Defaulting to CGST + SGST (set GSTINs to determine)'}
             </div>
           </div>
         </div>
