@@ -76,18 +76,17 @@ export default function OnboardingChecklist({ headers, onNavigate, invoiceCount 
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
         {steps.map(s => (
-          <button key={s.id} onClick={() => !s.done && onNavigate(s.go)}
-            disabled={s.done}
+          <button key={s.id} onClick={() => onNavigate(s.go)}
             style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: 12,
               background: s.done ? 'var(--surface-2)' : 'var(--surface)',
               border: `1px solid ${s.done ? 'var(--border)' : 'var(--border-2)'}`,
-              borderRadius: 'var(--r)', cursor: s.done ? 'default' : 'pointer',
-              textAlign: 'left', fontFamily: 'var(--font)', opacity: s.done ? 0.65 : 1,
+              borderRadius: 'var(--r)', cursor: 'pointer',
+              textAlign: 'left', fontFamily: 'var(--font)', opacity: s.done ? 0.7 : 1,
               transition: 'all 0.15s',
             }}
-            onMouseEnter={e => { if (!s.done) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-            onMouseLeave={e => { if (!s.done) { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.transform = 'none' } }}>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = s.done ? 'var(--border)' : 'var(--border-2)'; e.currentTarget.style.transform = 'none' }}>
             <div style={{
               width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
               background: s.done ? 'var(--green-text)' : 'var(--surface-2)',
@@ -105,7 +104,7 @@ export default function OnboardingChecklist({ headers, onNavigate, invoiceCount 
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textDecoration: s.done ? 'line-through' : 'none' }}>{s.label}</div>
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{s.desc}</div>
             </div>
-            {!s.done && <span style={{ fontSize: 14, color: 'var(--accent-2)' }}>→</span>}
+            <span style={{ fontSize: 14, color: 'var(--accent-2)' }}>→</span>
           </button>
         ))}
       </div>
