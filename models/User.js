@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
   twoFactorEnabled: { type: Boolean, default: false },
   twoFactorSecret:  { type: String, default: null }, // base32
   twoFactorBackupCodes: { type: [String], default: [] }, // hashed backup codes
+
+  // Email OTP (2FA fallback)
+  emailOtp:       { type: String, default: null },
+  emailOtpExpiry: { type: Date,   default: null },
   invitedBy:    { type: String, default: null },
   status:       { type: String, enum: ['active', 'invited', 'disabled'], default: 'active' },
   razorpaySubId:     { type: String, default: null },

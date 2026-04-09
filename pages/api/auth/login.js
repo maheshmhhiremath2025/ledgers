@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
   await connectDB()
 
-  const { email, password, totpCode, backupCode } = req.body
+  const { email, password, totpCode, backupCode, emailOtp } = req.body
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
 
   // Find the primary org record (admin role, earliest created) for this email
@@ -22,16 +22,28 @@ export default async function handler(req, res) {
 
   // 2FA gate
   if (user.twoFactorEnabled) {
-    if (!totpCode && !backupCode) {
+    if (!totpCode && !backupCode && !emailOtp) {
       return res.status(401).json({ error: '2FA code required', requires2FA: true })
     }
     let ok = false
+    // 1. TOTP from authenticator app
     if (totpCode && verifyTotp(user.twoFactorSecret, totpCode)) ok = true
+    // 2. Backup code (single-use)
     if (!ok && backupCode) {
       const h = crypto.createHash('sha256').update(String(backupCode).trim()).digest('hex')
       const idx = user.twoFactorBackupCodes.indexOf(h)
       if (idx >= 0) {
-        user.twoFactorBackupCodes.splice(idx, 1) // single-use
+        user.twoFactorBackupCodes.splice(idx, 1)
+        await user.save()
+        ok = true
+      }
+    }
+    // 3. Email OTP fallback
+    if (!ok && emailOtp) {
+      const h = crypto.createHash('sha256').update(String(emailOtp).trim()).digest('hex')
+      if (user.emailOtp === h && user.emailOtpExpiry && user.emailOtpExpiry > new Date()) {
+        user.emailOtp = null
+        user.emailOtpExpiry = null
         await user.save()
         ok = true
       }

@@ -228,6 +228,10 @@ export default function AuthPage({ onAuth }) {
   const [needs2FA, setNeeds2FA] = useState(false)
   const [totpCode, setTotpCode] = useState('')
   const [useBackup, setUseBackup] = useState(false)
+  const [useEmailOtp, setUseEmailOtp] = useState(false)
+  const [emailOtpSent, setEmailOtpSent] = useState(false)
+  const [emailOtpSending, setEmailOtpSending] = useState(false)
+  const [maskedEmail, setMaskedEmail] = useState('')
   const [orgId, setOrgId]     = useState('')
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -246,7 +250,7 @@ export default function AuthPage({ onAuth }) {
     setLoading(true)
     try {
       const body = mode === 'login'
-        ? { email, password, ...(useBackup ? { backupCode: totpCode } : { totpCode }) }
+        ? { email, password, ...(useEmailOtp ? { emailOtp: totpCode } : useBackup ? { backupCode: totpCode } : { totpCode }) }
         : { name, email, password, orgId }
       const res = await fetch(`/api/auth/${mode}`, {
         credentials: 'include',
@@ -433,13 +437,50 @@ export default function AuthPage({ onAuth }) {
 
               {mode === 'login' && needs2FA && (
                 <div style={{ marginBottom: 20, padding: 14, background: 'var(--accent-dim)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 'var(--r-md)' }}>
-                  <label style={labelStyle}>{useBackup ? 'Backup code' : 'Authenticator code'}</label>
-                  <input type="text" value={totpCode} onChange={e => setTotpCode(e.target.value)} placeholder={useBackup ? '8-character backup code' : '6-digit code'}
-                    autoFocus required style={inputStyle}/>
-                  <button type="button" onClick={() => { setUseBackup(b => !b); setTotpCode('') }}
-                    style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--accent-2)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)' }}>
-                    {useBackup ? '← Use authenticator code' : 'Use a backup code instead'}
-                  </button>
+                  <label style={labelStyle}>
+                    {useEmailOtp ? 'Email verification code' : useBackup ? 'Backup code' : 'Authenticator code'}
+                  </label>
+                  {useEmailOtp && !emailOtpSent && (
+                    <div style={{ marginBottom: 12 }}>
+                      <button type="button" disabled={emailOtpSending} onClick={async () => {
+                        setEmailOtpSending(true); setError('')
+                        try {
+                          const r = await fetch('/api/auth/2fa/email-otp', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password }),
+                          })
+                          const d = await r.json()
+                          if (r.ok) { setEmailOtpSent(true); setMaskedEmail(d.email || email) }
+                          else setError(d.error || 'Failed to send code')
+                        } catch { setError('Network error') }
+                        setEmailOtpSending(false)
+                      }} style={{ width: '100%', padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r)', fontSize: 13, fontWeight: 600, cursor: emailOtpSending ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)' }}>
+                        {emailOtpSending ? 'Sending...' : 'Send code to my email'}
+                      </button>
+                    </div>
+                  )}
+                  {useEmailOtp && emailOtpSent && (
+                    <div style={{ fontSize: 12, color: 'var(--green-text)', marginBottom: 8 }}>
+                      Code sent to {maskedEmail}. Check your inbox (valid 10 min).
+                    </div>
+                  )}
+                  {(!useEmailOtp || emailOtpSent) && (
+                    <input type="text" value={totpCode} onChange={e => setTotpCode(e.target.value)}
+                      placeholder={useEmailOtp ? '6-digit email code' : useBackup ? '8-character backup code' : '6-digit code'}
+                      autoFocus required style={inputStyle}/>
+                  )}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+                    {!useEmailOtp && (
+                      <button type="button" onClick={() => { setUseBackup(b => !b); setUseEmailOtp(false); setTotpCode('') }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-2)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                        {useBackup ? '← Authenticator code' : 'Use backup code'}
+                      </button>
+                    )}
+                    <button type="button" onClick={() => { setUseEmailOtp(e => !e); setUseBackup(false); setTotpCode(''); setEmailOtpSent(false) }}
+                      style={{ background: 'none', border: 'none', color: 'var(--accent-2)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                      {useEmailOtp ? '← Authenticator code' : 'Send code to email instead'}
+                    </button>
+                  </div>
                 </div>
               )}
 
