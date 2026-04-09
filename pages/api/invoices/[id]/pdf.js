@@ -77,8 +77,15 @@ function buildHTML(inv, cfg, t) {
   const dueBalance = (inv.total||0) - (inv.paidAmount||0)
   const dark = t.dark || false
 
+  // Field visibility — merge defaults with org config
+  const F = { logo:true, businessAddress:true, businessPhone:true, businessEmail:true, businessWebsite:false,
+    gstin:true, pan:true, sacCode:true, customerEmail:true, customerAddress:true, customerGstin:true,
+    dueDate:true, currency:false, taxColumn:true, taxBreakdown:true, paidAmount:true,
+    bankDetails:true, paymentInstr:true, notes:true, terms:true, signature:true, footerText:true,
+    ...(cfg?.pdfFields || {}) }
+
   const biz = cfg?.businessName || 'HexaLabs'
-  const logoUrl = cfg?.logoUrl || ''
+  const logoUrl = F.logo ? (cfg?.logoUrl || '') : ''
   const bodyColor   = dark ? '#ECEEF8' : '#1a1a1a'
   const mutedColor  = dark ? '#9EA3BF' : '#666'
   const faintColor  = dark ? '#636880' : '#999'
@@ -92,30 +99,31 @@ function buildHTML(inv, cfg, t) {
       <td class="td" style="color:${bodyColor}">${item.description||''}</td>
       <td class="td tr" style="color:${bodyColor}">${item.qty}</td>
       <td class="td tr" style="color:${bodyColor}">${fmt(item.rate)}</td>
-      <td class="td tc" style="color:${bodyColor}">${item.tax||0}%</td>
+      ${F.taxColumn ? `<td class="td tc" style="color:${bodyColor}">${item.tax||0}%</td>` : ''}
       <td class="td tr fw" style="color:${bodyColor}">${fmt(lt+ta)}</td>
     </tr>`
   }).join('')
 
+  // Build contact line: only include enabled fields
+  const contactParts = []
+  if (F.businessEmail && cfg?.businessEmail) contactParts.push(cfg.businessEmail)
+  if (F.businessPhone && cfg?.businessPhone) contactParts.push(cfg.businessPhone)
+  const contactLine = contactParts.join(' &nbsp;|&nbsp; ')
+  const addrLine = F.businessAddress && cfg?.businessAddress ? cfg.businessAddress.replace(/\n/g,'<br>') + '<br>' : ''
+  const webLine  = F.businessWebsite && cfg?.businessWebsite ? '<br>' + cfg.businessWebsite : ''
+  const gstinTag = F.gstin && cfg?.gstin ? `<span class="tag" style="background:${t.primaryLight};color:${t.primary}">GSTIN: ${cfg.gstin}</span>` : ''
+  const panTag   = F.pan && cfg?.pan     ? `<span class="tag" style="background:#FEF3C7;color:#92400E;margin-left:4px">PAN: ${cfg.pan}</span>` : ''
+
   const leftHeader = logoUrl
     ? `<div>
         <img src="${logoUrl}" alt="${biz}" style="max-height:56px;max-width:180px;object-fit:contain;display:block;margin-bottom:5px"/>
-        <div style="font-size:11px;color:${mutedColor};line-height:1.7">
-          ${cfg?.businessAddress ? cfg.businessAddress.replace(/\n/g,'<br>')+'<br>' : ''}
-          ${cfg?.businessEmail||''}${cfg?.businessPhone?' &nbsp;|&nbsp; '+cfg.businessPhone:''}
-        </div>
-        ${cfg?.gstin ? `<span class="tag" style="background:${t.primaryLight};color:${t.primary}">GSTIN: ${cfg.gstin}</span>` : ''}
-        ${cfg?.pan   ? `<span class="tag" style="background:#FEF3C7;color:#92400E;margin-left:4px">PAN: ${cfg.pan}</span>` : ''}
+        <div style="font-size:11px;color:${mutedColor};line-height:1.7">${addrLine}${contactLine}</div>
+        ${gstinTag || panTag ? `<div style="margin-top:5px">${gstinTag}${panTag}</div>` : ''}
       </div>`
     : `<div>
         <div style="font-size:20px;font-weight:700;color:${t.primary};margin-bottom:4px">${biz}</div>
-        <div style="font-size:11px;color:${mutedColor};line-height:1.7">
-          ${cfg?.businessAddress ? cfg.businessAddress.replace(/\n/g,'<br>')+'<br>' : ''}
-          ${cfg?.businessEmail||''}${cfg?.businessPhone?' &nbsp;|&nbsp; '+cfg.businessPhone:''}
-          ${cfg?.businessWebsite ? '<br>'+cfg.businessWebsite : ''}
-        </div>
-        ${cfg?.gstin ? `<div style="margin-top:5px"><span class="tag" style="background:${t.primaryLight};color:${t.primary}">GSTIN: ${cfg.gstin}</span></div>` : ''}
-        ${cfg?.pan   ? `<div style="margin-top:3px"><span class="tag" style="background:#FEF3C7;color:#92400E">PAN: ${cfg.pan}</span></div>` : ''}
+        <div style="font-size:11px;color:${mutedColor};line-height:1.7">${addrLine}${contactLine}${webLine}</div>
+        ${gstinTag || panTag ? `<div style="margin-top:5px">${gstinTag}${panTag}</div>` : ''}
       </div>`
 
   const hasBankDetails = cfg?.bankName || cfg?.accountNumber || cfg?.ifscCode
@@ -189,19 +197,19 @@ function buildHTML(inv, cfg, t) {
     <div class="pbox" style="background:${t.billBg};border:1px solid ${t.billBorder}">
       <div class="plbl">Bill To</div>
       <div class="pname">${inv.customer?.name||''}</div>
-      ${inv.customer?.email   ? `<div class="pdetail">${inv.customer.email}</div>` : ''}
-      ${inv.customer?.address ? `<div class="pdetail">${inv.customer.address}</div>` : ''}
-      ${inv.customer?.gstin   ? `<div><span class="pgstin">GSTIN: ${inv.customer.gstin}</span></div>` : ''}
+      ${F.customerEmail && inv.customer?.email   ? `<div class="pdetail">${inv.customer.email}</div>` : ''}
+      ${F.customerAddress && inv.customer?.address ? `<div class="pdetail">${inv.customer.address}</div>` : ''}
+      ${F.customerGstin && inv.customer?.gstin   ? `<div><span class="pgstin">GSTIN: ${inv.customer.gstin}</span></div>` : ''}
     </div>
     <div class="pbox" style="background:${t.detBg};border:1px solid ${t.detBorder}">
       <div class="plbl">Invoice Details</div>
       <div class="mgrid">
         <span class="ml">Invoice No.</span><span class="mv">${inv.invoiceNumber}</span>
         <span class="ml">Issue Date</span><span class="mv">${fmtDate(inv.issueDate)}</span>
-        <span class="ml">Due Date</span><span class="mv" style="${inv.status==='Overdue'?'color:#A32D2D':''}">${fmtDate(inv.dueDate)}</span>
-        <span class="ml">Currency</span><span class="mv">${inv.currency||'INR'}</span>
-        ${cfg?.sacCode ? `<span class="ml">SAC</span><span class="mv mono">${cfg.sacCode}</span>` : ''}
-        ${inv.paidAmount>0 ? `<span class="ml">Paid</span><span class="mv" style="color:#3B6D11">${fmt(inv.paidAmount)}</span>` : ''}
+        ${F.dueDate ? `<span class="ml">Due Date</span><span class="mv" style="${inv.status==='Overdue'?'color:#A32D2D':''}">${fmtDate(inv.dueDate)}</span>` : ''}
+        ${F.currency ? `<span class="ml">Currency</span><span class="mv">${inv.currency||'INR'}</span>` : ''}
+        ${F.sacCode && cfg?.sacCode ? `<span class="ml">SAC</span><span class="mv mono">${cfg.sacCode}</span>` : ''}
+        ${F.paidAmount && inv.paidAmount>0 ? `<span class="ml">Paid</span><span class="mv" style="color:#3B6D11">${fmt(inv.paidAmount)}</span>` : ''}
       </div>
     </div>
   </div>
@@ -211,24 +219,25 @@ function buildHTML(inv, cfg, t) {
       <thead><tr>
         <th class="th tc" style="width:32px">#</th><th class="th">Description</th>
         <th class="th tr" style="width:52px">Qty</th><th class="th tr" style="width:105px">Rate</th>
-        <th class="th tc" style="width:56px">Tax</th><th class="th tr" style="width:115px">Amount</th>
+        ${F.taxColumn ? '<th class="th tc" style="width:56px">Tax</th>' : ''}<th class="th tr" style="width:115px">Amount</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="tot-wrap">
       <div class="tot-box">
         <div class="trow"><span>Subtotal</span><span class="tv">${fmt(inv.subtotal)}</span></div>
-        ${(inv.taxType === 'inter' || (inv.igstTotal||0) > 0)
+        ${F.taxBreakdown ? ((inv.taxType === 'inter' || (inv.igstTotal||0) > 0)
           ? `<div class="trow"><span>IGST</span><span class="tv">${fmt(inv.igstTotal || inv.taxTotal || 0)}</span></div>`
           : `<div class="trow"><span>CGST</span><span class="tv">${fmt(inv.cgstTotal != null ? inv.cgstTotal : (inv.taxTotal||0)/2)}</span></div>
-             <div class="trow"><span>SGST</span><span class="tv">${fmt(inv.sgstTotal != null ? inv.sgstTotal : (inv.taxTotal||0)/2)}</span></div>`}
-        ${inv.paidAmount>0 ? `<div class="trow paid"><span>Amount Paid</span><span class="tv">- ${fmt(inv.paidAmount)}</span></div>` : ''}
-        <div class="tfinal"><span>Balance Due</span><span class="tv">${fmt(dueBalance)}</span></div>
+             <div class="trow"><span>SGST</span><span class="tv">${fmt(inv.sgstTotal != null ? inv.sgstTotal : (inv.taxTotal||0)/2)}</span></div>`)
+         : (inv.taxTotal > 0 ? `<div class="trow"><span>Tax</span><span class="tv">${fmt(inv.taxTotal)}</span></div>` : '')}
+        ${F.paidAmount && inv.paidAmount>0 ? `<div class="trow paid"><span>Amount Paid</span><span class="tv">- ${fmt(inv.paidAmount)}</span></div>` : ''}
+        <div class="tfinal"><span>${F.paidAmount ? 'Balance Due' : 'Total'}</span><span class="tv">${fmt(F.paidAmount ? dueBalance : inv.total)}</span></div>
       </div>
     </div>
   </div>
 
-  ${hasBankDetails ? `
+  ${F.bankDetails && hasBankDetails ? `
   <div class="bank-wrap">
     <div class="bank-box">
       <div class="bank-lbl">Bank Details</div>
@@ -241,20 +250,20 @@ function buildHTML(inv, cfg, t) {
         ${cfg?.upiId         ? `<span class="bl">UPI ID</span><span class="bv mono">${cfg.upiId}</span>` : ''}
       </div>
     </div>
-    ${cfg?.paymentInstructions ? `
+    ${F.paymentInstr && cfg?.paymentInstructions ? `
     <div class="bank-box" style="background:${dark?'rgba(245,158,11,0.08)':'#FFFBF0'};border-color:${dark?'rgba(245,158,11,0.2)':'#F6CC7C'}">
       <div class="bank-lbl" style="color:#92400E">Payment Instructions</div>
       <div style="font-size:11px;color:${mutedColor};line-height:1.6">${cfg.paymentInstructions}</div>
     </div>` : ''}
   </div>` : ''}
 
-  ${inv.notes || inv.terms ? `
+  ${(F.notes && inv.notes) || (F.terms && inv.terms) ? `
   <div class="notes-wrap">
-    ${inv.notes ? `<div class="note-box" style="background:${t.notesBg};border-left:3px solid ${t.notesBorder}"><div class="note-lbl">Notes</div><div class="note-txt">${inv.notes}</div></div>` : '<div></div>'}
-    ${inv.terms ? `<div class="note-box" style="background:${t.termsBg};border-left:3px solid ${t.termsBorder}"><div class="note-lbl">Terms &amp; Conditions</div><div class="note-txt">${inv.terms}</div></div>` : ''}
+    ${F.notes && inv.notes ? `<div class="note-box" style="background:${t.notesBg};border-left:3px solid ${t.notesBorder}"><div class="note-lbl">Notes</div><div class="note-txt">${inv.notes}</div></div>` : '<div></div>'}
+    ${F.terms && inv.terms ? `<div class="note-box" style="background:${t.termsBg};border-left:3px solid ${t.termsBorder}"><div class="note-lbl">Terms &amp; Conditions</div><div class="note-txt">${inv.terms}</div></div>` : ''}
   </div>` : ''}
 
-  ${(cfg?.signatureName || cfg?.signatureImage) ? (
+  ${F.signature && (cfg?.signatureName || cfg?.signatureImage) ? (
     '<div class="sig-wrap"><div class="sig-box">' +
     '<div style="font-size:10px;color:' + faintColor + ';margin-bottom:6px">For ' + biz + '</div>' +
     (cfg.signatureImage
@@ -267,8 +276,8 @@ function buildHTML(inv, cfg, t) {
     '</div></div>'
   ) : ''}
 
-  <div class="footer">
-    <span>${cfg?.footerText||'This is a computer-generated invoice.'}</span>
+  ${F.footerText ? `<div class="footer">
+    <span>${cfg?.footerText||'This is a computer-generated invoice.'}</span>` : '<div class="footer"><span></span>'}
     <span><span class="footer-brand">${biz}</span> &middot; ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</span>
   </div>
 </div>

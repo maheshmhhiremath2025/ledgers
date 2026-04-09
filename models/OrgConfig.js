@@ -30,6 +30,33 @@ const OrgConfigSchema = new mongoose.Schema({
   signatureTitle:  { type: String, default: '' },
   signatureImage:  { type: String, default: '' },
   footerText:      { type: String, default: 'This is a computer-generated invoice.' },
+
+  // PDF template field visibility — all default to true (shown)
+  pdfFields: {
+    logo:             { type: Boolean, default: true },
+    businessAddress:  { type: Boolean, default: true },
+    businessPhone:    { type: Boolean, default: true },
+    businessEmail:    { type: Boolean, default: true },
+    businessWebsite:  { type: Boolean, default: false },
+    gstin:            { type: Boolean, default: true },
+    pan:              { type: Boolean, default: true },
+    sacCode:          { type: Boolean, default: true },
+    customerEmail:    { type: Boolean, default: true },
+    customerAddress:  { type: Boolean, default: true },
+    customerGstin:    { type: Boolean, default: true },
+    dueDate:          { type: Boolean, default: true },
+    currency:         { type: Boolean, default: false },
+    taxColumn:        { type: Boolean, default: true },
+    taxBreakdown:     { type: Boolean, default: true },
+    paidAmount:       { type: Boolean, default: true },
+    bankDetails:      { type: Boolean, default: true },
+    paymentInstr:     { type: Boolean, default: true },
+    notes:            { type: Boolean, default: true },
+    terms:            { type: Boolean, default: true },
+    signature:        { type: Boolean, default: true },
+    footerText:       { type: Boolean, default: true },
+  },
+
   // Email / SMTP config
   smtpHost:        { type: String, default: '' },
   smtpPort:        { type: Number, default: 587 },

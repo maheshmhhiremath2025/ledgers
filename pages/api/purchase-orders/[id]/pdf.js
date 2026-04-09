@@ -10,19 +10,30 @@ function buildPOHTML(po, cfg) {
   const displayStatus = po.status==='Sent' ? 'Draft' : (po.status||'Draft')
   const sc = statusColor[displayStatus] || '#888'
 
+  // Field visibility — merge defaults with org config
+  const F = { logo:true, businessAddress:true, businessPhone:true, businessEmail:true, businessWebsite:false,
+    gstin:true, pan:true, sacCode:true, customerEmail:true, customerAddress:true, customerGstin:true,
+    dueDate:true, currency:false, taxColumn:true, taxBreakdown:true, paidAmount:true,
+    bankDetails:true, paymentInstr:true, notes:true, terms:true, signature:true, footerText:true,
+    ...(cfg?.pdfFields || {}) }
+
   const bizName    = cfg?.businessName    || 'HexaLabs'
-  const bizEmail   = cfg?.businessEmail   || ''
-  const bizPhone   = cfg?.businessPhone   || ''
-  const bizAddress = cfg?.businessAddress || ''
-  const bizWebsite = cfg?.businessWebsite || ''
-  const logoUrl    = cfg?.logoUrl         || ''
-  const gstin      = cfg?.gstin           || ''
-  const pan        = cfg?.pan             || ''
+  const logoUrl    = F.logo ? (cfg?.logoUrl || '') : ''
   const sigName    = cfg?.signatureName   || ''
   const sigTitle   = cfg?.signatureTitle  || ''
-  const sigImage   = cfg?.signatureImage   || ''
+  const sigImage   = cfg?.signatureImage  || ''
   const footerText = (cfg?.footerText || 'This is a computer-generated purchase order.')
     .replace(/invoice/gi, 'purchase order')
+
+  // Build contact line
+  const contactParts = []
+  if (F.businessEmail && cfg?.businessEmail) contactParts.push(cfg.businessEmail)
+  if (F.businessPhone && cfg?.businessPhone) contactParts.push(cfg.businessPhone)
+  const contactLine = contactParts.join(' &nbsp;|&nbsp; ')
+  const addrLine = F.businessAddress && cfg?.businessAddress ? cfg.businessAddress.replace(/\n/g,'<br>') + '<br>' : ''
+  const webLine  = F.businessWebsite && cfg?.businessWebsite ? '<br>' + cfg.businessWebsite : ''
+  const gstinTag = F.gstin && cfg?.gstin ? `<span class="biz-tag" style="background:#E8F5F1;color:#0F6E56">GSTIN: ${cfg.gstin}</span>` : ''
+  const panTag   = F.pan && cfg?.pan     ? `<span class="biz-tag" style="background:#FEF3C7;color:#92400E;margin-left:4px">PAN: ${cfg.pan}</span>` : ''
 
   const rows = (po.lineItems || []).map((item, i) => {
     const lineTotal = (item.qty || 0) * (item.rate || 0)
@@ -32,32 +43,21 @@ function buildPOHTML(po, cfg) {
       <td class="td">${item.description||''}</td>
       <td class="td tr">${item.qty}</td>
       <td class="td tr">${fmt(item.rate)}</td>
-      <td class="td tc">${item.tax||0}%</td>
+      ${F.taxColumn ? `<td class="td tc">${item.tax||0}%</td>` : ''}
       <td class="td tr fw">${fmt(lineTotal+taxAmt)}</td>
     </tr>`
   }).join('')
 
-  // Left header: logo if exists, else business name
   const leftHeader = logoUrl
     ? `<div>
         <img src="${logoUrl}" alt="${bizName}" style="max-height:56px;max-width:200px;object-fit:contain;display:block;margin-bottom:6px"/>
-        <div style="font-size:11px;color:#666;line-height:1.7">
-          ${bizAddress ? bizAddress.replace(/\n/g,'<br>') + '<br>' : ''}
-          ${bizEmail}${bizPhone ? ' &nbsp;|&nbsp; '+bizPhone : ''}
-          ${bizWebsite ? '<br>'+bizWebsite : ''}
-        </div>
-        ${gstin ? `<span class="biz-tag" style="background:#E8F5F1;color:#0F6E56">GSTIN: ${gstin}</span>` : ''}
-        ${pan   ? `<span class="biz-tag" style="background:#FEF3C7;color:#92400E;margin-left:4px">PAN: ${pan}</span>` : ''}
+        <div style="font-size:11px;color:#666;line-height:1.7">${addrLine}${contactLine}${webLine}</div>
+        ${gstinTag || panTag ? `<div style="margin-top:5px">${gstinTag}${panTag}</div>` : ''}
       </div>`
     : `<div>
         <div class="biz-name">${bizName}</div>
-        <div style="font-size:11px;color:#666;line-height:1.7">
-          ${bizAddress ? bizAddress.replace(/\n/g,'<br>') + '<br>' : ''}
-          ${bizEmail}${bizPhone ? ' &nbsp;|&nbsp; '+bizPhone : ''}
-          ${bizWebsite ? '<br>'+bizWebsite : ''}
-        </div>
-        ${gstin ? `<div style="margin-top:5px"><span class="biz-tag" style="background:#E8F5F1;color:#0F6E56">GSTIN: ${gstin}</span></div>` : ''}
-        ${pan   ? `<div style="margin-top:3px"><span class="biz-tag" style="background:#FEF3C7;color:#92400E">PAN: ${pan}</span></div>` : ''}
+        <div style="font-size:11px;color:#666;line-height:1.7">${addrLine}${contactLine}${webLine}</div>
+        ${gstinTag || panTag ? `<div style="margin-top:5px">${gstinTag}${panTag}</div>` : ''}
       </div>`
 
   return `<!DOCTYPE html>
@@ -125,18 +125,18 @@ function buildPOHTML(po, cfg) {
     <div class="pbox vendor">
       <div class="plbl">Vendor</div>
       <div class="pname">${po.vendor?.name||''}</div>
-      ${po.vendor?.email   ? `<div class="pdetail">${po.vendor.email}</div>` : ''}
-      ${po.vendor?.address ? `<div class="pdetail">${po.vendor.address}</div>` : ''}
-      ${po.vendor?.gstin   ? `<div><span class="pgstin">GSTIN: ${po.vendor.gstin}</span></div>` : ''}
+      ${F.customerEmail && po.vendor?.email   ? `<div class="pdetail">${po.vendor.email}</div>` : ''}
+      ${F.customerAddress && po.vendor?.address ? `<div class="pdetail">${po.vendor.address}</div>` : ''}
+      ${F.customerGstin && po.vendor?.gstin   ? `<div><span class="pgstin">GSTIN: ${po.vendor.gstin}</span></div>` : ''}
     </div>
     <div class="pbox det">
       <div class="plbl">Order Details</div>
       <div class="mgrid">
         <span class="ml">PO Number</span><span class="mv">${po.poNumber}</span>
         <span class="ml">Issue Date</span><span class="mv">${fmtDate(po.issueDate)}</span>
-        <span class="ml">Expected</span><span class="mv">${fmtDate(po.expectedDate)}</span>
+        ${F.dueDate ? `<span class="ml">Expected</span><span class="mv">${fmtDate(po.expectedDate)}</span>` : ''}
         ${po.deliveryAddress ? `<span class="ml">Deliver To</span><span class="mv">${po.deliveryAddress}</span>` : ''}
-        <span class="ml">Currency</span><span class="mv">${po.currency||'INR'}</span>
+        ${F.currency ? `<span class="ml">Currency</span><span class="mv">${po.currency||'INR'}</span>` : ''}
       </div>
     </div>
   </div>
@@ -148,7 +148,7 @@ function buildPOHTML(po, cfg) {
         <th class="th">Description</th>
         <th class="th tr" style="width:52px">Qty</th>
         <th class="th tr" style="width:105px">Rate</th>
-        <th class="th tc" style="width:56px">Tax</th>
+        ${F.taxColumn ? '<th class="th tc" style="width:56px">Tax</th>' : ''}
         <th class="th tr" style="width:115px">Amount</th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -156,22 +156,23 @@ function buildPOHTML(po, cfg) {
     <div class="tot-wrap">
       <div class="tot-box">
         <div class="trow"><span>Subtotal</span><span class="tv">${fmt(po.subtotal)}</span></div>
-        ${(po.taxType === 'inter' || (po.igstTotal||0) > 0)
+        ${F.taxBreakdown ? ((po.taxType === 'inter' || (po.igstTotal||0) > 0)
           ? `<div class="trow"><span>IGST</span><span class="tv">${fmt(po.igstTotal || po.taxTotal || 0)}</span></div>`
           : `<div class="trow"><span>CGST</span><span class="tv">${fmt(po.cgstTotal != null ? po.cgstTotal : (po.taxTotal||0)/2)}</span></div>
-             <div class="trow"><span>SGST</span><span class="tv">${fmt(po.sgstTotal != null ? po.sgstTotal : (po.taxTotal||0)/2)}</span></div>`}
+             <div class="trow"><span>SGST</span><span class="tv">${fmt(po.sgstTotal != null ? po.sgstTotal : (po.taxTotal||0)/2)}</span></div>`)
+         : (po.taxTotal > 0 ? `<div class="trow"><span>Tax</span><span class="tv">${fmt(po.taxTotal)}</span></div>` : '')}
         <div class="tfinal"><span>Total</span><span class="tv">${fmt(po.total)}</span></div>
       </div>
     </div>
   </div>
 
-  ${po.notes || po.terms ? `
+  ${(F.notes && po.notes) || (F.terms && po.terms) ? `
   <div class="notes-wrap">
-    ${po.notes ? `<div class="note-box notes"><div class="note-lbl">Notes</div><div class="note-txt">${po.notes}</div></div>` : '<div></div>'}
-    ${po.terms ? `<div class="note-box terms"><div class="note-lbl">Terms &amp; Conditions</div><div class="note-txt">${po.terms}</div></div>` : ''}
+    ${F.notes && po.notes ? `<div class="note-box notes"><div class="note-lbl">Notes</div><div class="note-txt">${po.notes}</div></div>` : '<div></div>'}
+    ${F.terms && po.terms ? `<div class="note-box terms"><div class="note-lbl">Terms &amp; Conditions</div><div class="note-txt">${po.terms}</div></div>` : ''}
   </div>` : ''}
 
-  ${(sigName || sigImage) ? (
+  ${F.signature && (sigName || sigImage) ? (
     '<div class="sig-wrap"><div class="sig-box">' +
     '<div style="font-size:10px;color:#999;margin-bottom:6px">For ' + bizName + '</div>' +
     (sigImage
@@ -185,7 +186,7 @@ function buildPOHTML(po, cfg) {
   ) : ''}
 
   <div class="footer">
-    <span>${footerText}</span>
+    ${F.footerText ? `<span>${footerText}</span>` : '<span></span>'}
     <span><span class="footer-brand">${bizName}</span> &middot; ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</span>
   </div>
 

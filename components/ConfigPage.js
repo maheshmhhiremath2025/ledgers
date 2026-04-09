@@ -10,6 +10,7 @@ const TABS = [
   { id: 'defaults', label: 'Defaults',   icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
   { id: 'email',    label: 'Email',      icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
   { id: 'payments',  label: 'Payments',   icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { id: 'template',  label: 'Template',   icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
 ]
 
 const inputStyle = {
@@ -145,6 +146,17 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
   const [emailBody,    setEmailBody]    = useState('Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nKindly make the payment by {{dueDate}}.\n\nThank you for your business!\n\n{{businessName}}')
   const [testingEmail, setTestingEmail] = useState(false)
 
+  // PDF template field visibility
+  const PDF_FIELD_DEFAULTS = {
+    logo: true, businessAddress: true, businessPhone: true, businessEmail: true,
+    businessWebsite: false, gstin: true, pan: true, sacCode: true,
+    customerEmail: true, customerAddress: true, customerGstin: true,
+    dueDate: true, currency: false, taxColumn: true, taxBreakdown: true,
+    paidAmount: true, bankDetails: true, paymentInstr: true,
+    notes: true, terms: true, signature: true, footerText: true,
+  }
+  const [pdfFields, setPdfFields] = useState(PDF_FIELD_DEFAULTS)
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -190,6 +202,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
         setSmtpSecure(d.smtpSecure || false)
         setEmailSubject(d.emailSubject || 'Invoice {{invoiceNumber}} from {{businessName}}')
         setEmailBody(d.emailBody || 'Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nKindly make the payment by {{dueDate}}.\n\nThank you for your business!\n\n{{businessName}}')
+        if (d.pdfFields) setPdfFields(prev => ({ ...prev, ...d.pdfFields }))
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -207,6 +220,7 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
     razorpayKeyId, razorpaySecret,
     smtpHost, smtpPort: parseInt(smtpPort)||587, smtpUser, smtpPass, smtpFrom, smtpSecure,
     emailSubject, emailBody,
+    pdfFields,
   })
 
   const save = async () => {
@@ -668,6 +682,101 @@ export default function ConfigPage({ org, headers, toast, readOnly = false, onSa
                   ⚠ No payment gateway configured — the Pay Now button will be hidden on your invoice portal
                 </div>
               )}
+              <SaveBar />
+            </Card>
+          )}
+
+          {tab === 'template' && (
+            <Card style={{ padding: 20 }}>
+              <SectionTitle>Customise PDF Template</SectionTitle>
+              <div style={{ marginBottom: 16, fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6 }}>
+                Choose which fields appear on your invoices and purchase orders. Changes apply to all new PDFs.
+              </div>
+              {[
+                { group: 'Your Business', fields: [
+                  { key: 'logo',            label: 'Company logo' },
+                  { key: 'businessAddress', label: 'Business address' },
+                  { key: 'businessPhone',   label: 'Phone number' },
+                  { key: 'businessEmail',   label: 'Email address' },
+                  { key: 'businessWebsite', label: 'Website URL' },
+                  { key: 'gstin',           label: 'GSTIN badge' },
+                  { key: 'pan',             label: 'PAN badge' },
+                  { key: 'sacCode',         label: 'SAC code' },
+                ]},
+                { group: 'Customer / Vendor', fields: [
+                  { key: 'customerEmail',   label: 'Customer email' },
+                  { key: 'customerAddress', label: 'Customer address' },
+                  { key: 'customerGstin',   label: 'Customer GSTIN' },
+                ]},
+                { group: 'Invoice Details', fields: [
+                  { key: 'dueDate',      label: 'Due date' },
+                  { key: 'currency',     label: 'Currency' },
+                  { key: 'paidAmount',   label: 'Paid amount / balance due' },
+                ]},
+                { group: 'Line Items & Tax', fields: [
+                  { key: 'taxColumn',    label: 'Tax % column' },
+                  { key: 'taxBreakdown', label: 'CGST / SGST / IGST breakdown' },
+                ]},
+                { group: 'Payment & Footer', fields: [
+                  { key: 'bankDetails',  label: 'Bank account details' },
+                  { key: 'paymentInstr', label: 'Payment instructions' },
+                  { key: 'notes',        label: 'Notes section' },
+                  { key: 'terms',        label: 'Terms & conditions' },
+                  { key: 'signature',    label: 'Authorized signature' },
+                  { key: 'footerText',   label: 'Footer text' },
+                ]},
+              ].map(section => (
+                <div key={section.group} style={{ marginBottom: 18 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{section.group}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
+                    {section.fields.map(f => (
+                      <label key={f.key} style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                        background: pdfFields[f.key] ? 'var(--accent-dim)' : 'var(--surface-2)',
+                        border: `1px solid ${pdfFields[f.key] ? 'rgba(99,102,241,0.25)' : 'var(--border-2)'}`,
+                        borderRadius: 'var(--r)', cursor: readOnly ? 'default' : 'pointer',
+                        transition: 'all 0.12s', fontSize: 13, color: 'var(--text)',
+                      }}>
+                        <div style={{
+                          width: 36, height: 20, borderRadius: 10, position: 'relative',
+                          background: pdfFields[f.key] ? 'var(--accent)' : 'var(--surface-3)',
+                          transition: 'background 0.2s', flexShrink: 0,
+                        }}>
+                          <div style={{
+                            width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                            position: 'absolute', top: 2,
+                            left: pdfFields[f.key] ? 18 : 2,
+                            transition: 'left 0.2s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                          }}/>
+                          <input type="checkbox" checked={pdfFields[f.key]} disabled={readOnly}
+                            onChange={e => { setPdfFields(prev => ({ ...prev, [f.key]: e.target.checked })); setDirty(true) }}
+                            style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}/>
+                        </div>
+                        <span style={{ fontWeight: 500 }}>{f.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                <button onClick={() => { setPdfFields({ ...PDF_FIELD_DEFAULTS, businessWebsite: true, currency: true }); setDirty(true) }}
+                  style={{ padding: '7px 14px', background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--text-2)', borderRadius: 'var(--r)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                  Show all
+                </button>
+                <button onClick={() => {
+                  const min = {}; Object.keys(PDF_FIELD_DEFAULTS).forEach(k => min[k] = false)
+                  min.logo = true; min.taxBreakdown = true; min.dueDate = true
+                  setPdfFields(min); setDirty(true)
+                }}
+                  style={{ padding: '7px 14px', background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--text-2)', borderRadius: 'var(--r)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                  Minimal
+                </button>
+                <button onClick={() => { setPdfFields(PDF_FIELD_DEFAULTS); setDirty(true) }}
+                  style={{ padding: '7px 14px', background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--text-2)', borderRadius: 'var(--r)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                  Reset defaults
+                </button>
+              </div>
               <SaveBar />
             </Card>
           )}
