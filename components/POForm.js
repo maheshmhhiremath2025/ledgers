@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Btn, Card, SectionTitle, fmt2, today } from './ui'
+import TemplatePicker from './TemplatePicker'
 
 const newLine = () => ({ description: '', qty: 1, rate: 0, tax: 18, amount: 0 })
 
@@ -135,6 +136,7 @@ export default function POForm({ org, headers, toast, editItem, onClose }) {
   const [notes,       setNotes]       = useState('')
   const [terms,       setTerms]       = useState('')
   const [lineItems,   setLineItems]   = useState([newLine()])
+  const [template,    setTemplate]    = useState('classic')
   const [saving,      setSaving]      = useState(false)
   const [configLoaded,setConfigLoaded]= useState(false)
   const [products,    setProducts]    = useState([])
@@ -155,6 +157,7 @@ export default function POForm({ org, headers, toast, editItem, onClose }) {
       setNotes(editItem.notes || '')
       setTerms(editItem.terms || '')
       setLineItems(editItem.lineItems?.length ? editItem.lineItems : [newLine()])
+      setTemplate(editItem.template || 'classic')
       setConfigLoaded(true)
       return
     }
@@ -222,7 +225,7 @@ export default function POForm({ org, headers, toast, editItem, onClose }) {
       const payload = {
         vendor: { name: vendName, email: vendEmail, address: vendAddress, gstin: vendGstin },
         poNumber, issueDate, expectedDate, deliveryAddress: deliveryAddr,
-        status: statusOverride || status, currency, notes, terms, lineItems,
+        status: statusOverride || status, currency, notes, terms, lineItems, template,
       }
       const isEdit = !!editItem?._id
       const url = isEdit ? `/api/purchase-orders/${editItem._id}` : '/api/purchase-orders'
@@ -256,6 +259,13 @@ export default function POForm({ org, headers, toast, editItem, onClose }) {
           {editItem ? `Edit ${editItem.poNumber}` : 'New Purchase Order'}
         </h2>
       </div>
+
+      {/* Template Picker */}
+      <Card style={{ padding: 18, marginBottom: 14 }}>
+        <SectionTitle style={{ marginBottom: 6 }}>PDF Template</SectionTitle>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 10 }}>Choose how your purchase order PDF will look</div>
+        <TemplatePicker value={template} onChange={setTemplate} />
+      </Card>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <Card style={{ padding: 18 }}>

@@ -32,6 +32,7 @@ const PurchaseOrderSchema = new mongoose.Schema({
   notes: String,
   terms: String,
   currency: { type: String, default: 'INR' },
+  template: { type: String, default: 'classic' },
 }, { timestamps: true })
 
 export default mongoose.models.PurchaseOrder || mongoose.model('PurchaseOrder', PurchaseOrderSchema)
