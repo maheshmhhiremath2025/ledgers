@@ -13,14 +13,14 @@ export default function OnboardingChecklist({ headers, onNavigate, invoiceCount 
       setDismissed(true)
     }
     Promise.all([
-      fetch('/api/org/config', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/customers?limit=1', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch('/api/bank-accounts?limit=1', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/config', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/customers', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/bank-accounts', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
     ]).then(([c, cust, banks]) => {
       setCfg(c || {})
       setCounts({
-        customers: Array.isArray(cust) ? cust.length : (cust?.items?.length || 0),
-        banks:     Array.isArray(banks) ? banks.length : (banks?.items?.length || 0),
+        customers: Array.isArray(cust) ? cust.length : 0,
+        banks:     Array.isArray(banks) ? banks.length : 0,
       })
       setLoading(false)
     })
@@ -29,11 +29,11 @@ export default function OnboardingChecklist({ headers, onNavigate, invoiceCount 
   if (loading || dismissed) return null
 
   const steps = [
-    { id: 'org',       label: 'Set up your organisation',     desc: 'Add business name, GSTIN and address',   done: !!(cfg?.gstin || cfg?.legalName), go: 'settings'  },
-    { id: 'logo',      label: 'Upload your logo',             desc: 'Appears on all invoices and PDFs',        done: !!cfg?.logoUrl,                    go: 'settings'  },
-    { id: 'customer',  label: 'Add your first customer',      desc: 'Save customer details for quick billing', done: counts.customers > 0,              go: 'customers' },
-    { id: 'bank',      label: 'Add a bank account',           desc: 'Shows on invoices for payments',          done: counts.banks > 0,                  go: 'bank-accounts' },
-    { id: 'invoice',   label: 'Create your first invoice',    desc: 'Send a GST-compliant invoice by email',   done: invoiceCount > 0,                  go: 'invoices'  },
+    { id: 'org',       label: 'Set up your organisation',     desc: 'Add business name, GSTIN and address',   done: !!(cfg?.gstin || cfg?.businessName), go: 'config'  },
+    { id: 'logo',      label: 'Upload your logo',             desc: 'Appears on all invoices and PDFs',        done: !!(cfg?.logoUrl),                    go: 'config'  },
+    { id: 'customer',  label: 'Add your first customer',      desc: 'Save customer details for quick billing', done: counts.customers > 0,                go: 'customers' },
+    { id: 'bank',      label: 'Add a bank account',           desc: 'Shows on invoices for payments',          done: counts.banks > 0,                    go: 'bank-accounts' },
+    { id: 'invoice',   label: 'Create your first invoice',    desc: 'Send a GST-compliant invoice by email',   done: invoiceCount > 0,                    go: 'invoices'  },
   ]
 
   const done  = steps.filter(s => s.done).length
