@@ -1,11 +1,398 @@
-import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Btn, Card, SectionTitle, fmt2, today } from './ui'
+import TemplatePicker from './TemplatePicker'
+
+const newLine = () => ({ description: '', qty: 1, rate: 0, tax: 18, amount: 0 })
+
+const inputCls = {
+  width: '100%', padding: '8px 11px',
+  background: 'var(--surface-2)', border: '1px solid var(--border-2)',
+  borderRadius: 'var(--r)', fontSize: 13, color: 'var(--text)',
+  outline: 'none', fontFamily: 'var(--font)', transition: 'border-color 0.15s',
+}
+const labelCls = { display: 'block', fontSize: 12, color: 'var(--text-3)', fontWeight: 500, marginBottom: 5, letterSpacing: '0.02em' }
+
+function F({ label, value, onChange, type = 'text', placeholder, required, span, mono, uppercase }) {
+  return (
+    <div style={span ? { gridColumn: `span ${span}` } : {}}>
+      {label && <label style={labelCls}>{label}{required && <span style={{ color: 'var(--red)', marginLeft: 2 }}>*</span>}</label>}
+      <input type={type} value={value || ''} onChange={e => onChange(uppercase ? e.target.value.toUpperCase() : e.target.value)}
+        placeholder={placeholder} required={required}
+        style={{ ...inputCls, fontFamily: mono ? 'var(--mono)' : 'var(--font)', textTransform: uppercase ? 'uppercase' : 'none' }}
+        onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)' }}
+        onBlur={e => { e.target.style.borderColor = 'var(--border-2)'; e.target.style.boxShadow = 'none' }} />
+    </div>
+  )
+}
+
+function Sel({ label, value, onChange, options, span }) {
+  return (
+    <div style={span ? { gridColumn: `span ${span}` } : {}}>
+      {label && <label style={labelCls}>{label}</label>}
+      <select value={value || ''} onChange={e => onChange(e.target.value)}
+        style={{ ...inputCls, cursor: 'pointer' }}
+        onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+        onBlur={e => e.target.style.borderColor = 'var(--border-2)'}>
+        {options.map(o => <option key={o} value={o} style={{ background: 'var(--bg-2)' }}>{o}</option>)}
+      </select>
+    </div>
+  )
+}
+
+function CustomerSelect({ value, onChange, headers }) {
+  const [customers, setCustomers] = useState([])
+  const [search, setSearch]       = useState('')
+  const [open, setOpen]           = useState(false)
+  const [saving, setSaving]       = useState(false)
+  const ref = useRef()
+
+  useEffect(() => {
+    fetch(`/api/customers?search=${encodeURIComponent(search)}`, { headers })
+      .then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [search, headers['x-org-id']])
+
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  const select = c => { onChange({ name: c.name, email: c.email, phone: c.phone || '', address: c.address, gstin: c.gstin }); setSearch(''); setOpen(false) }
+  const saveNew = async () => {
+    if (!value?.name) return
+    setSaving(true)
+    await fetch('/api/customers', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(value) })
+    setSaving(false); setOpen(false)
+    fetch(`/api/customers?search=${encodeURIComponent(search)}`, { headers }).then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : []))
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative', gridColumn: 'span 2' }}>
+      <label style={labelCls}>Customer Name <span style={{ color: 'var(--red)', marginLeft: 2 }}>*</span></label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input type="text" value={value?.name || ''} autoComplete="off"
+          onChange={e => { onChange({ ...(value || {}), name: e.target.value }); setOpen(true) }}
+          placeholder="Type to search or create new…"
+          style={{ ...inputCls, flex: 1 }}
+          onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; setOpen(true) }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border-2)'; e.target.style.boxShadow = 'none' }} />
+        {value?.name && <Btn size="sm" onClick={saveNew} disabled={saving} style={{ flexShrink: 0 }}>{saving ? '…' : '💾 Save'}</Btn>}
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--surface-2)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)', zIndex: 200, boxShadow: 'var(--shadow-lg)', maxHeight: 240, overflowY: 'auto' }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search saved customers…"
+              style={{ ...inputCls, fontSize: 12, padding: '6px 9px' }} autoFocus />
+          </div>
+          {customers.length === 0
+            ? <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text-3)' }}>No saved customers. Fill details and click 💾 Save.</div>
+            : customers.map(c => (
+              <div key={c._id} onClick={() => select(c)}
+                style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-3)'}
+                onMouseLeave={e => e.currentTarget.style.background = ''}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>{c.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{c.email}{c.gstin ? ` · GST: ${c.gstin}` : ''}</div>
+              </div>
+            ))
+          }
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Estimate Form (full-page, mirrors InvoiceForm) ───────────────────────────
+
+function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
+  const [custName,    setCustName]    = useState('')
+  const [custEmail,   setCustEmail]   = useState('')
+  const [custPhone,   setCustPhone]   = useState('')
+  const [custAddress, setCustAddress] = useState('')
+  const [custGstin,   setCustGstin]   = useState('')
+  const [orgGstin,    setOrgGstin]    = useState('')
+  const [estNumber,   setEstNumber]   = useState('')
+  const [issueDate,   setIssueDate]   = useState(today())
+  const [expiryDate,  setExpiryDate]  = useState('')
+  const [status,      setStatus]      = useState('Draft')
+  const [currency,    setCurrency]    = useState('INR')
+  const [notes,       setNotes]       = useState('')
+  const [terms,       setTerms]       = useState('')
+  const [lineItems,   setLineItems]   = useState([newLine()])
+  const [products,    setProducts]    = useState([])
+  const [productDropdown, setProductDropdown] = useState(null)
+  const [template,    setTemplate]    = useState('classic')
+  const [saving,      setSaving]      = useState(false)
+
+  useEffect(() => {
+    if (editItem) {
+      setCustName(editItem.customer?.name || '')
+      setCustEmail(editItem.customer?.email || '')
+      setCustPhone(editItem.customer?.phone || '')
+      setCustAddress(editItem.customer?.address || '')
+      setCustGstin((editItem.customer?.gstin || '').toUpperCase())
+      setEstNumber(editItem.estimateNumber || '')
+      setIssueDate(editItem.issueDate ? editItem.issueDate.split('T')[0] : today())
+      setExpiryDate(editItem.expiryDate ? editItem.expiryDate.split('T')[0] : '')
+      setStatus(editItem.status || 'Draft')
+      setCurrency(editItem.currency || 'INR')
+      setNotes(editItem.notes || '')
+      setTerms(editItem.terms || '')
+      setLineItems(editItem.lineItems?.length ? editItem.lineItems : [newLine()])
+      setTemplate(editItem.template || 'classic')
+      return
+    }
+    Promise.all([
+      fetch('/api/config', { headers }).then(r => r.json()),
+      fetch('/api/estimates?limit=1', { headers }).then(r => r.json()),
+    ]).then(([cfg, estData]) => {
+      if (cfg.defaultNotes)    setNotes(cfg.defaultNotes)
+      if (cfg.defaultTerms)    setTerms(cfg.defaultTerms)
+      if (cfg.defaultCurrency) setCurrency(cfg.defaultCurrency)
+      if (cfg.gstin)           setOrgGstin(cfg.gstin)
+      const prefix = cfg.estimatePrefix || 'EST'
+      const count  = (estData.total || 0) + 1
+      setEstNumber(`${prefix}-${String(count).padStart(4, '0')}`)
+      const exp = new Date(); exp.setDate(exp.getDate() + 30)
+      setExpiryDate(exp.toISOString().split('T')[0])
+      if (cfg.defaultTax) setLineItems([{ ...newLine(), tax: cfg.defaultTax }])
+    }).catch(() => {})
+  }, [editItem?._id])
+
+  useEffect(() => {
+    fetch('/api/products', { headers })
+      .then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : []))
+      .catch(() => {})
+  }, [])
+
+  const setCustomer = c => {
+    setCustName(c.name || '')
+    setCustEmail(c.email || '')
+    setCustPhone(c.phone || '')
+    setCustAddress(c.address || '')
+    setCustGstin((c.gstin || '').toUpperCase())
+  }
+
+  const setLine = (i, k, v) => {
+    setLineItems(prev => {
+      const ls = [...prev]
+      ls[i] = { ...ls[i], [k]: v }
+      ls[i].amount = (parseFloat(ls[i].qty) || 0) * (parseFloat(ls[i].rate) || 0)
+      return ls
+    })
+  }
+
+  const subtotal = lineItems.reduce((s, l) => s + (parseFloat(l.qty) || 0) * (parseFloat(l.rate) || 0), 0)
+  const taxTotal  = lineItems.reduce((s, l) => s + (parseFloat(l.qty) || 0) * (parseFloat(l.rate) || 0) * (parseFloat(l.tax) || 0) / 100, 0)
+  const grand = subtotal + taxTotal
+
+  const orgState  = (orgGstin  || '').slice(0, 2)
+  const custState = (custGstin || '').slice(0, 2)
+  const isInter   = orgState && custState && orgState !== custState
+  const cgstAmt   = isInter ? 0 : taxTotal / 2
+  const sgstAmt   = isInter ? 0 : taxTotal / 2
+  const igstAmt   = isInter ? taxTotal : 0
+
+  const save = async (statusOverride) => {
+    if (!custName.trim()) { toast('Customer name is required', 'error'); return }
+    setSaving(statusOverride || 'saving')
+    try {
+      await fetch('/api/customers', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: custName, email: custEmail, phone: custPhone, address: custAddress, gstin: custGstin }),
+      })
+      const payload = {
+        customer: { name: custName, email: custEmail, phone: custPhone, address: custAddress, gstin: custGstin },
+        estimateNumber: estNumber, issueDate, expiryDate: expiryDate || null,
+        status: statusOverride || status, currency, notes, terms, lineItems, template,
+      }
+      const isEdit = !!editItem?._id
+      const res = await fetch(isEdit ? `/api/estimates/${editItem._id}` : '/api/estimates', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const e = await res.json()
+        throw new Error(e.error)
+      }
+      toast(isEdit ? 'Estimate updated!' : statusOverride === 'Sent' ? 'Estimate saved & marked Sent!' : 'Estimate saved!')
+      onSaved()
+    } catch (e) { toast(e.message || 'Save failed', 'error') }
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+        <Btn variant="ghost" onClick={onClose}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </Btn>
+        <div style={{ height: 16, width: 1, background: 'var(--border)' }} />
+        <h2 style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{editItem ? `Edit ${editItem.estimateNumber}` : 'New Estimate'}</h2>
+      </div>
+
+      {/* Template Picker */}
+      <Card style={{ padding: '14px 18px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <SectionTitle style={{ marginBottom: 6 }}>PDF Template</SectionTitle>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Choose how your estimate PDF looks</div>
+          </div>
+          <TemplatePicker value={template} onChange={setTemplate} />
+        </div>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <Card style={{ padding: 18 }}>
+          <SectionTitle>Quote To</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <CustomerSelect value={{ name: custName, email: custEmail, phone: custPhone, address: custAddress, gstin: custGstin }} onChange={setCustomer} headers={headers} />
+            <F label="Email" value={custEmail} onChange={setCustEmail} type="email" placeholder="customer@company.com" span={2} />
+            <F label="Phone" value={custPhone} onChange={setCustPhone} type="tel" placeholder="+91 98765 43210" span={2} />
+            <F label="Address" value={custAddress} onChange={setCustAddress} placeholder="City, State" span={2} />
+            <F label="GSTIN" value={custGstin} onChange={v => setCustGstin(v.toUpperCase())} placeholder="22AAAAA0000A1Z5" mono uppercase span={2} />
+          </div>
+        </Card>
+        <Card style={{ padding: 18 }}>
+          <SectionTitle>Estimate Details</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <F label="Estimate Number" value={estNumber} onChange={setEstNumber} placeholder="EST-0001" span={2} />
+            <Sel label="Status" value={status} onChange={setStatus}
+              options={['Draft', 'Sent', 'Accepted', 'Declined', 'Expired']} />
+            <Sel label="Currency" value={currency} onChange={setCurrency} options={['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD']} />
+            <F label="Issue Date *" value={issueDate} onChange={setIssueDate} type="date" />
+            <F label="Valid Until" value={expiryDate} onChange={setExpiryDate} type="date" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Line Items */}
+      <Card style={{ marginBottom: 14, overflow: 'hidden' }}>
+        <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}><SectionTitle>Line Items</SectionTitle></div>
+        <div style={{ padding: '12px 18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 70px 110px 28px', gap: 8, marginBottom: 6 }}>
+            {['Description', 'Qty', 'Rate (₹)', 'Tax %', 'Amount', ''].map(h => (
+              <div key={h} style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: h === 'Amount' || h === 'Rate (₹)' ? 'right' : 'left' }}>{h}</div>
+            ))}
+          </div>
+          {lineItems.map((line, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 70px 110px 28px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <input value={line.description} onChange={e => { setLine(i, 'description', e.target.value); setProductDropdown(i) }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--accent)'; setProductDropdown(i) }}
+                  onBlur={() => setTimeout(() => setProductDropdown(null), 200)}
+                  placeholder="Item or type to search catalogue…"
+                  style={inputCls} />
+                {productDropdown === i && products.filter(p => !line.description || p.name.toLowerCase().includes(line.description.toLowerCase())).length > 0 && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)', zIndex: 999, boxShadow: 'var(--shadow-lg)', maxHeight: 200, overflowY: 'auto' }}>
+                    {products.filter(p => !line.description || p.name.toLowerCase().includes(line.description.toLowerCase())).slice(0, 8).map(p => (
+                      <button key={p._id} onMouseDown={() => {
+                        setLineItems(prev => prev.map((l, idx) => idx === i ? { ...l, description: p.name, rate: p.price, tax: p.taxRate || 18, hsnCode: p.hsnCode || '', unit: p.unit || 'pcs', amount: (parseFloat(l.qty) || 1) * (p.price || 0) } : l))
+                        setProductDropdown(null)
+                      }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left', borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{p.name}</div>
+                          {p.hsnCode && <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--mono)' }}>HSN: {p.hsnCode}</div>}
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
+                          <div style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 600, color: 'var(--accent-2)' }}>₹{p.price}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-3)' }}>{p.taxRate || 18}% GST</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input type="number" value={line.qty} onChange={e => setLine(i, 'qty', e.target.value)} min="0"
+                style={inputCls} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+              <input type="number" value={line.rate} onChange={e => setLine(i, 'rate', e.target.value)} min="0"
+                style={{ ...inputCls, textAlign: 'right' }} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+              <input type="number" value={line.tax} onChange={e => setLine(i, 'tax', e.target.value)} min="0" max="100"
+                style={inputCls} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+              <div style={{ ...inputCls, textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-2)', cursor: 'default' }}>
+                {fmt2((parseFloat(line.qty) || 0) * (parseFloat(line.rate) || 0) * (1 + (parseFloat(line.tax) || 0) / 100))}
+              </div>
+              <button onClick={() => setLineItems(prev => prev.filter((_, idx) => idx !== i))}
+                style={{ width: 28, height: 28, background: 'var(--red-dim)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--r-sm)', cursor: 'pointer', color: 'var(--red-text)', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            </div>
+          ))}
+          <button onClick={() => setLineItems(prev => [...prev, newLine()])}
+            style={{ width: '100%', marginTop: 4, padding: '7px', background: 'transparent', border: '1px dashed var(--border-2)', borderRadius: 'var(--r)', fontSize: 12, color: 'var(--text-3)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent-2)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.color = 'var(--text-3)' }}>
+            + Add Line Item
+          </button>
+        </div>
+        <div style={{ padding: '14px 18px', borderTop: '1px solid var(--border)', background: 'var(--bg-3)', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ width: 300 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13, color: 'var(--text-3)', borderBottom: '1px solid var(--border)' }}>
+              <span>Subtotal</span><span style={{ fontFamily: 'var(--mono)' }}>{fmt2(subtotal)}</span>
+            </div>
+            {isInter ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13, color: 'var(--text-3)', borderBottom: '1px solid var(--border)' }}>
+                <span>IGST</span><span style={{ fontFamily: 'var(--mono)' }}>{fmt2(igstAmt)}</span>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13, color: 'var(--text-3)', borderBottom: '1px solid var(--border)' }}>
+                  <span>CGST</span><span style={{ fontFamily: 'var(--mono)' }}>{fmt2(cgstAmt)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13, color: 'var(--text-3)', borderBottom: '1px solid var(--border)' }}>
+                  <span>SGST</span><span style={{ fontFamily: 'var(--mono)' }}>{fmt2(sgstAmt)}</span>
+                </div>
+              </>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: 17, fontWeight: 700, color: 'var(--accent-2)' }}>
+              <span>Total</span><span style={{ fontFamily: 'var(--mono)' }}>{fmt2(grand)}</span>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-4)', textAlign: 'right' }}>
+              {isInter ? `Inter-state · IGST (${orgState} → ${custState})` : orgState && custState ? 'Intra-state · CGST + SGST' : 'Defaulting to CGST + SGST (set GSTINs to determine)'}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+        <Card style={{ padding: 16 }}>
+          <SectionTitle>Notes</SectionTitle>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Thank you for your interest!"
+            style={{ ...inputCls, resize: 'vertical' }} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+        </Card>
+        <Card style={{ padding: 16 }}>
+          <SectionTitle>Terms &amp; Conditions</SectionTitle>
+          <textarea value={terms} onChange={e => setTerms(e.target.value)} rows={3}
+            style={{ ...inputCls, resize: 'vertical' }} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+        </Card>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 0', borderTop: '1px solid var(--border)', alignItems: 'center' }}>
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn onClick={() => save('Draft')} disabled={!!saving}>
+          {saving === 'Draft' ? 'Saving…' : 'Save as Draft'}
+        </Btn>
+        <Btn variant="outline" onClick={() => save(status === 'Draft' ? 'Draft' : status)} disabled={!!saving}>
+          {saving === 'saving' ? 'Saving…' : '💾 Save'}
+        </Btn>
+        <Btn variant="primary" onClick={() => save('Sent')} disabled={!!saving}>
+          {saving === 'Sent' ? 'Sending…' : '📤 Send Estimate'}
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
+// ─── List view ────────────────────────────────────────────────────────────────
 
 const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
 const STATUS_COLORS = {
-  Draft:    { bg: 'var(--surface-3)',     color: 'var(--text-3)' },
+  Draft:    { bg: 'var(--surface-3)',      color: 'var(--text-3)' },
   Sent:     { bg: 'rgba(59,130,246,0.12)', color: 'var(--blue-text)' },
   Accepted: { bg: 'rgba(16,185,129,0.12)', color: 'var(--green-text)' },
   Declined: { bg: 'rgba(239,68,68,0.12)',  color: 'var(--red-text)' },
@@ -14,11 +401,11 @@ const STATUS_COLORS = {
 }
 
 export default function EstimatesList({ headers, toast, readOnly }) {
+  const [view, setView]       = useState('list')
+  const [editing, setEditing] = useState(null)
   const [items, setItems]     = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing]   = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -29,22 +416,29 @@ export default function EstimatesList({ headers, toast, readOnly }) {
   }
   useEffect(() => { load() }, [])
 
+  const openForm = (item = null) => { setEditing(item); setView('form') }
+  const closeForm = () => { setView('list'); setEditing(null) }
+
+  if (view === 'form') {
+    return (
+      <EstimateForm
+        headers={headers}
+        toast={toast}
+        editItem={editing}
+        onClose={closeForm}
+        onSaved={() => { closeForm(); load() }}
+      />
+    )
+  }
+
   const filtered = items.filter(i =>
     !search ||
     (i.estimateNumber || '').toLowerCase().includes(search.toLowerCase()) ||
     (i.customer?.name || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const downloadPdf = (est) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('sb_token') : null
-    fetch(`/api/estimates/${est._id}/pdf`, { credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {} })
-      .then(r => r.ok ? r.blob() : Promise.reject(new Error('Failed')))
-      .then(blob => {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a'); a.href = url; a.download = `${est.estimateNumber}.pdf`; a.click()
-        URL.revokeObjectURL(url)
-      })
-      .catch(() => toast('PDF download failed', 'error'))
+  const viewPdf = (est) => {
+    window.open(`/api/estimates/${est._id}/pdf`, '_blank')
   }
 
   const sendEmail = async (est) => {
@@ -60,7 +454,7 @@ export default function EstimatesList({ headers, toast, readOnly }) {
     if (!confirm(`Convert ${est.estimateNumber} to invoice?`)) return
     const r = await fetch(`/api/estimates/${est._id}/convert`, { method: 'POST', headers, credentials: 'include' })
     const d = await r.json()
-    if (r.ok) { toast(`✓ Invoice ${d.invoice.invoiceNumber} created from estimate`); load() }
+    if (r.ok) { toast(`✓ Invoice ${d.invoice.invoiceNumber} created`); load() }
     else toast(d.error || 'Failed', 'error')
   }
 
@@ -72,188 +466,66 @@ export default function EstimatesList({ headers, toast, readOnly }) {
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 18, flexWrap:'wrap', gap:12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin:0 }}>Estimates / Quotes</h2>
-          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>{items.length} estimates · {fmt(items.reduce((s,i)=>s+(i.total||0),0))} total quoted</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Estimates / Quotes</h2>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>{items.length} estimates · {fmt(items.reduce((s, i) => s + (i.total || 0), 0))} total quoted</div>
         </div>
         {!readOnly && (
-          <button onClick={() => { setEditing(null); setShowForm(true) }} style={{ background:'var(--accent)', color:'#fff', border:'none', padding:'10px 18px', borderRadius:'var(--r-md)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>+ New Estimate</button>
+          <button onClick={() => openForm()} style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 'var(--r-md)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>+ New Estimate</button>
         )}
       </div>
 
       <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by number or customer…"
-        style={{ width:'100%', maxWidth:420, padding:'10px 14px', background:'var(--surface-2)', border:'1px solid var(--border-2)', color:'var(--text)', borderRadius:'var(--r)', fontSize:13, marginBottom:14, outline:'none', fontFamily:'var(--font)' }} />
+        style={{ width: '100%', maxWidth: 420, padding: '10px 14px', background: 'var(--surface-2)', border: '1px solid var(--border-2)', color: 'var(--text)', borderRadius: 'var(--r)', fontSize: 13, marginBottom: 14, outline: 'none', fontFamily: 'var(--font)' }} />
 
-      <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', overflow:'hidden' }}>
-        {loading ? <div style={{ padding:40, textAlign:'center', color:'var(--text-3)' }}>Loading…</div>
-         : filtered.length === 0 ? <div style={{ padding:40, textAlign:'center', color:'var(--text-3)' }}>No estimates yet. Create your first one.</div>
-         : (
-          <table style={{ width:'100%', borderCollapse:'collapse' }}>
-            <thead style={{ background:'var(--bg-3)' }}>
-              <tr>
-                {['Number','Customer','Date','Expiry','Total','Status',''].map(h => (
-                  <th key={h} style={{ textAlign:'left', padding:'12px 16px', fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'0.05em', borderBottom:'1px solid var(--border)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(i => {
-                const sc = STATUS_COLORS[i.status] || STATUS_COLORS.Draft
-                return (
-                  <tr key={i._id} style={{ borderBottom:'1px solid var(--border)' }}>
-                    <td style={{ padding:'12px 16px', fontSize:13, color:'var(--text)', fontWeight:600 }}>{i.estimateNumber}</td>
-                    <td style={{ padding:'12px 16px', fontSize:13, color:'var(--text-2)' }}>{i.customer?.name || '—'}</td>
-                    <td style={{ padding:'12px 16px', fontSize:12, color:'var(--text-3)' }}>{fmtDate(i.issueDate)}</td>
-                    <td style={{ padding:'12px 16px', fontSize:12, color:'var(--text-3)' }}>{fmtDate(i.expiryDate)}</td>
-                    <td style={{ padding:'12px 16px', fontSize:13, color:'var(--text)', fontFamily:'var(--mono)' }}>{fmt(i.total)}</td>
-                    <td style={{ padding:'12px 16px' }}>
-                      <span style={{ background: sc.bg, color: sc.color, padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:600 }}>{i.status}</span>
-                    </td>
-                    <td style={{ padding:'12px 16px', textAlign:'right' }}>
-                      <button onClick={() => downloadPdf(i)} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>PDF</button>
-                      {!readOnly && (
-                        <button onClick={() => sendEmail(i)} style={{ background:'transparent', border:'1px solid var(--blue)', color:'var(--blue-text)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>Send</button>
-                      )}
-                      {!readOnly && i.status !== 'Invoiced' && (
-                        <button onClick={() => convert(i)} style={{ background:'transparent', border:'1px solid var(--accent)', color:'var(--accent)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>→ Invoice</button>
-                      )}
-                      {!readOnly && (
-                        <>
-                          <button onClick={() => { setEditing(i); setShowForm(true) }} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, fontFamily:'var(--font)' }}>Edit</button>
-                          <button onClick={() => remove(i)} style={{ background:'transparent', border:'1px solid rgba(239,68,68,0.4)', color:'var(--red)', padding:'4px 10px', borderRadius:6, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>Delete</button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {showForm && <EstimateForm editing={editing} headers={headers} toast={toast} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load() }} />}
-    </div>
-  )
-}
-
-function EstimateForm({ editing, headers, toast, onClose, onSaved }) {
-  const [customer, setCustomer]   = useState(editing?.customer || { name: '', email: '', phone: '', gstin: '', address: '' })
-  const [issueDate, setIssueDate] = useState(editing?.issueDate ? new Date(editing.issueDate).toISOString().slice(0,10) : new Date().toISOString().slice(0,10))
-  const [expiryDate, setExpiry]   = useState(editing?.expiryDate ? new Date(editing.expiryDate).toISOString().slice(0,10) : '')
-  const [status, setStatus]       = useState(editing?.status || 'Draft')
-  const [lineItems, setLines]     = useState(editing?.lineItems?.length ? editing.lineItems : [{ description: '', qty: 1, rate: 0, tax: 0 }])
-  const [notes, setNotes]         = useState(editing?.notes || '')
-  const [terms, setTerms]         = useState(editing?.terms || '')
-  const [saving, setSaving]       = useState(false)
-
-  const updateLine = (idx, patch) => setLines(L => L.map((l, i) => i === idx ? { ...l, ...patch } : l))
-  const addLine    = () => setLines(L => [...L, { description: '', qty: 1, rate: 0, tax: 0 }])
-  const removeLine = i => setLines(L => L.filter((_, idx) => idx !== i))
-
-  const subtotal = lineItems.reduce((s, l) => s + (Number(l.qty)||0) * (Number(l.rate)||0), 0)
-  const taxTotal = lineItems.reduce((s, l) => s + (Number(l.qty)||0) * (Number(l.rate)||0) * (Number(l.tax)||0) / 100, 0)
-  const total    = subtotal + taxTotal
-  const orgState  = '' // not loaded in estimate modal — defaults to intra split
-  const custState = (customer.gstin || '').slice(0, 2)
-  const isInter   = orgState && custState && orgState !== custState
-  const cgstAmt   = isInter ? 0 : taxTotal / 2
-  const sgstAmt   = isInter ? 0 : taxTotal / 2
-  const igstAmt   = isInter ? taxTotal : 0
-
-  const save = async () => {
-    if (!customer.name) { toast('Customer name required', 'error'); return }
-    if (lineItems.some(l => !l.description)) { toast('All line items need a description', 'error'); return }
-    setSaving(true)
-    const body = { customer, issueDate, expiryDate: expiryDate || null, status, lineItems, notes, terms }
-    const url  = editing ? `/api/estimates/${editing._id}` : '/api/estimates'
-    const r = await fetch(url, { method: editing ? 'PUT' : 'POST', headers, credentials:'include', body: JSON.stringify(body) })
-    const d = await r.json()
-    if (r.ok) { toast(editing ? '✓ Updated' : '✓ Estimate created'); onSaved() }
-    else toast(d.error || 'Failed', 'error')
-    setSaving(false)
-  }
-
-  const inp = { width:'100%', padding:'8px 11px', background:'var(--surface-2)', border:'1px solid var(--border-2)', color:'var(--text)', borderRadius:'var(--r)', fontSize:13, outline:'none', fontFamily:'var(--font)' }
-
-  if (typeof document === 'undefined') return null
-  return createPortal(
-    <div onClick={onClose} style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.65)', zIndex:99999, overflow:'hidden' }}>
-      <div onClick={e => e.stopPropagation()} style={{ position:'absolute', top:'3vh', bottom:'3vh', left:'50%', transform:'translateX(-50%)', width:'min(900px, calc(100% - 40px))', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
-        <div style={{ padding:'16px 22px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center', flex:'0 0 auto', background:'var(--surface)', borderRadius:'var(--r-lg) var(--r-lg) 0 0' }}>
-          <div style={{ fontSize:16, fontWeight:700, color:'var(--text)' }}>{editing ? 'Edit Estimate' : 'New Estimate'}</div>
-          <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--text-3)', fontSize:22, cursor:'pointer', fontFamily:'var(--font)', lineHeight:1 }}>×</button>
-        </div>
-        <div style={{ padding:22, flex:'1 1 0', overflowY:'auto', overflowX:'hidden', minHeight:0 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', marginBottom:8 }}>Customer</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
-            <input placeholder="Name *"  value={customer.name}  onChange={e => setCustomer({ ...customer, name:  e.target.value })} style={inp}/>
-            <input placeholder="Email"   value={customer.email} onChange={e => setCustomer({ ...customer, email: e.target.value })} style={inp}/>
-            <input placeholder="Phone"   value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} style={inp}/>
-            <input placeholder="GSTIN"   value={customer.gstin} onChange={e => setCustomer({ ...customer, gstin: e.target.value })} style={inp}/>
-            <input placeholder="Address" value={customer.address} onChange={e => setCustomer({ ...customer, address: e.target.value })} style={{ ...inp, gridColumn:'1 / -1' }}/>
-          </div>
-
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:14 }}>
-            <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Issue date</label><input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} style={inp}/></div>
-            <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Expiry date</label><input type="date" value={expiryDate} onChange={e => setExpiry(e.target.value)} style={inp}/></div>
-            <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} style={inp}>
-                {['Draft','Sent','Accepted','Declined','Expired'].map(s => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', marginBottom:8 }}>Line items</div>
-          <table style={{ width:'100%', marginBottom:10 }}>
-            <thead><tr>
-              <th style={{ textAlign:'left', fontSize:10, color:'var(--text-3)', padding:'4px 6px' }}>Description</th>
-              <th style={{ textAlign:'right', fontSize:10, color:'var(--text-3)', padding:'4px 6px', width:70 }}>Qty</th>
-              <th style={{ textAlign:'right', fontSize:10, color:'var(--text-3)', padding:'4px 6px', width:100 }}>Rate</th>
-              <th style={{ textAlign:'right', fontSize:10, color:'var(--text-3)', padding:'4px 6px', width:70 }}>GST %</th>
-              <th style={{ textAlign:'right', fontSize:10, color:'var(--text-3)', padding:'4px 6px', width:120 }}>Amount</th>
-              <th style={{ width:30 }}></th>
-            </tr></thead>
-            <tbody>
-              {lineItems.map((l, i) => (
-                <tr key={i}>
-                  <td style={{ padding:3 }}><input value={l.description} onChange={e => updateLine(i, { description: e.target.value })} style={inp}/></td>
-                  <td style={{ padding:3 }}><input type="number" value={l.qty}  onChange={e => updateLine(i, { qty:  e.target.value })} style={{ ...inp, textAlign:'right' }}/></td>
-                  <td style={{ padding:3 }}><input type="number" value={l.rate} onChange={e => updateLine(i, { rate: e.target.value })} style={{ ...inp, textAlign:'right' }}/></td>
-                  <td style={{ padding:3 }}><input type="number" value={l.tax}  onChange={e => updateLine(i, { tax:  e.target.value })} style={{ ...inp, textAlign:'right' }}/></td>
-                  <td style={{ padding:3, textAlign:'right', fontSize:13, color:'var(--text)', fontFamily:'var(--mono)' }}>{fmt((Number(l.qty)||0)*(Number(l.rate)||0)*(1+(Number(l.tax)||0)/100))}</td>
-                  <td style={{ textAlign:'center' }}><button onClick={() => removeLine(i)} style={{ background:'none', border:'none', color:'var(--red)', cursor:'pointer', fontSize:16, fontFamily:'var(--font)' }}>×</button></td>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+        {loading ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>Loading…</div>
+          : filtered.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>No estimates yet. Create your first one.</div>
+          : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead style={{ background: 'var(--bg-3)' }}>
+                <tr>
+                  {['Number', 'Customer', 'Date', 'Valid Until', 'Total', 'Status', ''].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <button onClick={addLine} style={{ background:'transparent', border:'1px dashed var(--border-2)', color:'var(--text-3)', padding:'6px 14px', borderRadius:'var(--r)', fontSize:12, cursor:'pointer', marginBottom:14, fontFamily:'var(--font)' }}>+ Add line</button>
-
-          <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:14 }}>
-            <div style={{ minWidth:260, padding:14, background:'var(--surface-2)', borderRadius:'var(--r)' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:4 }}><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
-              {!isInter ? (<>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:4 }}><span>CGST</span><span>{fmt(cgstAmt)}</span></div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>SGST</span><span>{fmt(sgstAmt)}</span></div>
-              </>) : (
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text-3)', marginBottom:6 }}><span>IGST</span><span>{fmt(igstAmt)}</span></div>
-              )}
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'var(--text)', fontWeight:700, paddingTop:6, borderTop:'1px solid var(--border)' }}><span>Total</span><span>{fmt(total)}</span></div>
-            </div>
-          </div>
-
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ ...inp, resize:'vertical' }}/></div>
-            <div><label style={{ fontSize:11, color:'var(--text-3)' }}>Terms</label><textarea value={terms} onChange={e => setTerms(e.target.value)} rows={2} style={{ ...inp, resize:'vertical' }}/></div>
-          </div>
-        </div>
-        <div style={{ padding:'14px 22px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'flex-end', gap:8, flex:'0 0 auto', background:'var(--surface)', borderRadius:'0 0 var(--r-lg) var(--r-lg)' }}>
-          <button onClick={onClose} style={{ background:'transparent', border:'1px solid var(--border-2)', color:'var(--text-2)', padding:'8px 16px', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontFamily:'var(--font)' }}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{ background:'var(--accent)', color:'#fff', border:'none', padding:'8px 18px', borderRadius:'var(--r)', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'var(--font)' }}>{saving ? 'Saving…' : '💾 Save'}</button>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map(i => {
+                  const sc = STATUS_COLORS[i.status] || STATUS_COLORS.Draft
+                  return (
+                    <tr key={i._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{i.estimateNumber}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-2)' }}>{i.customer?.name || '—'}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-3)' }}>{fmtDate(i.issueDate)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-3)' }}>{fmtDate(i.expiryDate)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{fmt(i.total)}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{i.status}</span>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => viewPdf(i)} style={{ background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--text-2)', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', marginRight: 6, fontFamily: 'var(--font)' }}>PDF</button>
+                        {!readOnly && (
+                          <button onClick={() => sendEmail(i)} style={{ background: 'transparent', border: '1px solid var(--blue)', color: 'var(--blue-text)', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', marginRight: 6, fontFamily: 'var(--font)' }}>Send</button>
+                        )}
+                        {!readOnly && i.status !== 'Invoiced' && (
+                          <button onClick={() => convert(i)} style={{ background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', marginRight: 6, fontFamily: 'var(--font)' }}>→ Invoice</button>
+                        )}
+                        {!readOnly && (
+                          <>
+                            <button onClick={() => openForm(i)} style={{ background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--text-2)', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', marginRight: 6, fontFamily: 'var(--font)' }}>Edit</button>
+                            <button onClick={() => remove(i)} style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.4)', color: 'var(--red)', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Delete</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
       </div>
-    </div>,
-    document.body
+    </div>
   )
 }

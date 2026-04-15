@@ -36,6 +36,7 @@ const EstimateSchema = new mongoose.Schema({
   currency: { type: String, default: 'INR' },
   notes:    { type: String, default: '' },
   terms:    { type: String, default: '' },
+  template: { type: String, default: 'classic' },
 
   // If converted to invoice
   convertedInvoiceId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice', default: null },
