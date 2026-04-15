@@ -293,6 +293,39 @@ export default function Home() {
   const [newOrgCreating, setNewOrgCreating] = useState(false)
   const [switchingOrg, setSwitchingOrg] = useState(null)
   const userMenuRef = useRef()
+  const [showIdleWarning, setShowIdleWarning] = useState(false)
+  const idleTimerRef = useRef(null)
+  const warnTimerRef = useRef(null)
+
+  // Auto-signout after 45 mins inactivity (warn at 42 mins, sign out at 45 mins)
+  const IDLE_TIMEOUT   = 45 * 60 * 1000  // 45 minutes
+  const WARN_BEFORE    = 3  * 60 * 1000  // warn 3 minutes before
+  const WARN_AT        = IDLE_TIMEOUT - WARN_BEFORE
+
+  const resetIdleTimer = useCallback(() => {
+    if (!user) return
+    clearTimeout(idleTimerRef.current)
+    clearTimeout(warnTimerRef.current)
+    setShowIdleWarning(false)
+    warnTimerRef.current = setTimeout(() => setShowIdleWarning(true), WARN_AT)
+    idleTimerRef.current = setTimeout(async () => {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      localStorage.removeItem('sb_token')
+      window.location.href = '/?reason=idle'
+    }, IDLE_TIMEOUT)
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach(e => window.addEventListener(e, resetIdleTimer, { passive: true }))
+    resetIdleTimer()
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetIdleTimer))
+      clearTimeout(idleTimerRef.current)
+      clearTimeout(warnTimerRef.current)
+    }
+  }, [user, resetIdleTimer])
 
   // Global search keyboard shortcut
   useEffect(() => {
@@ -381,7 +414,7 @@ export default function Home() {
   }
 
   const logout = async () => {
-    await fetch('/api/auth/me', { method: 'POST', credentials: 'include' })
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     localStorage.removeItem('sb_token')
     window.location.href = '/'
   }
@@ -700,6 +733,31 @@ export default function Home() {
           </div>
         ))}
       </div>
+
+      {/* Idle warning modal */}
+      {showIdleWarning && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:999999, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'var(--bg-2)', border:'1px solid var(--border-2)', borderRadius:14, padding:'28px 32px', maxWidth:380, width:'90%', textAlign:'center', boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>⏱</div>
+            <div style={{ fontSize:16, fontWeight:700, color:'var(--text)', marginBottom:8 }}>Still there?</div>
+            <div style={{ fontSize:13, color:'var(--text-3)', marginBottom:24, lineHeight:1.6 }}>
+              You&apos;ve been inactive for a while. For your security, you&apos;ll be signed out in <strong>3 minutes</strong> unless you stay.
+            </div>
+            <button
+              onClick={resetIdleTimer}
+              style={{ padding:'10px 28px', background:'var(--accent)', color:'#fff', border:'none', borderRadius:'var(--r)', cursor:'pointer', fontSize:14, fontWeight:600, fontFamily:'var(--font)', width:'100%' }}
+            >
+              Stay signed in
+            </button>
+            <button
+              onClick={logout}
+              style={{ marginTop:10, padding:'8px 20px', background:'none', border:'none', cursor:'pointer', fontSize:13, color:'var(--text-3)', fontFamily:'var(--font)', width:'100%' }}
+            >
+              Sign out now
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
