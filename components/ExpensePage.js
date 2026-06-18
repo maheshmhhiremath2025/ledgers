@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Btn, Card, SectionTitle, EmptyState, SearchBar, fmt, fmtDate } from './ui'
 import AttachmentUploader from './AttachmentUploader'
 
@@ -103,7 +103,7 @@ function ExpenseForm({ editItem, headers, toast, onClose, readOnly }) {
   const [receiptImage, setReceiptImage] = useState(editItem?.receiptImage || '')
   const [attachments, setAttachments] = useState(editItem?.attachments || [])
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
-  const receiptRef = React.useRef()
+  const receiptRef = useRef()
   const [saving,      setSaving]      = useState(false)
 
   const handleReceiptUpload = async (e) => {
