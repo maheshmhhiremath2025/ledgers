@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   }
 
   const pdfBuf = await generateDocPdf({
-    title: 'ESTIMATE',
+    title: 'QUOTATION',
     number: est.estimateNumber, status: est.status,
     dateLabel: 'Date', date: est.issueDate,
     dueLabel: 'Valid Until', dueDate: est.expiryDate,
@@ -50,21 +50,21 @@ export default async function handler(req, res) {
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif">
   <div style="max-width:560px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden">
     <div style="background:linear-gradient(135deg,#6366F1,#4F46E5);padding:24px 28px">
-      <div style="color:rgba(255,255,255,0.85);font-size:12px;text-transform:uppercase;letter-spacing:0.06em">Estimate from ${cfg?.businessName || ''}</div>
+      <div style="color:rgba(255,255,255,0.85);font-size:12px;text-transform:uppercase;letter-spacing:0.06em">Quotation from ${cfg?.businessName || ''}</div>
       <div style="color:#fff;font-size:22px;font-weight:700;margin-top:4px">${est.estimateNumber}</div>
       <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:6px">
         Amount: <strong style="color:#fff">${(est.currency || 'INR') === 'INR' ? '₹' : ''}${Number(est.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
       </div>
     </div>
     <div style="padding:24px 28px;color:#374151;font-size:14px;line-height:1.7">
-      ${(body || `Hi ${est.customer?.name || 'there'},<br><br>Please find our estimate attached. Let us know if you'd like to proceed.`).replace(/\n/g, '<br>')}
+      ${(body || `Hi ${est.customer?.name || 'there'},<br><br>Please find our quotation attached. Let us know if you'd like to proceed.`).replace(/\n/g, '<br>')}
     </div>
     <div style="background:#f9fafb;padding:14px 28px;text-align:center;font-size:11px;color:#9CA3AF">${cfg?.businessName || 'HexaLabs Books'}</div>
   </div></body></html>`
 
   await transporter.sendMail({
     from: smtpFrom, to: recipient,
-    subject: subject || `Estimate ${est.estimateNumber} from ${cfg?.businessName || 'us'}`,
+    subject: subject || `Quotation ${est.estimateNumber} from ${cfg?.businessName || 'us'}`,
     html,
     attachments: [{ filename: `${est.estimateNumber}.pdf`, content: pdfBuf, contentType: 'application/pdf' }],
   })

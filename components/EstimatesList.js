@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Btn, Card, SectionTitle, fmt2, today } from './ui'
 import TemplatePicker from './TemplatePicker'
 
-const newLine = () => ({ description: '', qty: 1, rate: 0, tax: 18, amount: 0 })
+const newLine = () => ({ description: '', qty: 1, rate: 0, hours: 1, tax: 18, amount: 0 })
 
 const inputCls = {
   width: '100%', padding: '8px 11px',
@@ -102,7 +102,7 @@ function CustomerSelect({ value, onChange, headers }) {
   )
 }
 
-// ─── Estimate Form (full-page, mirrors InvoiceForm) ───────────────────────────
+// ─── Quotation Form (full-page, mirrors InvoiceForm) ───────────────────────────
 
 function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
   const [custName,    setCustName]    = useState('')
@@ -150,12 +150,12 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
       if (cfg.defaultTerms)    setTerms(cfg.defaultTerms)
       if (cfg.defaultCurrency) setCurrency(cfg.defaultCurrency)
       if (cfg.gstin)           setOrgGstin(cfg.gstin)
-      const prefix = cfg.estimatePrefix || 'EST'
+      const prefix = cfg.estimatePrefix || 'QT'
       const count  = (estData.total || 0) + 1
       setEstNumber(`${prefix}-${String(count).padStart(4, '0')}`)
       const exp = new Date(); exp.setDate(exp.getDate() + 30)
       setExpiryDate(exp.toISOString().split('T')[0])
-      if (cfg.defaultTax) setLineItems([{ ...newLine(), tax: cfg.defaultTax }])
+      if (cfg.defaultTax) setLineItems([{ ...newLine(), tax: cfg.defaultTax, hours: 1 }])
     }).catch(() => {})
   }, [editItem?._id])
 
@@ -177,13 +177,13 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
     setLineItems(prev => {
       const ls = [...prev]
       ls[i] = { ...ls[i], [k]: v }
-      ls[i].amount = (parseFloat(ls[i].qty) || 0) * (parseFloat(ls[i].rate) || 0)
+      ls[i].amount = (parseFloat(ls[i].qty) || 0) * (parseFloat(ls[i].hours) || 1) * (parseFloat(ls[i].rate) || 0)
       return ls
     })
   }
 
-  const subtotal = lineItems.reduce((s, l) => s + (parseFloat(l.qty) || 0) * (parseFloat(l.rate) || 0), 0)
-  const taxTotal  = lineItems.reduce((s, l) => s + (parseFloat(l.qty) || 0) * (parseFloat(l.rate) || 0) * (parseFloat(l.tax) || 0) / 100, 0)
+  const subtotal = lineItems.reduce((s, l) => s + (parseFloat(l.qty) || 0) * (parseFloat(l.hours) || 1) * (parseFloat(l.rate) || 0), 0)
+  const taxTotal  = lineItems.reduce((s, l) => s + (parseFloat(l.qty) || 0) * (parseFloat(l.hours) || 1) * (parseFloat(l.rate) || 0) * (parseFloat(l.tax) || 0) / 100, 0)
   const grand = subtotal + taxTotal
 
   const orgState  = (orgGstin  || '').slice(0, 2)
@@ -217,7 +217,7 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
         const e = await res.json()
         throw new Error(e.error)
       }
-      toast(isEdit ? 'Estimate updated!' : statusOverride === 'Sent' ? 'Estimate saved & marked Sent!' : 'Estimate saved!')
+      toast(isEdit ? 'Quotation updated!' : statusOverride === 'Sent' ? 'Quotation saved & marked Sent!' : 'Quotation saved!')
       onSaved()
     } catch (e) { toast(e.message || 'Save failed', 'error') }
     setSaving(false)
@@ -231,7 +231,7 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
           Back
         </Btn>
         <div style={{ height: 16, width: 1, background: 'var(--border)' }} />
-        <h2 style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{editItem ? `Edit ${editItem.estimateNumber}` : 'New Estimate'}</h2>
+        <h2 style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{editItem ? `Edit ${editItem.estimateNumber}` : 'New Quotation'}</h2>
       </div>
 
       {/* Template Picker */}
@@ -239,7 +239,7 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <SectionTitle style={{ marginBottom: 6 }}>PDF Template</SectionTitle>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Choose how your estimate PDF looks</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Choose how your quotation PDF looks</div>
           </div>
           <TemplatePicker value={template} onChange={setTemplate} />
         </div>
@@ -257,9 +257,9 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
           </div>
         </Card>
         <Card style={{ padding: 18 }}>
-          <SectionTitle>Estimate Details</SectionTitle>
+          <SectionTitle>Quotation Details</SectionTitle>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <F label="Estimate Number" value={estNumber} onChange={setEstNumber} placeholder="EST-0001" span={2} />
+            <F label="Quotation Number" value={estNumber} onChange={setEstNumber} placeholder="QT-0001" span={2} />
             <Sel label="Status" value={status} onChange={setStatus}
               options={['Draft', 'Sent', 'Accepted', 'Declined', 'Expired']} />
             <Sel label="Currency" value={currency} onChange={setCurrency} options={['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD']} />
@@ -273,13 +273,13 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
       <Card style={{ marginBottom: 14, overflow: 'hidden' }}>
         <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}><SectionTitle>Line Items</SectionTitle></div>
         <div style={{ padding: '12px 18px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 70px 110px 28px', gap: 8, marginBottom: 6 }}>
-            {['Description', 'Qty', 'Rate (₹)', 'Tax %', 'Amount', ''].map(h => (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 80px 70px 110px 28px', gap: 8, marginBottom: 6 }}>
+            {['Description', 'Qty', 'Rate (₹)', 'Hours', 'Tax %', 'Amount', ''].map(h => (
               <div key={h} style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: h === 'Amount' || h === 'Rate (₹)' ? 'right' : 'left' }}>{h}</div>
             ))}
           </div>
           {lineItems.map((line, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 70px 110px 28px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 110px 80px 70px 110px 28px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
                 <input value={line.description} onChange={e => { setLine(i, 'description', e.target.value); setProductDropdown(i) }}
                   onFocus={e => { e.target.style.borderColor = 'var(--accent)'; setProductDropdown(i) }}
@@ -290,7 +290,7 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
                   <div style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border-2)', borderRadius: 'var(--r-md)', zIndex: 999, boxShadow: 'var(--shadow-lg)', maxHeight: 200, overflowY: 'auto' }}>
                     {products.filter(p => !line.description || p.name.toLowerCase().includes(line.description.toLowerCase())).slice(0, 8).map(p => (
                       <button key={p._id} onMouseDown={() => {
-                        setLineItems(prev => prev.map((l, idx) => idx === i ? { ...l, description: p.name, rate: p.price, tax: p.taxRate || 18, hsnCode: p.hsnCode || '', unit: p.unit || 'pcs', amount: (parseFloat(l.qty) || 1) * (p.price || 0) } : l))
+                        setLineItems(prev => prev.map((l, idx) => idx === i ? { ...l, description: p.name, rate: p.price, hours: l.hours || 1, tax: p.taxRate || 18, hsnCode: p.hsnCode || '', unit: p.unit || 'pcs', amount: (parseFloat(l.qty) || 1) * (parseFloat(l.hours) || 1) * (p.price || 0) } : l))
                         setProductDropdown(null)
                       }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left', borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
@@ -312,10 +312,12 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
                 style={inputCls} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
               <input type="number" value={line.rate} onChange={e => setLine(i, 'rate', e.target.value)} min="0"
                 style={{ ...inputCls, textAlign: 'right' }} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
+              <input type="number" value={line.hours} onChange={e => setLine(i, 'hours', e.target.value)} min="0"
+                style={inputCls} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
               <input type="number" value={line.tax} onChange={e => setLine(i, 'tax', e.target.value)} min="0" max="100"
                 style={inputCls} onFocus={e => e.target.style.borderColor = 'var(--accent)'} onBlur={e => e.target.style.borderColor = 'var(--border-2)'} />
               <div style={{ ...inputCls, textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text-2)', cursor: 'default' }}>
-                {fmt2((parseFloat(line.qty) || 0) * (parseFloat(line.rate) || 0) * (1 + (parseFloat(line.tax) || 0) / 100))}
+                {fmt2((parseFloat(line.qty) || 0) * (parseFloat(line.hours) || 1) * (parseFloat(line.rate) || 0) * (1 + (parseFloat(line.tax) || 0) / 100))}
               </div>
               <button onClick={() => setLineItems(prev => prev.filter((_, idx) => idx !== i))}
                 style={{ width: 28, height: 28, background: 'var(--red-dim)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--r-sm)', cursor: 'pointer', color: 'var(--red-text)', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
@@ -379,7 +381,7 @@ function EstimateForm({ headers, toast, editItem, onClose, onSaved }) {
           {saving === 'saving' ? 'Saving…' : '💾 Save'}
         </Btn>
         <Btn variant="primary" onClick={() => save('Sent')} disabled={!!saving}>
-          {saving === 'Sent' ? 'Sending…' : '📤 Send Estimate'}
+          {saving === 'Sent' ? 'Sending…' : '📤 Send Quotation'}
         </Btn>
       </div>
     </div>
@@ -444,14 +446,14 @@ export default function EstimatesList({ headers, toast, readOnly }) {
   const sendEmail = async (est) => {
     const to = est.customer?.email
     if (!to) { toast('Customer has no email address', 'error'); return }
-    if (!confirm(`Email estimate ${est.estimateNumber} to ${to}?`)) return
+    if (!confirm(`Email quotation ${est.estimateNumber} to ${to}?`)) return
     const r = await fetch(`/api/estimates/${est._id}/send-email`, { method: 'POST', headers, credentials: 'include', body: JSON.stringify({ to }) })
     const d = await r.json()
     if (r.ok) { toast(`✓ Sent to ${to}`); load() } else toast(d.error || 'Failed', 'error')
   }
 
   const convert = async (est) => {
-    if (!confirm(`Convert ${est.estimateNumber} to invoice?`)) return
+    if (!confirm(`Convert quotation ${est.estimateNumber} to invoice?`)) return
     const r = await fetch(`/api/estimates/${est._id}/convert`, { method: 'POST', headers, credentials: 'include' })
     const d = await r.json()
     if (r.ok) { toast(`✓ Invoice ${d.invoice.invoiceNumber} created`); load() }
@@ -459,7 +461,7 @@ export default function EstimatesList({ headers, toast, readOnly }) {
   }
 
   const remove = async (est) => {
-    if (!confirm(`Delete estimate ${est.estimateNumber}?`)) return
+    if (!confirm(`Delete quotation ${est.estimateNumber}?`)) return
     const r = await fetch(`/api/estimates/${est._id}`, { method: 'DELETE', headers, credentials: 'include' })
     if (r.ok) { toast('Deleted'); load() } else toast('Failed', 'error')
   }
@@ -468,11 +470,11 @@ export default function EstimatesList({ headers, toast, readOnly }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Estimates / Quotes</h2>
-          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>{items.length} estimates · {fmt(items.reduce((s, i) => s + (i.total || 0), 0))} total quoted</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Quotations</h2>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>{items.length} quotations · {fmt(items.reduce((s, i) => s + (i.total || 0), 0))} total quoted</div>
         </div>
         {!readOnly && (
-          <button onClick={() => openForm()} style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 'var(--r-md)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>+ New Estimate</button>
+          <button onClick={() => openForm()} style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 'var(--r-md)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>+ New Quotation</button>
         )}
       </div>
 
@@ -481,7 +483,7 @@ export default function EstimatesList({ headers, toast, readOnly }) {
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
         {loading ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>Loading…</div>
-          : filtered.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>No estimates yet. Create your first one.</div>
+          : filtered.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>No quotations yet. Create your first one.</div>
           : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead style={{ background: 'var(--bg-3)' }}>

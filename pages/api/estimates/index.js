@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     try {
       const data = req.body
       if (!data.estimateNumber) {
-        data.estimateNumber = await nextNumber(orgId, 'estimate', 'EST', 4)
+        data.estimateNumber = await nextNumber(orgId, 'estimate', 'QT', 4)
       }
       data.orgId = orgId
       const cfg = await OrgConfig.findOne({ orgId }).lean()
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       const est = await Estimate.create(data)
 
       audit(req, auth, {
-        action: 'estimate.create', entityType: 'Estimate',
+        action: 'quotation.create', entityType: 'Quotation',
         entityId: est._id, entityRef: est.estimateNumber,
         amount: est.total, after: est.toObject(),
       })

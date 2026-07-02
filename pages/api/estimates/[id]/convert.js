@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   const { id } = req.query
 
   const est = await Estimate.findOne({ _id: id, orgId })
-  if (!est) return res.status(404).json({ error: 'Estimate not found' })
-  if (est.convertedInvoiceId) return res.status(400).json({ error: 'Estimate already converted to invoice ' + est.convertedInvoiceNumber })
+  if (!est) return res.status(404).json({ error: 'Quotation not found' })
+  if (est.convertedInvoiceId) return res.status(400).json({ error: 'Quotation already converted to invoice ' + est.convertedInvoiceNumber })
 
   const invoiceNumber = await nextNumber(orgId, 'invoice', 'INV', 4)
 
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
   await est.save()
 
   audit(req, auth, {
-    action: 'estimate.convert', entityType: 'Estimate',
+    action: 'quotation.convert', entityType: 'Quotation',
     entityId: est._id, entityRef: est.estimateNumber, amount: est.total,
     meta: { invoiceId: inv._id, invoiceNumber: inv.invoiceNumber },
   })

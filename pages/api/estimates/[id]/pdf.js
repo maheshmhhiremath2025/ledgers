@@ -95,13 +95,15 @@ function buildHTML(est, cfg, t) {
   const bodyBg     = dark ? '#0D0F1A' : '#fff'
 
   const rows = (est.lineItems || []).map((item, i) => {
-    const lt = (item.qty || 0) * (item.rate || 0), ta = lt * (item.tax || 0) / 100
+    const hrs = item.hours || 1
+    const lt = (item.qty || 0) * hrs * (item.rate || 0), ta = lt * (item.tax || 0) / 100
     const rowBg = dark ? (i % 2 === 0 ? '#1E2140' : '#252848') : (i % 2 === 0 ? '#fff' : t.billBg)
     return `<tr style="background:${rowBg}">
       <td class="td tc" style="color:${bodyColor}">${i + 1}</td>
       <td class="td" style="color:${bodyColor}">${item.description || ''}</td>
       <td class="td tr" style="color:${bodyColor}">${item.qty}</td>
       <td class="td tr" style="color:${bodyColor}">${fmt(item.rate)}</td>
+      <td class="td tr" style="color:${bodyColor}">${hrs}</td>
       ${F.taxColumn ? `<td class="td tc" style="color:${bodyColor}">${item.tax || 0}%</td>` : ''}
       <td class="td tr fw" style="color:${bodyColor}">${fmt(lt + ta)}</td>
     </tr>`
@@ -183,7 +185,7 @@ function buildHTML(est, cfg, t) {
   <div class="hdr">
     ${leftHeader}
     <div class="inv-right">
-      <div class="inv-title">ESTIMATE</div>
+      <div class="inv-title">QUOTATION</div>
       <div style="font-size:13px;font-weight:600;color:${mutedColor};margin-top:3px">${est.estimateNumber}</div>
       <div><span class="status-pill">${est.status || 'Draft'}</span></div>
     </div>
@@ -199,9 +201,9 @@ function buildHTML(est, cfg, t) {
       ${F.customerGstin && est.customer?.gstin   ? `<div><span class="pgstin">GSTIN: ${est.customer.gstin}</span></div>` : ''}
     </div>
     <div class="pbox" style="background:${t.detBg};border:1px solid ${t.detBorder}">
-      <div class="plbl">Estimate Details</div>
+      <div class="plbl">Quotation Details</div>
       <div class="mgrid">
-        <span class="ml">Estimate No.</span><span class="mv">${est.estimateNumber}</span>
+        <span class="ml">Quotation No.</span><span class="mv">${est.estimateNumber}</span>
         <span class="ml">Issue Date</span><span class="mv">${fmtDate(est.issueDate)}</span>
         ${F.dueDate && est.expiryDate ? `<span class="ml">Valid Until</span><span class="mv">${fmtDate(est.expiryDate)}</span>` : ''}
         ${F.currency ? `<span class="ml">Currency</span><span class="mv">${est.currency || 'INR'}</span>` : ''}
@@ -215,6 +217,7 @@ function buildHTML(est, cfg, t) {
       <thead><tr>
         <th class="th tc" style="width:32px">#</th><th class="th">Description</th>
         <th class="th tr" style="width:52px">Qty</th><th class="th tr" style="width:105px">Rate</th>
+        <th class="th tr" style="width:56px">Hours</th>
         ${F.taxColumn ? '<th class="th tc" style="width:56px">Tax</th>' : ''}<th class="th tr" style="width:115px">Amount</th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -272,7 +275,7 @@ function buildHTML(est, cfg, t) {
   ) : ''}
 
   ${F.footerText ? `<div class="footer">
-    <span>${cfg?.footerText || 'This is a computer-generated estimate.'}</span>` : '<div class="footer"><span></span>'}
+    <span>${cfg?.footerText || 'This is a computer-generated quotation.'}</span>` : '<div class="footer"><span></span>'}
     <span><span class="footer-brand">${biz}</span> &middot; ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
   </div>
 </div>
